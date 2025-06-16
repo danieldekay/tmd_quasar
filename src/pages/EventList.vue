@@ -46,7 +46,7 @@
                   {{ formatDate(props.row.registration_start_date) }}
                 </q-td>
                 <q-td key="location" :props="props">
-                  {{ props.row.city }}, {{ props.row.country }}
+                  {{ formatLocation(props.row.city, props.row.country) }}
                 </q-td>
                 <q-td key="category" :props="props">
                   {{ props.row.event_category }}
@@ -126,7 +126,7 @@ const columns: EventTableColumn[] = [
   {
     name: 'location',
     label: 'Location',
-    field: (row) => `${row.city}, ${row.country}`,
+    field: (row) => formatLocation(row.city, row.country),
     sortable: true,
     align: 'left',
     style: 'width: 22%',
@@ -152,10 +152,43 @@ const filteredEvents = computed(() => {
   });
 });
 
-const formatDate = (date: string | number | boolean | null | undefined): string => {
-  if (!date || typeof date !== 'string') return '';
-  const d = new Date(date);
-  return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+const formatDate = (date: unknown): string => {
+  if (!date) return '';
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (!trimmed) return '';
+    const d = new Date(trimmed);
+    if (isNaN(d.getTime())) return '';
+    try {
+      const isoString = d.toISOString();
+      if (!isoString) return '';
+      const parts = isoString.split('T');
+      return parts[0] || '';
+    } catch {
+      return '';
+    }
+  }
+  if (typeof date === 'number') {
+    if (!isFinite(date)) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    try {
+      const isoString = d.toISOString();
+      if (!isoString) return '';
+      const parts = isoString.split('T');
+      return parts[0] || '';
+    } catch {
+      return '';
+    }
+  }
+  return '';
+};
+
+const formatLocation = (city?: string, country?: string): string => {
+  if (city && country) return `${city}, ${country}`;
+  if (city) return city;
+  if (country) return country;
+  return '—';
 };
 
 const navigateToEvent = (event: Event) => {

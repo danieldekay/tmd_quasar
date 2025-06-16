@@ -213,6 +213,7 @@ export interface RawEvent {
     'wp:featuredmedia'?: Array<{
       source_url: string;
     }>;
+    'wp:term'?: Array<Array<{ name: string }>>;
   };
   'event-categories-2020'?: Array<{
     name: string;
@@ -237,6 +238,16 @@ export interface RawEvent {
 
 const eventCache = new Map<number, Event>();
 
+const REQUIRED_META_FIELDS = [
+  'city',
+  'country',
+  'event_category',
+  'start_date',
+  'end_date',
+  'registration_start_date',
+  // add more fields as needed
+].join(',');
+
 export const wordpressService = {
   async getEvents(params = {}) {
     try {
@@ -246,8 +257,7 @@ export const wordpressService = {
           page: 1,
           orderby: 'start_date',
           order: 'desc',
-          meta_fields:
-            'event_name,city,country,facebook_event,facebook_page,website,email,have_milongas,have_tickets,have_food,food_options,have_sleep,sleeping_options,have_registration,have_registration_mode,registration_start_date,role_balanced,invitation_only,price,currency,number_of_participants,music_hours,lat,lon',
+          meta_fields: REQUIRED_META_FIELDS,
           ...params,
         },
         timeout: 50000,
@@ -256,16 +266,17 @@ export const wordpressService = {
       const events = Array.isArray(response.data) ? response.data : [];
       return events.map((event: RawEvent) => ({
         ...event,
-        title: event.event_name || event.title || '',
-        description: event.post_content || event.description || '',
+        title: event.title || '',
+        description: event.description || event.post_content || '',
         featured_image: event.featured_image || '',
-        event_category: event['event-categories-2020']?.[0]?.name || event.event_category || '',
+        event_category: event.event_category || '',
         djs: event.djs || '',
         teachers: event.teachers || '',
         city: event.city || '',
         country: event.country || '',
         start_date: event.start_date || '',
         end_date: event.end_date || '',
+        registration_start_date: event.registration_start_date || '',
       })) as Event[];
     } catch (error) {
       console.error('API Error:', error);
@@ -281,8 +292,7 @@ export const wordpressService = {
           page,
           orderby: 'start_date',
           order: 'desc',
-          meta_fields:
-            'event_name,city,country,facebook_event,facebook_page,website,email,have_milongas,have_tickets,have_food,food_options,have_sleep,sleeping_options,have_registration,have_registration_mode,registration_start_date,role_balanced,invitation_only,price,currency,number_of_participants,music_hours,lat,lon',
+          meta_fields: REQUIRED_META_FIELDS,
           ...params,
         },
         timeout: 50000,
@@ -291,16 +301,17 @@ export const wordpressService = {
       const events = Array.isArray(response.data) ? response.data : [];
       return events.map((event: RawEvent) => ({
         ...event,
-        title: event.event_name || event.title || '',
-        description: event.post_content || event.description || '',
+        title: event.title || '',
+        description: event.description || event.post_content || '',
         featured_image: event.featured_image || '',
-        event_category: event['event-categories-2020']?.[0]?.name || event.event_category || '',
+        event_category: event.event_category || '',
         djs: event.djs || '',
         teachers: event.teachers || '',
         city: event.city || '',
         country: event.country || '',
         start_date: event.start_date || '',
         end_date: event.end_date || '',
+        registration_start_date: event.registration_start_date || '',
       })) as Event[];
     } catch (error) {
       console.error('API Error:', error);
