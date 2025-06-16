@@ -2,174 +2,12 @@ import { api } from '../boot/axios';
 
 export type Event = {
   id: number;
-  date: string;
-  date_gmt: string;
-  guid: {
-    rendered: string;
-  };
-  modified: string;
-  modified_gmt: string;
-  slug: string;
-  status: string;
-  type: string;
-  link: string;
-  author: number;
-  featured_media: number;
-  template: string;
   title: string;
-  description?: string;
-  featured_image?: string;
-  event_category: string;
-  djs: string;
-  teachers: string;
-  max_participants?: number;
-  registered_count?: number;
-  schedule?: Array<{
-    time: string;
-    title: string;
-    description: string;
-  }>;
-  meta: {
-    _genesis_hide_title: boolean;
-    _genesis_hide_breadcrumbs: boolean;
-    _genesis_hide_singular_image: boolean;
-    _genesis_hide_footer_widgets: boolean;
-    _genesis_custom_body_class: string;
-    _genesis_custom_post_class: string;
-    _genesis_layout: string;
-    activitypub_content_warning: string;
-    activitypub_content_visibility: string;
-    activitypub_max_image_attachments: number;
-    event_bridge_for_activitypub_reminder_time_gap: number;
-  };
-  'event-categories-2020': Array<{
-    id: number;
-    name: string;
-    slug: string;
-  }>;
-  class_list: string[];
-  edition: string;
-  event_name: string;
+  date: string;
+  link: string;
   start_date: string;
-  end_date: string;
-  city: string;
-  country: string;
-  facebook_event: string;
-  facebook_group: string;
-  facebook_page: string;
-  website: string;
-  email: string;
-  have_registration: string;
-  have_registration_mode: string;
   registration_start_date: string;
-  role_balanced: string;
-  invitation_only: string;
-  have_milongas: string;
-  have_tickets: string;
-  have_food: string;
-  food_options: string;
-  have_sleep: string;
-  sleeping_options: string;
-  have_services: string;
-  service_options: string;
-  have_sales: string;
-  lat: string;
-  lon: string;
-  price: string;
-  currency: string;
-  number_of_participants: string;
-  music_hours: string;
-  post_content: string;
-  month: string;
-  weekend: string;
-  meta_box: {
-    urgent_change_status: string;
-    edition: string;
-    event_name: string;
-    event_category: boolean;
-    start_date: string;
-    end_date: string;
-    role_balanced: string;
-    invitation_only: string;
-    have_registration: string;
-    have_registration_mode: string;
-    registration_start_date: string;
-    post_content: string;
-    country: string;
-    city: string;
-    'venue-name': string;
-    street: string;
-    website: string;
-    email: string;
-    facebook_event: string;
-    facebook_group: string;
-    facebook_page: string;
-    price: string;
-    currency: string;
-    number_of_participants: string;
-    music_hours: string;
-    type_of_floor: string;
-    venue_features: string[];
-    have_milongas: string;
-    have_tickets: string;
-    have_live_music: string;
-    have_lessons: string;
-    have_show: string;
-    have_separated_seating: string;
-    have_folklore: string;
-    have_non_tango: string;
-    have_food: string;
-    food_options: string[];
-    have_sleep: string;
-    sleeping_options: string[];
-    have_services: string;
-    service_options: string[];
-    have_sales: string;
-    shopping_options: string[];
-    tmd_openai_summary: string;
-    tmd_openai_djs: string;
-    tmd_openai_people: string;
-    teachers_to_events_from: Array<{
-      id: number;
-      title: string;
-      link: string;
-    }>;
-    couples_to_events_from: Array<{
-      id: number;
-      title: string;
-      link: string;
-    }>;
-    event_series_to_events_from: Array<{
-      id: number;
-      title: string;
-      link: string;
-    }>;
-    djs_to_events_from: Array<{
-      id: number;
-      title: string;
-      link: string;
-    }>;
-    orchestras_to_events_from: Array<{
-      id: number;
-      title: string;
-      link: string;
-    }>;
-    brands_to_events_from: Array<{
-      id: number;
-      title: string;
-      link: string;
-    }>;
-  };
-  _links: {
-    self: Array<{ href: string; targetHints?: { allow: string[] } }>;
-    collection: Array<{ href: string }>;
-    about: Array<{ href: string }>;
-    author: Array<{ embeddable: boolean; href: string }>;
-    'version-history': Array<{ count: number; href: string }>;
-    'wp:attachment': Array<{ href: string }>;
-    'wp:term': Array<{ taxonomy: string; embeddable: boolean; href: string }>;
-    curies: Array<{ name: string; href: string; templated: boolean }>;
-  };
+  edition: string;
 };
 
 export interface DJ {
@@ -248,39 +86,67 @@ const REQUIRED_META_FIELDS = [
   // add more fields as needed
 ].join(',');
 
+interface EventParams {
+  page?: number;
+  perPage?: number;
+  country?: string | undefined;
+  start_date_from?: string | undefined;
+  start_date_to?: string | undefined;
+  registration_start_date_from?: string | undefined;
+  registration_start_date_to?: string | undefined;
+}
+
 export const wordpressService = {
-  async getEvents(params = {}) {
+  async getEvents(params: EventParams = {}): Promise<Event[]> {
     try {
-      const response = await api.get('/events', {
-        params: {
-          per_page: 100,
-          page: 1,
-          orderby: 'start_date',
-          order: 'desc',
-          meta_fields: REQUIRED_META_FIELDS,
-          ...params,
-        },
-        timeout: 50000,
+      const {
+        page = 1,
+        perPage = 100,
+        country,
+        start_date_from,
+        start_date_to,
+        registration_start_date_from,
+        registration_start_date_to,
+      } = params;
+
+      const queryParams = new URLSearchParams({
+        per_page: perPage.toString(),
+        page: page.toString(),
+        orderby: 'start_date',
+        order: 'desc',
+        meta_fields: 'all',
       });
 
-      const events = Array.isArray(response.data) ? response.data : [];
-      return events.map((event: RawEvent) => ({
-        ...event,
-        title: event.title || '',
-        description: event.description || event.post_content || '',
-        featured_image: event.featured_image || '',
-        event_category: event.event_category || '',
-        djs: event.djs || '',
-        teachers: event.teachers || '',
-        city: event.city || '',
-        country: event.country || '',
-        start_date: event.start_date || '',
-        end_date: event.end_date || '',
-        registration_start_date: event.registration_start_date || '',
-      })) as Event[];
+      if (country) {
+        queryParams.append('country', country);
+      }
+      if (start_date_from) {
+        queryParams.append('start_date_from', start_date_from);
+      }
+      if (start_date_to) {
+        queryParams.append('start_date_to', start_date_to);
+      }
+      if (registration_start_date_from) {
+        queryParams.append('registration_start_date_from', registration_start_date_from);
+      }
+      if (registration_start_date_to) {
+        queryParams.append('registration_start_date_to', registration_start_date_to);
+      }
+
+      const response = await api.get(`events?${queryParams.toString()}`);
+      // Specify the type as unknown[] and map to Event
+      return (response.data as unknown[]).map((e) => ({
+        id: (e as Record<string, unknown>).id as number,
+        title: (e as Record<string, unknown>).title as string,
+        date: (e as Record<string, unknown>).date as string,
+        link: (e as Record<string, unknown>).link as string,
+        start_date: (e as Record<string, unknown>).start_date as string,
+        registration_start_date: (e as Record<string, unknown>).registration_start_date as string,
+        edition: (e as Record<string, unknown>).edition as string,
+      }));
     } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+      console.error('Error fetching events:', error);
+      throw new Error('API Error');
     }
   },
 

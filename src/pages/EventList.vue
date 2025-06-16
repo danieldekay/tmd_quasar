@@ -4,6 +4,59 @@
       <div class="col-12">
         <h1 class="text-h4 q-mb-lg">Events</h1>
       </div>
+      <!-- Filter Controls -->
+      <div class="col-12 row q-col-gutter-md q-mb-md">
+        <div class="col-xs-12 col-sm-6 col-md-3">
+          <q-select
+            v-model="selectedCountry"
+            :options="countryOptions"
+            label="Filter by Country"
+            clearable
+            dense
+            outlined
+            emit-value
+            map-options
+            :option-label="(opt) => countryMap[opt] || opt"
+            :option-value="(opt) => opt"
+          />
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-3">
+          <q-input
+            :model-value="formatDateRange(startDateRange)"
+            label="Event Date Range"
+            dense
+            outlined
+            clearable
+            @clear="startDateRange = { from: null, to: null }"
+          >
+            <template v-slot:append>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="startDateRange" range mask="YYYY-MM-DD" today-btn />
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-3">
+          <q-input
+            :model-value="formatDateRange(registrationDateRange)"
+            label="Registration Date Range"
+            dense
+            outlined
+            clearable
+            @clear="registrationDateRange = { from: null, to: null }"
+          >
+            <template v-slot:append>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="registrationDateRange" range mask="YYYY-MM-DD" today-btn />
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
+        </div>
+      </div>
 
       <!-- Loading State -->
       <div v-if="state.loading" class="col-12 text-center">
@@ -36,7 +89,7 @@
             <template v-slot:body="props">
               <q-tr :props="props" @click="navigateToEvent(props.row)" class="cursor-pointer">
                 <q-td key="title" :props="props">
-                  <div class="text-weight-medium">{{ props.row.title }}</div>
+                  <div class="text-weight-medium">{{ props.row.title.rendered }}</div>
                   <div class="text-caption">{{ props.row.event_category }}</div>
                 </q-td>
                 <q-td key="start_date" :props="props">
@@ -61,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { wordpressService } from '../services/wordpress';
@@ -96,11 +149,27 @@ const state = ref<EventViewState>({
   },
 });
 
+const selectedCountry = ref<string | null>(null);
+
+// Add country mapping
+const countryMap: Record<string, string> = {
+  US: 'United States',
+  DE: 'Germany',
+  FR: 'France',
+  // Add more mappings as needed
+};
+
+// Update countryOptions to use two-letter codes
+const countryOptions = computed(() => {
+  const set = new Set(state.value.events.map((e) => e.country).filter(Boolean));
+  return Array.from(set).sort();
+});
+
 const columns: EventTableColumn[] = [
   {
     name: 'title',
     label: 'Event',
-    field: (row) => row.title,
+    field: (row) => row.title.rendered,
     sortable: true,
     align: 'left',
     style: 'width: 30%',
@@ -141,14 +210,84 @@ const columns: EventTableColumn[] = [
   },
 ];
 
+// Add date filter state
+const startDateRange = ref<{ from: string | null; to: string | null }>({
+  from: null,
+  to: null,
+});
+const registrationDateRange = ref<{ from: string | null; to: string | null }>({
+  from: null,
+  to: null,
+});
+
+// Format date for display
+const formatDateRange = (range: { from: string | null; to: string | null }): string => {
+  if (!range.from && !range.to) return '';
+  if (range.from && range.to) return `${range.from} - ${range.to}`;
+  return range.from || range.to || '';
+};
+
+// Watch for date range changes and reload events
+watch(
+  [startDateRange, registrationDateRange],
+  async ([newStartRange, newRegRange]) => {
+    state.value.loading = true;
+    try {
+      const events = await wordpressService.getEvents({
+        country: selectedCountry.value || undefined,
+        start_date_from: newStartRange.from ? `${newStartRange.from}T00:00:00+00:00` : undefined,
+        start_date_to: newStartRange.to ? `${newStartRange.to}T23:59:59+00:00` : undefined,
+        registration_start_date_from: newRegRange.from
+          ? `${newRegRange.from}T00:00:00+00:00`
+          : undefined,
+        registration_start_date_to: newRegRange.to ? `${newRegRange.to}T23:59:59+00:00` : undefined,
+      });
+      state.value.events = events;
+      state.value.pagination.total = events.length;
+    } catch (error) {
+      console.error('Error loading filtered events:', error);
+      $q.notify({
+        type: 'negative',
+        message: 'Failed to load filtered events',
+        position: 'top',
+      });
+    } finally {
+      state.value.loading = false;
+    }
+  },
+  { deep: true },
+);
+
+// Watch for country changes and reload events
+watch(selectedCountry, async (newCountry) => {
+  state.value.loading = true;
+  try {
+    const events = await wordpressService.getEvents({
+      country: newCountry || undefined,
+    });
+    state.value.events = events;
+    state.value.pagination.total = events.length;
+  } catch (error) {
+    console.error('Error loading filtered events:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load filtered events',
+      position: 'top',
+    });
+  } finally {
+    state.value.loading = false;
+  }
+});
+
+// Update filteredEvents to only handle search filtering
 const filteredEvents = computed(() => {
   return state.value.events.filter((event) => {
-    const searchLower = state.value.searchQuery.toLowerCase();
-    return (
-      event.title.toLowerCase().includes(searchLower) ||
-      event.city.toLowerCase().includes(searchLower) ||
-      event.country.toLowerCase().includes(searchLower)
-    );
+    const matchesSearch =
+      !state.value.searchQuery ||
+      event.title.rendered.toLowerCase().includes(state.value.searchQuery.toLowerCase()) ||
+      event.city?.toLowerCase().includes(state.value.searchQuery.toLowerCase()) ||
+      event.country?.toLowerCase().includes(state.value.searchQuery.toLowerCase());
+    return matchesSearch;
   });
 });
 
@@ -317,3 +456,10 @@ onMounted(async () => {
   await loadEvents();
 });
 </script>
+
+<style lang="scss" scoped>
+.q-date {
+  width: 100%;
+  max-width: 300px;
+}
+</style>
