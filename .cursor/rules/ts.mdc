@@ -1,0 +1,8 @@
+---
+description: 
+globs: *.ts
+alwaysApply: false
+---
+Automatically fix:
+- type errors
+- import errors

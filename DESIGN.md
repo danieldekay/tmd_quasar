@@ -57,6 +57,72 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 - **`src/assets/`**: Contains assets that are processed by Vite
 - **`wp-content/`**: Contains the WordPress theme/plugin code for serving the Vue.js frontend
 
+### 3.4 Available Quasar Components
+
+The project utilizes Quasar's comprehensive component library:
+
+#### Layout Components
+
+- QLayout: Main layout container
+- QPage: Page container
+- QHeader: Top header bar
+- QFooter: Bottom footer bar
+- QDrawer: Side navigation drawer
+- QPageContainer: Page content container
+
+#### Form Components
+
+- QInput: Text input fields
+- QSelect: Dropdown selection
+- QCheckbox: Checkbox inputs
+- QRadio: Radio button inputs
+- QToggle: Toggle switches
+- QDate: Date picker
+- QTime: Time picker
+- QFile: File upload
+
+#### Data Display
+
+- QTable: Data tables with sorting and filtering
+- QCard: Content cards
+- QList: List items
+- QTimeline: Timeline display
+- QTree: Hierarchical data display
+- QMarkupTable: Simple HTML tables
+
+#### Navigation
+
+- QTabs: Tab navigation
+- QBreadcrumbs: Navigation path
+- QMenu: Dropdown menus
+- QPagination: Page navigation
+- QStepper: Step-by-step navigation
+
+#### Feedback & Loading
+
+- QSpinner: Loading indicators
+- QDialog: Modal dialogs
+- QNotify: Toast notifications
+- QLoading: Loading overlay
+- QInnerLoading: Component loading state
+
+#### Utility Components
+
+- QBtn: Buttons
+- QIcon: Icons
+- QBadge: Status badges
+- QTooltip: Tooltips
+- QSeparator: Visual dividers
+- QSpace: Flexible spacing
+
+#### Advanced Features
+
+- VirtualScroll: Efficient long lists
+- InfiniteScroll: Load more on scroll
+- Intersection: Viewport detection
+- TouchSwipe: Touch gestures
+- QParallax: Parallax effects
+
 ## 4. Design Principles
 
 ### 4.1 Modern Design

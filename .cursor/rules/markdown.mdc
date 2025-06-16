@@ -1,0 +1,7 @@
+---
+description: 
+globs: *.md
+alwaysApply: false
+---
+Maximum line length: 80 characters
+Follow Markdown rules and fix linter errors.
