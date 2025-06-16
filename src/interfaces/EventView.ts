@@ -32,6 +32,7 @@ export interface EventTableColumn {
   sortable?: boolean;
   align?: 'left' | 'right' | 'center';
   format?: (val: string | number | boolean | null) => string;
+  style?: string;
 }
 
 export interface EventCardProps {

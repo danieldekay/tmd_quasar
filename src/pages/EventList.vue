@@ -1,82 +1,61 @@
 <template>
   <q-page padding>
-    <div class="row q-mb-md items-center">
-      <div class="col-12 col-md-6">
-        <q-input
-          v-model="state.searchQuery"
-          dense
-          outlined
-          placeholder="Search events..."
-          class="q-mr-md"
-        >
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+    <div class="row q-col-gutter-lg">
+      <div class="col-12">
+        <h1 class="text-h4 q-mb-lg">Events</h1>
       </div>
-      <div class="col-12 col-md-6 text-right">
-        <q-btn-toggle
-          v-model="state.viewMode"
-          :options="[
-            { label: 'Table', value: 'table' },
-            { label: 'Cards', value: 'card' },
-          ]"
-          flat
-          class="q-mr-md"
-        />
-        <q-btn round color="primary" icon="refresh" @click="loadEvents" :loading="state.loading">
-          <q-tooltip>Reload events</q-tooltip>
-        </q-btn>
+
+      <!-- Loading State -->
+      <div v-if="state.loading" class="col-12 text-center">
+        <q-spinner color="primary" size="3em" />
+        <p class="q-mt-md">Loading events...</p>
       </div>
-    </div>
 
-    <!-- Error State -->
-    <div v-if="state.error" class="q-mb-md">
-      <q-banner class="bg-negative text-white">
-        {{ state.error }}
-        <template v-slot:action>
-          <q-btn flat label="Retry" @click="loadEvents" />
-        </template>
-      </q-banner>
-    </div>
+      <!-- Error State -->
+      <div v-else-if="state.error" class="col-12 text-center">
+        <q-banner class="bg-negative text-white">
+          {{ state.error }}
+        </q-banner>
+      </div>
 
-    <!-- Table View -->
-    <q-table
-      v-if="state.viewMode === 'table'"
-      :rows="filteredEvents"
-      :columns="columns"
-      row-key="id"
-      :loading="state.loading"
-      v-model:pagination="state.pagination"
-      v-model:sort-by="state.sortBy.field"
-      v-model:sort-desc="state.sortBy.direction"
-      binary-state-sort
-    >
-      <template v-slot:body="props">
-        <q-tr :props="props" @click="navigateToEvent(props.row)" class="cursor-pointer">
-          <q-td v-for="col in props.cols" :key="col.name" :props="props">
-            {{ typeof col.field === 'function' ? col.field(props.row) : props.row[col.field] }}
-          </q-td>
-        </q-tr>
+      <!-- Events List -->
+      <template v-else>
+        <div class="col-12">
+          <q-table
+            :rows="filteredEvents"
+            :columns="columns"
+            row-key="id"
+            :loading="state.loading"
+            v-model:pagination="state.pagination"
+            @request="onRequest"
+            @scroll="onScroll"
+            virtual-scroll
+            :virtual-scroll-item-size="48"
+            :rows-per-page-options="[10, 20, 50, 100]"
+          >
+            <template v-slot:body="props">
+              <q-tr :props="props" @click="navigateToEvent(props.row)" class="cursor-pointer">
+                <q-td key="title" :props="props">
+                  <div class="text-weight-medium">{{ props.row.title }}</div>
+                  <div class="text-caption">{{ props.row.event_category }}</div>
+                </q-td>
+                <q-td key="start_date" :props="props">
+                  {{ formatDate(props.row.start_date) }}
+                </q-td>
+                <q-td key="registration_start_date" :props="props">
+                  {{ formatDate(props.row.registration_start_date) }}
+                </q-td>
+                <q-td key="location" :props="props">
+                  {{ props.row.city }}, {{ props.row.country }}
+                </q-td>
+                <q-td key="category" :props="props">
+                  {{ props.row.event_category }}
+                </q-td>
+              </q-tr>
+            </template>
+          </q-table>
+        </div>
       </template>
-    </q-table>
-
-    <!-- Card View -->
-    <div v-else class="row q-col-gutter-md">
-      <div v-for="event in filteredEvents" :key="event.id" class="col-12 col-sm-6 col-md-4">
-        <q-card class="cursor-pointer" @click="navigateToEvent(event)">
-          <q-img :src="'https://cdn.quasar.dev/img/mountains.jpg'" :ratio="16 / 9">
-            <div class="absolute-bottom text-subtitle2 text-center bg-transparent">
-              {{ event.title }}
-            </div>
-          </q-img>
-
-          <q-card-section>
-            <div class="text-subtitle2">{{ formatDate(event.start_date) }}</div>
-            <div class="text-caption">{{ event.city }}, {{ event.country }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
     </div>
   </q-page>
 </template>
@@ -84,11 +63,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
 import { wordpressService } from '../services/wordpress';
 import type { Event } from '../services/wordpress';
 import type { EventViewState, EventTableColumn } from '../interfaces/EventView';
 
 const router = useRouter();
+const $q = useQuasar();
 
 const state = ref<EventViewState>({
   events: [],
@@ -122,6 +103,7 @@ const columns: EventTableColumn[] = [
     field: (row) => row.title,
     sortable: true,
     align: 'left',
+    style: 'width: 30%',
   },
   {
     name: 'start_date',
@@ -130,6 +112,16 @@ const columns: EventTableColumn[] = [
     sortable: true,
     align: 'left',
     format: (val) => formatDate(val),
+    style: 'width: 14%',
+  },
+  {
+    name: 'registration_start_date',
+    label: 'Registration Opens',
+    field: (row) => row.registration_start_date,
+    sortable: true,
+    align: 'left',
+    format: (val) => formatDate(val),
+    style: 'width: 14%',
   },
   {
     name: 'location',
@@ -137,6 +129,7 @@ const columns: EventTableColumn[] = [
     field: (row) => `${row.city}, ${row.country}`,
     sortable: true,
     align: 'left',
+    style: 'width: 22%',
   },
   {
     name: 'category',
@@ -144,6 +137,7 @@ const columns: EventTableColumn[] = [
     field: (row) => row.event_category,
     sortable: true,
     align: 'left',
+    style: 'width: 20%',
   },
 ];
 
@@ -158,13 +152,14 @@ const filteredEvents = computed(() => {
   });
 });
 
-const formatDate = (date: string | number | boolean | null): string => {
+const formatDate = (date: string | number | boolean | null | undefined): string => {
   if (!date || typeof date !== 'string') return '';
-  return new Date(date).toLocaleDateString();
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
 };
 
-const navigateToEvent = async (event: Event) => {
-  await router.push(`/events/${event.id}`);
+const navigateToEvent = (event: Event) => {
+  void router.push(`/events/${event.id}`);
 };
 
 interface ApiError extends Error {
@@ -192,13 +187,7 @@ const loadEvents = async () => {
       return;
     }
 
-    const sortedEvents = [...events].sort((a, b) => {
-      const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
-      const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
-      return state.value.sortBy.direction === 'asc' ? aDate - bDate : bDate - aDate;
-    });
-
-    state.value.events = sortedEvents;
+    state.value.events = events;
     state.value.pagination.total = events.length;
   } catch (err: unknown) {
     console.error('Error loading events:', err);
@@ -228,6 +217,66 @@ const loadEvents = async () => {
     }
   } finally {
     state.value.loading = false;
+  }
+};
+
+const loadMoreEvents = async () => {
+  if (state.value.loading) return;
+
+  state.value.loading = true;
+  try {
+    const nextPage = state.value.pagination.page + 1;
+    const newEvents = await wordpressService.loadMoreEvents(nextPage, {
+      _embed: true,
+      per_page: 100,
+      orderby: 'start_date',
+      order: 'desc',
+    });
+
+    if (newEvents && newEvents.length > 0) {
+      state.value.events = [...state.value.events, ...newEvents];
+      state.value.pagination.page = nextPage;
+      state.value.pagination.total += newEvents.length;
+    }
+  } catch (error) {
+    console.error('Error loading more events:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load more events',
+      position: 'top',
+    });
+  } finally {
+    state.value.loading = false;
+  }
+};
+
+const onRequest = (props: {
+  pagination: {
+    sortBy: string;
+    descending: boolean;
+    page: number;
+    rowsPerPage: number;
+    rowsNumber?: number;
+  };
+  filter?: unknown;
+  getCellValue: (col: unknown, row: unknown) => unknown;
+}) => {
+  state.value.pagination = {
+    page: props.pagination.page,
+    rowsPerPage: props.pagination.rowsPerPage,
+    total: props.pagination.rowsNumber || state.value.pagination.total,
+  };
+};
+
+// Add infinite scroll handler
+const onScroll = (event: UIEvent) => {
+  const target = event.target as HTMLElement;
+  const scrollPosition = target.scrollTop + target.clientHeight;
+  const scrollHeight = target.scrollHeight;
+
+  // Load more when user scrolls to bottom
+  if (scrollHeight - scrollPosition < 100) {
+    void loadMoreEvents();
   }
 };
 

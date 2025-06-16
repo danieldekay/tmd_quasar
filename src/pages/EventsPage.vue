@@ -64,7 +64,7 @@ const error = ref('');
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'Date TBA';
-  return new Date(dateString).toLocaleDateString();
+  return new Date(dateString).toISOString().split('T')[0];
 };
 
 const loadEvents = async () => {

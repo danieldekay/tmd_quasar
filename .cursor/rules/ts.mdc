@@ -3,6 +3,9 @@ description:
 globs: *.ts
 alwaysApply: false
 ---
-Automatically fix:
+Automatically fix before finishing a task
 - type errors
 - import errors
+- all errors
+
+Run `pnpm lint`to check for errors
