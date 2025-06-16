@@ -11,7 +11,7 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 ## 2. Technical Stack
 
 - **Frontend Framework**: Vue.js 3.x with TypeScript
-- **UI Framework**: Quasar Framework
+- **UI Framework**: Quasar Framework (replaced Vuetify)
 - **State Management**: Pinia
 - **Router**: Vue Router
 - **Icons**: Material Design Icons
@@ -20,6 +20,9 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 - **Package Manager**: pnpm
 - **Code Quality**: ESLint + Stylelint
 - **Type Checking**: TypeScript
+- **API Integration**: WordPress REST API at `/wp-json/tmd/v3` (all endpoints use this base)
+- **Date Formatting**: All dates are displayed in ISO format (`YYYY-MM-DD`) everywhere in the app for consistency and internationalization.
+- **Linting Rules**: Strict TypeScript and ESLint rules, including no floating promises (`@typescript-eslint/no-floating-promises`), and consistent use of the `void` operator or error handling for all Promises.
 
 ## 3. Architecture
 
@@ -49,7 +52,7 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 - WordPress REST API integration for content consumption
 - Read-only access to WordPress content
 - Authentication for protected API endpoints
-- Base URL configuration for development and production environments
+- **Base URL for API:** `/wp-json/tmd/v3` (development and production)
 
 ### 3.3 Data Storage & Assets
 
@@ -59,69 +62,35 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 
 ### 3.4 Available Quasar Components
 
-The project utilizes Quasar's comprehensive component library:
+The project utilizes Quasar's comprehensive component library (see Quasar docs for full list):
 
 #### Layout Components
 
-- QLayout: Main layout container
-- QPage: Page container
-- QHeader: Top header bar
-- QFooter: Bottom footer bar
-- QDrawer: Side navigation drawer
-- QPageContainer: Page content container
+- QLayout, QPage, QHeader, QFooter, QDrawer, QPageContainer
 
 #### Form Components
 
-- QInput: Text input fields
-- QSelect: Dropdown selection
-- QCheckbox: Checkbox inputs
-- QRadio: Radio button inputs
-- QToggle: Toggle switches
-- QDate: Date picker
-- QTime: Time picker
-- QFile: File upload
+- QInput, QSelect, QCheckbox, QRadio, QToggle, QDate, QTime, QFile
 
 #### Data Display
 
-- QTable: Data tables with sorting and filtering
-- QCard: Content cards
-- QList: List items
-- QTimeline: Timeline display
-- QTree: Hierarchical data display
-- QMarkupTable: Simple HTML tables
+- QTable, QCard, QList, QTimeline, QTree, QMarkupTable
 
 #### Navigation
 
-- QTabs: Tab navigation
-- QBreadcrumbs: Navigation path
-- QMenu: Dropdown menus
-- QPagination: Page navigation
-- QStepper: Step-by-step navigation
+- QTabs, QBreadcrumbs, QMenu, QPagination, QStepper
 
 #### Feedback & Loading
 
-- QSpinner: Loading indicators
-- QDialog: Modal dialogs
-- QNotify: Toast notifications
-- QLoading: Loading overlay
-- QInnerLoading: Component loading state
+- QSpinner, QDialog, QNotify, QLoading, QInnerLoading
 
 #### Utility Components
 
-- QBtn: Buttons
-- QIcon: Icons
-- QBadge: Status badges
-- QTooltip: Tooltips
-- QSeparator: Visual dividers
-- QSpace: Flexible spacing
+- QBtn, QIcon, QBadge, QTooltip, QSeparator, QSpace
 
 #### Advanced Features
 
-- VirtualScroll: Efficient long lists
-- InfiniteScroll: Load more on scroll
-- Intersection: Viewport detection
-- TouchSwipe: Touch gestures
-- QParallax: Parallax effects
+- VirtualScroll, InfiniteScroll, Intersection, TouchSwipe, QParallax
 
 ## 4. Design Principles
 
@@ -204,7 +173,7 @@ The project utilizes Quasar's comprehensive component library:
 
 Required environment variables:
 
-- `VITE_WP_API_URL` - WordPress REST API URL
+- `VITE_WP_API_URL` - WordPress REST API URL (should point to `/wp-json/tmd/v3`)
 - `VITE_WP_USERNAME` - WordPress API username
 - `VITE_WP_PASSWORD` - WordPress API password
 
@@ -221,12 +190,12 @@ Required environment variables:
 - `pnpm dev`: Development server
 - `pnpm build`: Production build
 - `pnpm preview`: Preview production build
-- `pnpm lint`: Code linting
+- `pnpm lint`: Code linting (strict ESLint rules, including floating promises)
 - `pnpm typecheck`: TypeScript type checking
 
 ### 7.2 Code Quality
 
-- ESLint for JavaScript/TypeScript
+- ESLint for JavaScript/TypeScript (strict, including floating promises)
 - Stylelint for CSS/SCSS
 - TypeScript for type safety
 - Git hooks for pre-commit checks

@@ -12,56 +12,54 @@
   - [x] Configure Prettier
   - [x] Add pre-commit hooks (Husky)
   - [x] Add TypeScript support to ESLint
-- [x] Set up Vuetify integration
-  - [x] Install and configure Vuetify 3
+- [x] Set up Quasar integration (replaced Vuetify)
+  - [x] Install and configure Quasar
   - [x] Set up Material Design Icons
   - [x] Configure theme system
-- [ ] Implement core features
-  - [x] Create basic layout components with Vuetify
-  - [ ] Set up routing
-  - [ ] Implement API integration
+- [x] Set up routing
+- [x] Implement API integration (using `/wp-json/tmd/v3`)
 
 ### Performance & Data Handling
 
-- [ ] Implement data fetching strategy
-  - [ ] Set up API composables
-  - [ ] Configure request caching
+- [x] Implement data fetching strategy
+  - [x] Set up API composables/services
+  - [x] Configure request caching (basic)
   - [ ] Implement error retry logic
-- [ ] Add data loading states
-  - [ ] Vuetify skeleton loaders
-  - [ ] Progress indicators
-  - [ ] Empty states
-- [ ] Optimize image handling
-  - [ ] Set up image optimization
-  - [ ] Implement lazy loading
-  - [ ] Add WebP support
+- [x] Add data loading states
+  - [x] Quasar skeleton loaders/spinners
+  - [x] Progress indicators
+  - [x] Empty states
+- [x] Optimize image handling
+  - [x] Set up image optimization
+  - [x] Implement lazy loading
+  - [x] Add WebP support
 
 ### Mobile-First Implementation
 
-- [x] Set up responsive breakpoints with Vuetify
+- [x] Set up responsive breakpoints with Quasar
   - [x] Mobile (< 640px)
   - [x] Tablet (640px - 1024px)
   - [x] Desktop (> 1024px)
-- [ ] Implement mobile navigation
-  - [ ] Vuetify navigation drawer
-  - [ ] Touch-friendly interactions
-  - [ ] Smooth transitions
-- [ ] Optimize touch targets
-  - [ ] Minimum 44x44px touch areas
-  - [ ] Adequate spacing
-  - [ ] Clear visual feedback
+- [x] Implement mobile navigation
+  - [x] Quasar navigation drawer
+  - [x] Touch-friendly interactions
+  - [x] Smooth transitions
+- [x] Optimize touch targets
+  - [x] Minimum 44x44px touch areas
+  - [x] Adequate spacing
+  - [x] Clear visual feedback
 
 ## High Priority Features
 
 ### Content Display
 
-- [ ] Implement event listing page
-  - [ ] Vuetify data tables
-  - [ ] Filtering and sorting
-  - [ ] Search functionality
-- [ ] Create event detail pages
-  - [ ] Rich content display
-  - [ ] Related events
+- [x] Implement event listing page
+  - [x] Quasar data tables
+  - [x] Filtering and sorting
+  - [x] Search functionality
+- [x] Create event detail pages
+  - [x] Rich content display
+  - [x] Related events (basic)
   - [ ] Map integration
 - [ ] Set up blog post listing
   - [ ] Infinite scroll
@@ -71,13 +69,13 @@
 ### User Experience
 
 - [x] Add dark mode support
-  - [x] Vuetify theme switching
+  - [x] Quasar theme switching
   - [x] Persistent preference
   - [x] System preference detection
-- [ ] Implement loading states
-  - [ ] Vuetify skeleton screens
-  - [ ] Progress indicators
-  - [ ] Transition animations
+- [x] Implement loading states
+  - [x] Quasar skeleton screens
+  - [x] Progress indicators
+  - [x] Transition animations
 - [ ] Add keyboard navigation
   - [ ] Focus management
   - [ ] Keyboard shortcuts
@@ -102,18 +100,18 @@
 
 ### Documentation
 
-- [ ] Create component documentation
-  - [ ] Vuetify component usage
-  - [ ] Custom component examples
-  - [ ] Props documentation
-- [ ] Document API integration
-  - [ ] Endpoint documentation
-  - [ ] Data structures
-  - [ ] Error handling
-- [ ] Write deployment guide
-  - [ ] Build process
-  - [ ] Environment setup
-  - [ ] Troubleshooting
+- [x] Create component documentation
+  - [x] Quasar component usage
+  - [x] Custom component examples
+  - [x] Props documentation
+- [x] Document API integration
+  - [x] Endpoint documentation (using `/wp-json/tmd/v3`)
+  - [x] Data structures
+  - [x] Error handling
+- [x] Write deployment guide
+  - [x] Build process
+  - [x] Environment setup
+  - [x] Troubleshooting
 
 ## Low Priority
 
@@ -126,9 +124,11 @@
 
 ## Notes
 
-- Focus on mobile-first development with Vuetify
+- Focus on mobile-first development with Quasar
 - Prioritize performance and user experience
 - Regular testing on various devices and screen sizes
 - Monitor and optimize Core Web Vitals
 - Keep documentation up to date with changes
 - Follow Material Design guidelines for consistency
+- **All dates in the app are displayed in ISO format (`YYYY-MM-DD`) for consistency and internationalization.**
+- **Strict TypeScript and ESLint rules are enforced, including no floating promises and explicit error handling for all Promises.**
