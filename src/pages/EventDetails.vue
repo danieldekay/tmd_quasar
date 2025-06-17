@@ -120,56 +120,105 @@
         <q-tab-panels v-model="tab" animated :swipeable="$q.platform.is.mobile">
           <!-- Overview Panel -->
           <q-tab-panel name="overview">
-            <q-card flat>
-              <q-card-section v-if="descriptionHtml">
-                <div class="text-h6 q-mb-md">About This Event</div>
-                <div v-html="descriptionHtml" class="event-description"></div>
-              </q-card-section>
-              <q-separator v-if="descriptionHtml" />
-              <q-card-section>
-                <div class="text-h6 q-mb-md">Event Details</div>
-                <q-list>
-                  <q-item>
-                    <q-item-section avatar>
-                      <q-icon name="event" color="primary" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>Duration</q-item-label>
-                      <q-item-label caption>{{ formattedDates }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item v-if="location">
-                    <q-item-section avatar>
-                      <q-icon name="location_on" color="primary" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>Location</q-item-label>
-                      <q-item-label caption>{{ location }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item v-if="event.number_of_participants">
-                    <q-item-section avatar>
-                      <q-icon name="groups" color="primary" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>Expected Participants</q-item-label>
-                      <q-item-label caption
-                        >{{ event.number_of_participants }} dancers</q-item-label
-                      >
-                    </q-item-section>
-                  </q-item>
-                  <q-item v-if="event.music_hours">
-                    <q-item-section avatar>
-                      <q-icon name="schedule" color="primary" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>Music Hours</q-item-label>
-                      <q-item-label caption>{{ event.music_hours }} hours of dancing</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card-section>
-            </q-card>
+            <div class="row q-col-gutter-lg">
+              <!-- Left Column: Description (shows first on mobile) -->
+              <div class="col-12 col-md-8 order-first order-md-first">
+                <q-card flat>
+                  <q-card-section v-if="descriptionHtml">
+                    <div class="text-h6 q-mb-md">About This Event</div>
+                    <div v-html="descriptionHtml" class="event-description"></div>
+                  </q-card-section>
+                  <q-card-section v-else>
+                    <div class="text-h6 q-mb-md">About This Event</div>
+                    <div class="text-grey-7">No description available for this event.</div>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <!-- Right Column: Event Info (shows second on mobile) -->
+              <div class="col-12 col-md-4 order-last order-md-last">
+                <q-card flat bordered class="bg-grey-1">
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">Event Info</div>
+                    <q-list dense>
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon name="event" color="primary" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Duration</q-item-label>
+                          <q-item-label caption>{{ formattedDates }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="location">
+                        <q-item-section avatar>
+                          <q-icon name="location_on" color="primary" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Location</q-item-label>
+                          <q-item-label caption>{{ location }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="event.venue_name">
+                        <q-item-section avatar>
+                          <q-icon name="store" color="primary" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Venue</q-item-label>
+                          <q-item-label caption>{{ event.venue_name }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="event.number_of_participants">
+                        <q-item-section avatar>
+                          <q-icon name="groups" color="primary" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Participants</q-item-label>
+                          <q-item-label caption
+                            >{{ event.number_of_participants }} dancers</q-item-label
+                          >
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="event.music_hours">
+                        <q-item-section avatar>
+                          <q-icon name="schedule" color="primary" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Music Hours</q-item-label>
+                          <q-item-label caption>{{ event.music_hours }} hours</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="event.price">
+                        <q-item-section avatar>
+                          <q-icon name="paid" color="green" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Price</q-item-label>
+                          <q-item-label caption
+                            >{{ event.price }} {{ event.currency || '' }}</q-item-label
+                          >
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="editionLabel">
+                        <q-item-section avatar>
+                          <q-icon name="stars" color="amber" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Edition</q-item-label>
+                          <q-item-label caption>{{ editionLabel }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
           </q-tab-panel>
 
           <!-- Registration Panel -->
