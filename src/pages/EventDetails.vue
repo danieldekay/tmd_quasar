@@ -12,9 +12,9 @@
         >
           <div class="absolute-full bg-gradient" />
           <div class="hero-content column justify-end q-pa-lg">
-            <div class="text-h3 text-weight-bold text-white">
-              {{ event.event_name || event.title
-              }}<span v-if="editionLabel" class="text-subtitle2"> – {{ editionLabel }}</span>
+            <div class="text-h4 text-weight-bold text-white">
+              <template v-if="editionOrdinal">{{ editionOrdinal }}&nbsp;</template
+              >{{ event.event_name || event.title }}
             </div>
             <div class="row items-center q-gutter-sm text-white q-mt-sm">
               <div class="row items-center">
@@ -121,8 +121,8 @@
           <!-- Overview Panel -->
           <q-tab-panel name="overview">
             <div class="row q-col-gutter-lg">
-              <!-- Left Column: Description (shows first on mobile) -->
-              <div class="col-12 col-md-8 order-first order-md-first">
+              <!-- Left Column: Description (shows second on mobile) -->
+              <div class="col-12 col-md-8 order-last order-md-first">
                 <q-card flat>
                   <q-card-section v-if="descriptionHtml">
                     <div class="text-h6 q-mb-md">About This Event</div>
@@ -135,8 +135,8 @@
                 </q-card>
               </div>
 
-              <!-- Right Column: Event Info (shows second on mobile) -->
-              <div class="col-12 col-md-4 order-last order-md-last">
+              <!-- Right Column: Event Info (shows first on mobile) -->
+              <div class="col-12 col-md-4 order-first order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Event Info</div>
@@ -225,7 +225,7 @@
           <q-tab-panel name="registration">
             <div class="row q-col-gutter-lg">
               <!-- Left Column: Registration Details -->
-              <div class="col-12 col-md-8 order-first order-md-first">
+              <div class="col-12 col-md-8 order-last order-md-first">
                 <q-card flat>
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Registration Details</div>
@@ -283,7 +283,7 @@
                           />
                         </q-item-section>
                         <q-item-section>
-                          <q-item-label>Tickets</q-item-label>
+                          <q-item-label>Tickets for single Milongas</q-item-label>
                           <q-item-label caption>
                             {{ event.have_tickets ? 'Yes - Tickets available' : '-' }}
                           </q-item-label>
@@ -295,7 +295,7 @@
               </div>
 
               <!-- Right Column: Registration Summary -->
-              <div class="col-12 col-md-4 order-last order-md-last">
+              <div class="col-12 col-md-4 order-first order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Registration Info</div>
@@ -421,7 +421,7 @@
           <q-tab-panel name="music">
             <div class="row q-col-gutter-lg">
               <!-- Left Column: Dance Features (4 columns) -->
-              <div class="col-12 col-md-4 order-first order-md-first">
+              <div class="col-12 col-md-4 order-last order-md-first">
                 <q-card flat>
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Dance Features</div>
@@ -502,7 +502,7 @@
               </div>
 
               <!-- Middle Column: Music Features (4 columns) -->
-              <div class="col-12 col-md-4 order-second order-md-second">
+              <div class="col-12 col-md-4 order-last order-md-second">
                 <q-card flat>
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Music Features</div>
@@ -572,7 +572,7 @@
               </div>
 
               <!-- Right Column: Summary (4 columns) -->
-              <div class="col-12 col-md-4 order-last order-md-last">
+              <div class="col-12 col-md-4 order-first order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Available Features</div>
@@ -667,37 +667,19 @@
           <!-- Venue Panel -->
           <q-tab-panel name="venue">
             <div class="row q-col-gutter-lg">
-              <!-- Left Column: Venue Details -->
-              <div class="col-12 col-md-8 order-first order-md-first">
+              <!-- Left Column: Address & Details (6 columns) -->
+              <div class="col-12 col-md-6 order-last order-md-first">
                 <q-card flat>
                   <q-card-section>
-                    <div class="text-h6 q-mb-md">Venue Information</div>
+                    <div class="text-h6 q-mb-md">Address</div>
                     <q-list>
-                      <q-item v-if="event.venue_name">
-                        <q-item-section avatar>
-                          <q-icon name="business" color="primary" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Venue Name</q-item-label>
-                          <q-item-label caption>{{ event.venue_name }}</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item v-if="event.street">
+                      <q-item v-if="fullAddress">
                         <q-item-section avatar>
                           <q-icon name="location_on" color="primary" />
                         </q-item-section>
                         <q-item-section>
-                          <q-item-label>Address</q-item-label>
-                          <q-item-label caption>{{ event.street }}</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item v-if="event.venue_features">
-                        <q-item-section avatar>
-                          <q-icon name="star" color="gold" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Venue Features</q-item-label>
-                          <q-item-label caption>{{ event.venue_features }}</q-item-label>
+                          <q-item-label>Full Address</q-item-label>
+                          <q-item-label caption class="text-wrap">{{ fullAddress }}</q-item-label>
                         </q-item-section>
                       </q-item>
                       <q-item v-if="event.type_of_floor">
@@ -728,25 +710,54 @@
                           />
                         </q-item-section>
                       </q-item>
+                      <q-item v-if="!fullAddress && !event.type_of_floor">
+                        <q-item-section avatar>
+                          <q-icon name="help_outline" color="grey" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-grey-6">No address details</q-item-label>
+                          <q-item-label caption>Check with organizers</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card-section>
+                </q-card>
+
+                <!-- Venue Features Card -->
+                <q-card flat class="q-mt-md" v-if="event.venue_features">
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">Venue Features</div>
+                    <q-list>
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon name="star" color="gold" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Features</q-item-label>
+                          <q-item-label caption class="text-wrap">{{
+                            event.venue_features
+                          }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
                     </q-list>
                   </q-card-section>
                 </q-card>
               </div>
 
-              <!-- Right Column: Location Summary -->
-              <div class="col-12 col-md-4 order-last order-md-last">
+              <!-- Right Column: Map & Location Summary (6 columns) -->
+              <div class="col-12 col-md-6 order-first order-md-last">
                 <!-- Map Widget -->
                 <q-card flat bordered class="bg-grey-1 q-mb-md" v-if="event.lat && event.lon">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Location Map</div>
                     <div
                       class="map-container"
-                      style="height: 200px; border-radius: 8px; overflow: hidden"
+                      style="height: 300px; border-radius: 8px; overflow: hidden"
                     >
                       <iframe
-                        :src="`https://www.openstreetmap.org/export/embed.html?bbox=${event.lon! - 0.01},${event.lat! - 0.01},${event.lon! + 0.01},${event.lat! + 0.01}&layer=mapnik&marker=${event.lat},${event.lon}`"
+                        :src="`https://www.openstreetmap.org/export/embed.html?bbox=${event.lon! - 2},${event.lat! - 1.5},${event.lon! + 2},${event.lat! + 1.5}&layer=mapnik&marker=${event.lat},${event.lon}`"
                         width="100%"
-                        height="200"
+                        height="300"
                         frameborder="0"
                         scrolling="no"
                         marginheight="0"
@@ -771,7 +782,7 @@
 
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
-                    <div class="text-h6 q-mb-md">Location</div>
+                    <div class="text-h6 q-mb-md">Location Summary</div>
                     <q-list dense>
                       <q-item v-if="event.city">
                         <q-item-section avatar>
@@ -845,7 +856,7 @@
           <q-tab-panel name="practical">
             <div class="row q-col-gutter-lg">
               <!-- Left Column: Practical Details (split into 2 sub-columns) -->
-              <div class="col-12 col-md-8 order-first order-md-first">
+              <div class="col-12 col-md-8 order-last order-md-first">
                 <div class="row q-col-gutter-md">
                   <!-- Left Sub-column: Food & Accommodation -->
                   <div class="col-12 col-sm-6">
@@ -975,7 +986,7 @@
               </div>
 
               <!-- Right Column: Services Summary -->
-              <div class="col-12 col-md-4 order-last order-md-last">
+              <div class="col-12 col-md-4 order-first order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Available Services</div>
@@ -1085,7 +1096,7 @@
           <q-tab-panel name="contact">
             <div class="row q-col-gutter-lg">
               <!-- Left Column: Contact Details -->
-              <div class="col-12 col-md-8 order-first order-md-first">
+              <div class="col-12 col-md-8 order-last order-md-first">
                 <q-card flat>
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Contact Information</div>
@@ -1209,7 +1220,7 @@
               </div>
 
               <!-- Right Column: Quick Contact -->
-              <div class="col-12 col-md-4 order-last order-md-last">
+              <div class="col-12 col-md-4 order-first order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Quick Contact</div>
@@ -1411,11 +1422,29 @@ const editionLabel = computed(() => {
   return isNaN(num) ? raw : `${getOrdinal(num)} edition`;
 });
 
+const editionOrdinal = computed(() => {
+  const raw = event.value?.edition;
+  if (!raw) return '';
+  const num = parseInt(raw, 10);
+  return isNaN(num) ? raw : getOrdinal(num);
+});
+
 const descriptionHtml = computed(() => {
   const desc = event.value?.event_description;
   const post = event.value?.post_content;
   if (desc && post) return `${desc}<hr/>${post}`;
   return desc || post || '';
+});
+
+const fullAddress = computed(() => {
+  if (!event.value) return '';
+  const parts = [
+    event.value.venue_name,
+    event.value.street,
+    event.value.city,
+    event.value.country,
+  ].filter(Boolean);
+  return parts.join(', ');
 });
 
 const openInMaps = (lat: number, lon: number) => {

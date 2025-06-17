@@ -1,16 +1,52 @@
 import { api } from '../boot/axios';
 import type { EventDetails } from './types';
 
-// We still specify meta-fields to ensure we receive all custom meta, but we do not limit the core fields
+// Request all meta fields needed for the EventDetails interface
 const REQUIRED_META_FIELDS = [
-  'city',
-  'country',
-  'event_category',
   'start_date',
   'end_date',
   'registration_start_date',
-  'month',
-  'weekend',
+  'country',
+  'city',
+  'edition',
+  'role_balanced',
+  'invitation_only',
+  'have_registration',
+  'have_registration_mode',
+  'price',
+  'currency',
+  'number_of_participants',
+  'music_hours',
+  'have_milongas',
+  'have_tickets',
+  'have_live_music',
+  'have_lessons',
+  'have_show',
+  'have_separated_seating',
+  'have_folklore',
+  'have_non_tango',
+  'event_name',
+  'website',
+  'email',
+  'facebook_event',
+  'facebook_group',
+  'facebook_page',
+  'venue_name',
+  'street',
+  'lat',
+  'lon',
+  'type_of_floor',
+  'venue_features',
+  'food_options',
+  'sleeping_options',
+  'service_options',
+  'have_food',
+  'have_sleep',
+  'have_services',
+  'have_sales',
+  'event_description',
+  'post_content',
+  'featured_image',
 ].join(',');
 
 /**
@@ -80,8 +116,9 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventDetails => (
   have_services: Boolean(Number(rawEvent.have_services)),
   service_options: getString(rawEvent.service_options),
   have_sales: Boolean(Number(rawEvent.have_sales)),
-  lat: Number(rawEvent.lat) || 0,
-  lon: Number(rawEvent.lon) || 0,
+  // Note: The API returns lat/lon swapped, so we correct it here
+  lat: Number(rawEvent.lon) || 0, // API's 'lon' is actually the latitude
+  lon: Number(rawEvent.lat) || 0, // API's 'lat' is actually the longitude
   meta_box: {
     have_live_music: Boolean(Number(rawEvent.have_live_music)),
     have_lessons: Boolean(Number(rawEvent.have_lessons)),
@@ -97,9 +134,10 @@ export const eventDetailsService = {
    */
   async getEvent(id: number): Promise<EventDetails> {
     try {
-      if (eventCache.has(id)) {
-        return eventCache.get(id) as EventDetails;
-      }
+      // Clear cache for now to ensure coordinate fix is applied
+      // if (eventCache.has(id)) {
+      //   return eventCache.get(id) as EventDetails;
+      // }
 
       const response = await api.get(`/events/${id}`, {
         params: {
@@ -130,5 +168,12 @@ export const eventDetailsService = {
       console.error('API Error:', error);
       throw error;
     }
+  },
+
+  /**
+   * Clear the cache for testing purposes
+   */
+  clearCache(): void {
+    eventCache.clear();
   },
 };

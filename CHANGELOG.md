@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Data display components (QTable, QCard)
   - Utility components (QDialog, QSpinner)
 
+### Improved
+
+- Enhanced EventDetails venue tab with multi-column layout
+- Added combined address display (venue name, street, city, country)
+- Separated venue features into dedicated section
+- Improved map integration with country-level zoom instead of close zoom
+- Optimized mobile experience with priority content ordering
+
 ### Changed
 
 - Migrated from Vuetify to Quasar Framework
@@ -28,7 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- None yet
+- Fixed empty data fields in EventDetails page by expanding API meta fields request
+- Fixed coordinate swap issue (lat/lon were reversed in API response transformation)
+- Fixed mobile content ordering - quick summary boxes now appear first on mobile across all tabs
 
 ### Security
 

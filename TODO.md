@@ -24,6 +24,7 @@
 - [x] Implement data fetching strategy
   - [x] Set up API composables/services
   - [x] Configure request caching (basic)
+  - [x] Fix API data field mapping issues
   - [ ] Implement error retry logic
 - [x] Add data loading states
   - [x] Quasar skeleton loaders/spinners
@@ -48,6 +49,10 @@
   - [x] Minimum 44x44px touch areas
   - [x] Adequate spacing
   - [x] Clear visual feedback
+- [x] Implement mobile-first content ordering
+  - [x] Quick info/summary boxes appear first on mobile
+  - [x] Detailed content follows on mobile
+  - [x] Maintain desktop layout preference
 
 ## High Priority Features
 
@@ -60,7 +65,7 @@
 - [x] Create event detail pages
   - [x] Rich content display
   - [x] Related events (basic)
-  - [ ] Map integration
+  - [x] Map integration
 - [ ] Set up blog post listing
   - [ ] Infinite scroll
   - [ ] Category filtering
