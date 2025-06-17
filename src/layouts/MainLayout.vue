@@ -4,7 +4,7 @@
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
-        <q-toolbar-title> Tango Marathons </q-toolbar-title>
+        <q-toolbar-title> Tango Marathon Directory </q-toolbar-title>
 
         <q-btn flat round dense icon="search" />
         <q-btn flat round dense icon="notifications" />

@@ -8,7 +8,7 @@
       <div class="col-12 row q-col-gutter-md q-mb-md">
         <div class="col-xs-12 col-sm-6 col-md-3">
           <q-select
-            v-model="selectedCountry"
+            v-model="state.selectedCountry"
             :options="countryOptions"
             label="Filter by Country"
             clearable
@@ -16,7 +16,7 @@
             outlined
             emit-value
             map-options
-            :option-label="(opt) => countryMap[opt] || opt"
+            :option-label="getCountryName"
             :option-value="(opt) => opt"
           />
         </div>
@@ -37,6 +37,14 @@
               </q-icon>
             </template>
           </q-input>
+          <q-btn
+            class="q-mt-xs"
+            size="sm"
+            outline
+            color="primary"
+            label="Next 9 mo"
+            @click="applyQuickStartDateFilter"
+          />
         </div>
         <div class="col-xs-12 col-sm-6 col-md-3">
           <q-input
@@ -55,6 +63,14 @@
               </q-icon>
             </template>
           </q-input>
+          <q-btn
+            class="q-mt-xs"
+            size="sm"
+            outline
+            color="primary"
+            label="Next 4 mo"
+            @click="applyQuickRegistrationFilter"
+          />
         </div>
       </div>
 
@@ -89,7 +105,7 @@
             <template v-slot:body="props">
               <q-tr :props="props" @click="navigateToEvent(props.row)" class="cursor-pointer">
                 <q-td key="title" :props="props">
-                  <div class="text-weight-medium">{{ props.row.title.rendered }}</div>
+                  <div class="text-weight-medium">{{ props.row.title }}</div>
                   <div class="text-caption">{{ props.row.event_category }}</div>
                 </q-td>
                 <q-td key="start_date" :props="props">
@@ -117,9 +133,10 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { wordpressService } from '../services/wordpress';
-import type { Event } from '../services/wordpress';
+import { eventListService as eventService } from '../services';
+import type { EventListItem } from '../services/types';
 import type { EventViewState, EventTableColumn } from '../interfaces/EventView';
+import { useFormatters } from '../composables/useFormatters';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -128,28 +145,18 @@ const state = ref<EventViewState>({
   events: [],
   loading: false,
   error: null,
-  viewMode: 'table',
   searchQuery: '',
-  filters: {
-    eventType: [],
-    country: [],
-    dateRange: {
-      start: null,
-      end: null,
-    },
+  selectedCountry: null,
+  selectedDateRange: {
+    from: null,
+    to: null,
   },
   pagination: {
     page: 1,
     rowsPerPage: 10,
-    total: 0,
-  },
-  sortBy: {
-    field: 'start_date',
-    direction: 'asc',
+    rowsNumber: 0,
   },
 });
-
-const selectedCountry = ref<string | null>(null);
 
 // Add country mapping
 const countryMap: Record<string, string> = {
@@ -159,17 +166,62 @@ const countryMap: Record<string, string> = {
   // Add more mappings as needed
 };
 
-// Update countryOptions to use two-letter codes
-const countryOptions = computed(() => {
-  const set = new Set(state.value.events.map((e) => e.country).filter(Boolean));
-  return Array.from(set).sort();
-});
+// Fallback using Intl.DisplayNames for codes not in the static map
+let regionNames: Intl.DisplayNames | undefined;
+try {
+  // Some browsers/environments might not support it yet
+  regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+} catch {
+  regionNames = undefined;
+}
+
+const getCountryName = (code: string): string => {
+  return countryMap[code] ?? regionNames?.of(code) ?? code;
+};
+
+// Use shared formatters (declare early so columns can reference them)
+const { formatDate, formatLocation } = useFormatters();
+
+// Helper to get month abbreviation from date string (YYYY-MM-DD)
+const getMonthAbbr = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleString(undefined, { month: 'short' });
+};
+
+// Determine if an event is mainly a weekend (<=3 days and covers Saturday & Sunday)
+const isWeekendEvent = (start: string, end: string): boolean => {
+  if (!start || !end) return false;
+  const s = new Date(start);
+  const e = new Date(end);
+  const diffDays = (e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24) + 1;
+  // Check if range includes Saturday (6) and Sunday (0)
+  const includesSaturday =
+    [s, e].some((d) => d.getDay() === 6) || (s.getDay() < 6 && e.getDay() >= 6);
+  const includesSunday =
+    [s, e].some((d) => d.getDay() === 0) || (s.getDay() < 0 && e.getDay() >= 0);
+  return diffDays <= 3 && includesSaturday && includesSunday;
+};
+
+// Keep a master list of all countries we have encountered so the select retains every option
+const allCountries = ref<Set<string>>(new Set());
+
+const updateCountrySet = (events: EventListItem[]) => {
+  events.forEach((e) => {
+    if (e.country) allCountries.value.add(e.country);
+  });
+};
+
+// Options displayed in the dropdown
+const countryOptions = computed(() =>
+  Array.from(allCountries.value).sort((a, b) => getCountryName(a).localeCompare(getCountryName(b))),
+);
 
 const columns: EventTableColumn[] = [
   {
     name: 'title',
     label: 'Event',
-    field: (row) => row.title.rendered,
+    field: (row: EventListItem) => row.title ?? '',
     sortable: true,
     align: 'left',
     style: 'width: 30%',
@@ -193,6 +245,22 @@ const columns: EventTableColumn[] = [
     style: 'width: 14%',
   },
   {
+    name: 'month',
+    label: 'Month',
+    field: (row: EventListItem) => getMonthAbbr(row.start_date),
+    sortable: true,
+    align: 'left',
+    style: 'width: 10%',
+  },
+  {
+    name: 'weekend',
+    label: 'Weekend',
+    field: (row: EventListItem) => (isWeekendEvent(row.start_date, row.end_date) ? 'Yes' : ''),
+    sortable: false,
+    align: 'center',
+    style: 'width: 8%',
+  },
+  {
     name: 'location',
     label: 'Location',
     field: (row) => formatLocation(row.city, row.country),
@@ -203,7 +271,7 @@ const columns: EventTableColumn[] = [
   {
     name: 'category',
     label: 'Category',
-    field: (row) => row.event_category,
+    field: (row: EventListItem) => row.event_category ?? '',
     sortable: true,
     align: 'left',
     style: 'width: 20%',
@@ -220,6 +288,29 @@ const registrationDateRange = ref<{ from: string | null; to: string | null }>({
   to: null,
 });
 
+// Quick filter helpers
+const toIso = (d: Date): string => d.toISOString().split('T')[0] ?? '';
+
+const applyQuickRegistrationFilter = () => {
+  const today = new Date();
+  const future = new Date();
+  future.setMonth(future.getMonth() + 4);
+  registrationDateRange.value = {
+    from: toIso(today),
+    to: toIso(future),
+  };
+};
+
+const applyQuickStartDateFilter = () => {
+  const today = new Date();
+  const future = new Date();
+  future.setMonth(future.getMonth() + 9);
+  startDateRange.value = {
+    from: toIso(today),
+    to: toIso(future),
+  };
+};
+
 // Format date for display
 const formatDateRange = (range: { from: string | null; to: string | null }): string => {
   if (!range.from && !range.to) return '';
@@ -227,46 +318,40 @@ const formatDateRange = (range: { from: string | null; to: string | null }): str
   return range.from || range.to || '';
 };
 
-// Watch for date range changes and reload events
-watch(
-  [startDateRange, registrationDateRange],
-  async ([newStartRange, newRegRange]) => {
-    state.value.loading = true;
-    try {
-      const events = await wordpressService.getEvents({
-        country: selectedCountry.value || undefined,
-        start_date_from: newStartRange.from ? `${newStartRange.from}T00:00:00+00:00` : undefined,
-        start_date_to: newStartRange.to ? `${newStartRange.to}T23:59:59+00:00` : undefined,
-        registration_start_date_from: newRegRange.from
-          ? `${newRegRange.from}T00:00:00+00:00`
-          : undefined,
-        registration_start_date_to: newRegRange.to ? `${newRegRange.to}T23:59:59+00:00` : undefined,
-      });
-      state.value.events = events;
-      state.value.pagination.total = events.length;
-    } catch (error) {
-      console.error('Error loading filtered events:', error);
-      $q.notify({
-        type: 'negative',
-        message: 'Failed to load filtered events',
-        position: 'top',
-      });
-    } finally {
-      state.value.loading = false;
-    }
-  },
-  { deep: true },
-);
+// Simple debounce helper (avoids external dependency)
+function debounce<T extends (...args: unknown[]) => void>(fn: T, delay = 400) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
 
-// Watch for country changes and reload events
-watch(selectedCountry, async (newCountry) => {
+// Unified & debounced watcher for country and date filters
+const refetchEvents = debounce(async () => {
   state.value.loading = true;
   try {
-    const events = await wordpressService.getEvents({
-      country: newCountry || undefined,
-    });
+    const filters = {
+      ...(state.value.selectedCountry ? { country: state.value.selectedCountry } : {}),
+      ...(startDateRange.value.from
+        ? { start_date_from: `${startDateRange.value.from}T00:00:00+00:00` }
+        : {}),
+      ...(startDateRange.value.to
+        ? { start_date_to: `${startDateRange.value.to}T23:59:59+00:00` }
+        : {}),
+      ...(registrationDateRange.value.from
+        ? { registration_start_date_from: `${registrationDateRange.value.from}T00:00:00+00:00` }
+        : {}),
+      ...(registrationDateRange.value.to
+        ? { registration_start_date_to: `${registrationDateRange.value.to}T23:59:59+00:00` }
+        : {}),
+    } as const;
+
+    const events = await eventService.getEvents(filters);
+
     state.value.events = events;
-    state.value.pagination.total = events.length;
+    updateCountrySet(events);
+    state.value.pagination.rowsNumber = events.length;
   } catch (error) {
     console.error('Error loading filtered events:', error);
     $q.notify({
@@ -277,116 +362,51 @@ watch(selectedCountry, async (newCountry) => {
   } finally {
     state.value.loading = false;
   }
-});
+}, 400);
+
+watch(
+  [() => state.value.selectedCountry, startDateRange, registrationDateRange],
+  () => refetchEvents(),
+  { deep: true },
+);
 
 // Update filteredEvents to only handle search filtering
 const filteredEvents = computed(() => {
-  return state.value.events.filter((event) => {
+  const events = state.value.events || [];
+  return events.filter((event: EventListItem) => {
     const matchesSearch =
       !state.value.searchQuery ||
-      event.title.rendered.toLowerCase().includes(state.value.searchQuery.toLowerCase()) ||
+      event.title.toLowerCase().includes(state.value.searchQuery.toLowerCase()) ||
+      event.event_name?.toLowerCase().includes(state.value.searchQuery.toLowerCase()) ||
       event.city?.toLowerCase().includes(state.value.searchQuery.toLowerCase()) ||
       event.country?.toLowerCase().includes(state.value.searchQuery.toLowerCase());
     return matchesSearch;
   });
 });
 
-const formatDate = (date: unknown): string => {
-  if (!date) return '';
-  if (typeof date === 'string') {
-    const trimmed = date.trim();
-    if (!trimmed) return '';
-    const d = new Date(trimmed);
-    if (isNaN(d.getTime())) return '';
-    try {
-      const isoString = d.toISOString();
-      if (!isoString) return '';
-      const parts = isoString.split('T');
-      return parts[0] || '';
-    } catch {
-      return '';
-    }
-  }
-  if (typeof date === 'number') {
-    if (!isFinite(date)) return '';
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return '';
-    try {
-      const isoString = d.toISOString();
-      if (!isoString) return '';
-      const parts = isoString.split('T');
-      return parts[0] || '';
-    } catch {
-      return '';
-    }
-  }
-  return '';
-};
-
-const formatLocation = (city?: string, country?: string): string => {
-  if (city && country) return `${city}, ${country}`;
-  if (city) return city;
-  if (country) return country;
-  return '—';
-};
-
-const navigateToEvent = (event: Event) => {
+const navigateToEvent = (event: EventListItem) => {
   void router.push(`/events/${event.id}`);
 };
-
-interface ApiError extends Error {
-  response?: {
-    status: number;
-    data?: unknown;
-  };
-  request?: unknown;
-}
 
 const loadEvents = async () => {
   state.value.loading = true;
   state.value.error = null;
-
   try {
-    const events = await wordpressService.getEvents({
-      _embed: true,
-      per_page: 100,
-      orderby: 'start_date',
-      order: 'desc',
+    const events = await eventService.getEvents({
+      page: state.value.pagination.page,
+      perPage: state.value.pagination.rowsPerPage,
     });
-
-    if (!events || events.length === 0) {
-      state.value.error = 'No events found. Please check back later.';
-      return;
-    }
-
     state.value.events = events;
-    state.value.pagination.total = events.length;
-  } catch (err: unknown) {
+    updateCountrySet(events);
+    state.value.pagination.rowsNumber = events.length;
+  } catch (err) {
     console.error('Error loading events:', err);
-    const apiError = err as ApiError;
-
-    if (apiError.response) {
-      switch (apiError.response.status) {
-        case 404:
-          state.value.error = 'Events endpoint not found. Please contact support.';
-          break;
-        case 401:
-          state.value.error = 'Authentication required. Please log in.';
-          break;
-        case 403:
-          state.value.error = 'Access denied. Please check your permissions.';
-          break;
-        case 500:
-          state.value.error = 'Server error. Please try again later.';
-          break;
-        default:
-          state.value.error = `Failed to load events (${apiError.response.status}). Please try again.`;
-      }
-    } else if (apiError.request) {
-      state.value.error = 'Network error. Please check your connection.';
-    } else {
-      state.value.error = 'An unexpected error occurred. Please try again.';
-    }
+    state.value.error = 'Failed to load events';
+    $q.notify({
+      type: 'negative',
+      message: state.value.error,
+      position: 'top',
+    });
   } finally {
     state.value.loading = false;
   }
@@ -398,7 +418,7 @@ const loadMoreEvents = async () => {
   state.value.loading = true;
   try {
     const nextPage = state.value.pagination.page + 1;
-    const newEvents = await wordpressService.loadMoreEvents(nextPage, {
+    const newEvents = await eventService.loadMoreEvents(nextPage, {
       _embed: true,
       per_page: 100,
       orderby: 'start_date',
@@ -407,8 +427,9 @@ const loadMoreEvents = async () => {
 
     if (newEvents && newEvents.length > 0) {
       state.value.events = [...state.value.events, ...newEvents];
+      updateCountrySet(newEvents);
       state.value.pagination.page = nextPage;
-      state.value.pagination.total += newEvents.length;
+      state.value.pagination.rowsNumber += newEvents.length;
     }
   } catch (error) {
     console.error('Error loading more events:', error);
@@ -436,7 +457,7 @@ const onRequest = (props: {
   state.value.pagination = {
     page: props.pagination.page,
     rowsPerPage: props.pagination.rowsPerPage,
-    total: props.pagination.rowsNumber || state.value.pagination.total,
+    rowsNumber: props.pagination.rowsNumber || state.value.pagination.rowsNumber,
   };
 };
 
@@ -452,9 +473,7 @@ const onScroll = (event: UIEvent) => {
   }
 };
 
-onMounted(async () => {
-  await loadEvents();
-});
+onMounted(loadEvents);
 </script>
 
 <style lang="scss" scoped>

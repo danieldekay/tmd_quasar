@@ -1,41 +1,43 @@
-import type { Event } from '../services/wordpress';
+import type { EventListItem } from '../services/types';
 
 export interface EventViewState {
-  events: Event[];
+  events: EventListItem[];
   loading: boolean;
   error: string | null;
-  viewMode: 'table' | 'card';
   searchQuery: string;
-  filters: {
-    eventType: string[];
-    country: string[];
-    dateRange: {
-      start: string | null;
-      end: string | null;
-    };
+  selectedCountry: string | null;
+  selectedDateRange: {
+    from: string | null;
+    to: string | null;
   };
   pagination: {
     page: number;
     rowsPerPage: number;
-    total: number;
-  };
-  sortBy: {
-    field: keyof Event | 'acf.start_date' | 'acf.end_date' | 'acf.location' | 'acf.country';
-    direction: 'asc' | 'desc';
+    rowsNumber: number;
   };
 }
 
 export interface EventTableColumn {
   name: string;
   label: string;
-  field: keyof Event | ((row: Event) => string | number | boolean | null);
-  sortable?: boolean;
+  field: string | ((row: EventListItem) => string | number | boolean | null);
+  required?: boolean;
   align?: 'left' | 'right' | 'center';
-  format?: (val: string | number | boolean | null) => string;
+  sortable?: boolean;
+  sort?: (
+    a: string | number | boolean | null,
+    b: string | number | boolean | null,
+    rowA: EventListItem,
+    rowB: EventListItem,
+  ) => number;
+  format?: (val: string | number | boolean | null, row: EventListItem) => string;
   style?: string;
+  classes?: string;
+  headerStyle?: string;
+  headerClasses?: string;
 }
 
 export interface EventCardProps {
-  event: Event;
-  onClick?: (event: Event) => void;
+  event: EventListItem;
+  onClick?: (event: EventListItem) => void;
 }

@@ -56,11 +56,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { wordpressService, type Event } from '../services/wordpress';
+import { eventListService as eventService } from '../services';
+import type { EventListItem } from '../services/types';
 
-const events = ref<Event[]>([]);
+const events = ref<EventListItem[]>([]);
 const loading = ref(true);
-const error = ref('');
+const error = ref<string | null>(null);
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'Date TBA';
@@ -69,25 +70,16 @@ const formatDate = (dateString?: string) => {
 
 const loadEvents = async () => {
   try {
-    loading.value = true;
-    error.value = '';
-    events.value = await wordpressService.getEvents({
-      _embed: true,
-      per_page: 12,
-      orderby: 'start_date',
-      order: 'asc',
-    });
+    events.value = await eventService.getEvents();
   } catch (err) {
-    error.value = 'Failed to load events. Please try again later.';
     console.error('Error loading events:', err);
+    error.value = 'Failed to load events';
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(async () => {
-  await loadEvents();
-});
+onMounted(loadEvents);
 </script>
 
 <style lang="scss" scoped>
