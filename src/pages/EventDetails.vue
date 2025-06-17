@@ -298,7 +298,7 @@
               <div class="col-12 col-md-4 order-last order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
-                    <div class="text-h6 q-mb-md">Quick Info</div>
+                    <div class="text-h6 q-mb-md">Registration Info</div>
                     <q-list dense>
                       <q-item v-if="event.registration_start_date">
                         <q-item-section avatar>
@@ -359,6 +359,57 @@
                           <q-item-label caption>Invitation only</q-item-label>
                         </q-item-section>
                       </q-item>
+
+                      <!-- Contact Information for Registration -->
+                      <q-separator spaced v-if="event.email || event.website" />
+                      <q-item-label header class="text-primary" v-if="event.email || event.website"
+                        >Registration Contact</q-item-label
+                      >
+
+                      <q-item v-if="event.email">
+                        <q-item-section avatar>
+                          <q-icon name="email" color="primary" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Email</q-item-label>
+                          <q-item-label caption>
+                            <q-btn
+                              flat
+                              dense
+                              no-caps
+                              color="primary"
+                              :href="`mailto:${event.email}`"
+                              class="q-pa-none"
+                              style="min-height: auto; min-width: auto"
+                            >
+                              {{ event.email }}
+                            </q-btn>
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item v-if="event.website">
+                        <q-item-section avatar>
+                          <q-icon name="language" color="green" size="sm" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">Website</q-item-label>
+                          <q-item-label caption>
+                            <q-btn
+                              flat
+                              dense
+                              no-caps
+                              color="green"
+                              :href="event.website"
+                              target="_blank"
+                              class="q-pa-none"
+                              style="min-height: auto; min-width: auto"
+                            >
+                              Visit registration page
+                            </q-btn>
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
                     </q-list>
                   </q-card-section>
                 </q-card>
@@ -369,11 +420,11 @@
           <!-- Music & Dance Panel -->
           <q-tab-panel name="music">
             <div class="row q-col-gutter-lg">
-              <!-- Left Column: Music & Dance Details -->
-              <div class="col-12 col-md-8 order-first order-md-first">
+              <!-- Left Column: Dance Features (4 columns) -->
+              <div class="col-12 col-md-4 order-first order-md-first">
                 <q-card flat>
                   <q-card-section>
-                    <div class="text-h6 q-mb-md">Music & Dance Features</div>
+                    <div class="text-h6 q-mb-md">Dance Features</div>
                     <q-list>
                       <q-item>
                         <q-item-section avatar>
@@ -387,24 +438,6 @@
                           <q-item-label caption>
                             {{
                               event.have_milongas ? 'Yes - Traditional tango social dancing' : '-'
-                            }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item>
-                        <q-item-section avatar>
-                          <q-icon
-                            :name="event.meta_box?.have_live_music ? 'campaign' : 'help_outline'"
-                            :color="event.meta_box?.have_live_music ? 'red' : 'grey'"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Live Music</q-item-label>
-                          <q-item-label caption>
-                            {{
-                              event.meta_box?.have_live_music
-                                ? 'Yes - Live orchestras or musicians'
-                                : '-'
                             }}
                           </q-item-label>
                         </q-item-section>
@@ -448,6 +481,53 @@
                       <q-item>
                         <q-item-section avatar>
                           <q-icon
+                            :name="event.have_separated_seating ? 'event_seat' : 'help_outline'"
+                            :color="event.have_separated_seating ? 'indigo' : 'grey'"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Separated Seating</q-item-label>
+                          <q-item-label caption>
+                            {{
+                              event.have_separated_seating
+                                ? 'Yes - Traditional milonga seating'
+                                : '-'
+                            }}
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <!-- Middle Column: Music Features (4 columns) -->
+              <div class="col-12 col-md-4 order-second order-md-second">
+                <q-card flat>
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">Music Features</div>
+                    <q-list>
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon
+                            :name="event.meta_box?.have_live_music ? 'campaign' : 'help_outline'"
+                            :color="event.meta_box?.have_live_music ? 'red' : 'grey'"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Live Music</q-item-label>
+                          <q-item-label caption>
+                            {{
+                              event.meta_box?.have_live_music
+                                ? 'Yes - Live orchestras or musicians'
+                                : '-'
+                            }}
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      <q-item>
+                        <q-item-section avatar>
+                          <q-icon
                             :name="event.have_folklore ? 'celebration' : 'help_outline'"
                             :color="event.have_folklore ? 'orange' : 'grey'"
                           />
@@ -475,22 +555,15 @@
                           </q-item-label>
                         </q-item-section>
                       </q-item>
-                      <q-item>
+                      <q-item v-if="event.music_hours">
                         <q-item-section avatar>
-                          <q-icon
-                            :name="event.have_separated_seating ? 'event_seat' : 'help_outline'"
-                            :color="event.have_separated_seating ? 'indigo' : 'grey'"
-                          />
+                          <q-icon name="schedule" color="primary" />
                         </q-item-section>
                         <q-item-section>
-                          <q-item-label>Separated Seating</q-item-label>
-                          <q-item-label caption>
-                            {{
-                              event.have_separated_seating
-                                ? 'Yes - Traditional milonga seating'
-                                : '-'
-                            }}
-                          </q-item-label>
+                          <q-item-label>Music Hours</q-item-label>
+                          <q-item-label caption
+                            >{{ event.music_hours }} hours of music</q-item-label
+                          >
                         </q-item-section>
                       </q-item>
                     </q-list>
@@ -498,7 +571,7 @@
                 </q-card>
               </div>
 
-              <!-- Right Column: Music Summary -->
+              <!-- Right Column: Summary (4 columns) -->
               <div class="col-12 col-md-4 order-last order-md-last">
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
@@ -662,6 +735,40 @@
 
               <!-- Right Column: Location Summary -->
               <div class="col-12 col-md-4 order-last order-md-last">
+                <!-- Map Widget -->
+                <q-card flat bordered class="bg-grey-1 q-mb-md" v-if="event.lat && event.lon">
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">Location Map</div>
+                    <div
+                      class="map-container"
+                      style="height: 200px; border-radius: 8px; overflow: hidden"
+                    >
+                      <iframe
+                        :src="`https://www.openstreetmap.org/export/embed.html?bbox=${event.lon! - 0.01},${event.lat! - 0.01},${event.lon! + 0.01},${event.lat! + 0.01}&layer=mapnik&marker=${event.lat},${event.lon}`"
+                        width="100%"
+                        height="200"
+                        frameborder="0"
+                        scrolling="no"
+                        marginheight="0"
+                        marginwidth="0"
+                        style="border: 0"
+                        title="Event Location Map"
+                      ></iframe>
+                    </div>
+                    <div class="q-mt-sm text-center">
+                      <q-btn
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        icon="open_in_new"
+                        @click="openInMaps(event.lat!, event.lon!)"
+                        label="Open in Maps"
+                      />
+                    </div>
+                  </q-card-section>
+                </q-card>
+
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Location</div>
@@ -711,20 +818,8 @@
                           <q-icon name="gps_fixed" color="primary" size="sm" />
                         </q-item-section>
                         <q-item-section>
-                          <q-item-label class="text-weight-medium">GPS</q-item-label>
-                          <q-item-label caption>
-                            <q-btn
-                              flat
-                              dense
-                              no-caps
-                              color="primary"
-                              @click="openInMaps(event.lat!, event.lon!)"
-                              class="q-pa-none"
-                              style="min-height: auto; min-width: auto"
-                            >
-                              Open in Maps
-                            </q-btn>
-                          </q-item-label>
+                          <q-item-label class="text-weight-medium">Coordinates</q-item-label>
+                          <q-item-label caption>{{ event.lat }}, {{ event.lon }}</q-item-label>
                         </q-item-section>
                       </q-item>
 
@@ -749,113 +844,134 @@
           <!-- Practical Panel -->
           <q-tab-panel name="practical">
             <div class="row q-col-gutter-lg">
-              <!-- Left Column: Practical Details -->
+              <!-- Left Column: Practical Details (split into 2 sub-columns) -->
               <div class="col-12 col-md-8 order-first order-md-first">
-                <q-card flat>
-                  <q-card-section>
-                    <div class="text-h6 q-mb-md">Practical Information</div>
-                    <q-list>
-                      <!-- Food Section -->
-                      <q-separator spaced />
-                      <q-item-label header class="text-primary">Food & Dining</q-item-label>
-                      <q-item>
-                        <q-item-section avatar>
-                          <q-icon
-                            :name="event.have_food ? 'restaurant' : 'help_outline'"
-                            :color="event.have_food ? 'green' : 'grey'"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Food Available</q-item-label>
-                          <q-item-label caption>
-                            {{
-                              event.have_food ? 'Yes - Food will be available at the event' : '-'
-                            }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item v-if="event.food_options">
-                        <q-item-section avatar>
-                          <q-icon name="fastfood" color="orange" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Food Options</q-item-label>
-                          <q-item-label caption>{{ event.food_options }}</q-item-label>
-                        </q-item-section>
-                      </q-item>
+                <div class="row q-col-gutter-md">
+                  <!-- Left Sub-column: Food & Accommodation -->
+                  <div class="col-12 col-sm-6">
+                    <q-card flat>
+                      <q-card-section>
+                        <div class="text-h6 q-mb-md">Food & Sleep</div>
+                        <q-list>
+                          <!-- Food Section -->
+                          <q-item-label header class="text-primary">Food & Dining</q-item-label>
+                          <q-item>
+                            <q-item-section avatar>
+                              <q-icon
+                                :name="event.have_food ? 'restaurant' : 'help_outline'"
+                                :color="event.have_food ? 'green' : 'grey'"
+                              />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Food Available</q-item-label>
+                              <q-item-label caption>
+                                {{
+                                  event.have_food
+                                    ? 'Yes - Food will be available at the event'
+                                    : '-'
+                                }}
+                              </q-item-label>
+                            </q-item-section>
+                          </q-item>
+                          <q-item v-if="event.food_options">
+                            <q-item-section avatar>
+                              <q-icon name="fastfood" color="orange" />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Food Options</q-item-label>
+                              <q-item-label caption>{{ event.food_options }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
 
-                      <!-- Accommodation Section -->
-                      <q-separator spaced />
-                      <q-item-label header class="text-purple">Accommodation</q-item-label>
-                      <q-item>
-                        <q-item-section avatar>
-                          <q-icon
-                            :name="event.have_sleep ? 'hotel' : 'help_outline'"
-                            :color="event.have_sleep ? 'purple' : 'grey'"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Accommodation</q-item-label>
-                          <q-item-label caption>
-                            {{
-                              event.have_sleep ? 'Yes - Accommodation information available' : '-'
-                            }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item v-if="event.sleeping_options">
-                        <q-item-section avatar>
-                          <q-icon name="bed" color="indigo" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Sleeping Options</q-item-label>
-                          <q-item-label caption>{{ event.sleeping_options }}</q-item-label>
-                        </q-item-section>
-                      </q-item>
+                          <!-- Accommodation Section -->
+                          <q-separator spaced />
+                          <q-item-label header class="text-purple">Accommodation</q-item-label>
+                          <q-item>
+                            <q-item-section avatar>
+                              <q-icon
+                                :name="event.have_sleep ? 'hotel' : 'help_outline'"
+                                :color="event.have_sleep ? 'purple' : 'grey'"
+                              />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Accommodation</q-item-label>
+                              <q-item-label caption>
+                                {{
+                                  event.have_sleep
+                                    ? 'Yes - Accommodation information available'
+                                    : '-'
+                                }}
+                              </q-item-label>
+                            </q-item-section>
+                          </q-item>
+                          <q-item v-if="event.sleeping_options">
+                            <q-item-section avatar>
+                              <q-icon name="bed" color="indigo" />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Sleeping Options</q-item-label>
+                              <q-item-label caption>{{ event.sleeping_options }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-card-section>
+                    </q-card>
+                  </div>
 
-                      <!-- Services Section -->
-                      <q-separator spaced />
-                      <q-item-label header class="text-teal">Services</q-item-label>
-                      <q-item>
-                        <q-item-section avatar>
-                          <q-icon
-                            :name="event.have_services ? 'room_service' : 'help_outline'"
-                            :color="event.have_services ? 'teal' : 'grey'"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Additional Services</q-item-label>
-                          <q-item-label caption>
-                            {{ event.have_services ? 'Yes - Additional services available' : '-' }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item v-if="event.service_options">
-                        <q-item-section avatar>
-                          <q-icon name="build" color="blue-grey" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Service Options</q-item-label>
-                          <q-item-label caption>{{ event.service_options }}</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item>
-                        <q-item-section avatar>
-                          <q-icon
-                            :name="event.have_sales ? 'shopping_cart' : 'help_outline'"
-                            :color="event.have_sales ? 'pink' : 'grey'"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Sales & Shopping</q-item-label>
-                          <q-item-label caption>
-                            {{ event.have_sales ? 'Yes - Shopping available at the event' : '-' }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </q-card-section>
-                </q-card>
+                  <!-- Right Sub-column: Services -->
+                  <div class="col-12 col-sm-6">
+                    <q-card flat>
+                      <q-card-section>
+                        <div class="text-h6 q-mb-md">Services</div>
+                        <q-list>
+                          <!-- Services Section -->
+                          <q-item-label header class="text-teal">Additional Services</q-item-label>
+                          <q-item>
+                            <q-item-section avatar>
+                              <q-icon
+                                :name="event.have_services ? 'room_service' : 'help_outline'"
+                                :color="event.have_services ? 'teal' : 'grey'"
+                              />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Services</q-item-label>
+                              <q-item-label caption>
+                                {{
+                                  event.have_services ? 'Yes - Additional services available' : '-'
+                                }}
+                              </q-item-label>
+                            </q-item-section>
+                          </q-item>
+                          <q-item v-if="event.service_options">
+                            <q-item-section avatar>
+                              <q-icon name="build" color="blue-grey" />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Service Options</q-item-label>
+                              <q-item-label caption>{{ event.service_options }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                          <q-item>
+                            <q-item-section avatar>
+                              <q-icon
+                                :name="event.have_sales ? 'shopping_cart' : 'help_outline'"
+                                :color="event.have_sales ? 'pink' : 'grey'"
+                              />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>Sales & Shopping</q-item-label>
+                              <q-item-label caption>
+                                {{
+                                  event.have_sales ? 'Yes - Shopping available at the event' : '-'
+                                }}
+                              </q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-card-section>
+                    </q-card>
+                  </div>
+                </div>
               </div>
 
               <!-- Right Column: Services Summary -->
@@ -1302,8 +1418,10 @@ const descriptionHtml = computed(() => {
   return desc || post || '';
 });
 
-const openLink = (url: string) => {
-  window.open(url, '_blank', 'noopener,noreferrer');
+const openInMaps = (lat: number, lon: number) => {
+  // Create a Google Maps URL for better cross-platform compatibility
+  const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+  window.open(mapsUrl, '_blank', 'noopener,noreferrer');
 };
 
 const loadEvent = async (done?: () => void) => {
