@@ -66,6 +66,12 @@
   - [x] Rich content display
   - [x] Related events (basic)
   - [x] Map integration
+- [x] **DJ profiles and management**
+  - [x] Complete DJ detail pages with tabbed interface
+  - [x] DJ activity tracking and experience timelines
+  - [x] DJ-Event relationships with embedded data
+  - [x] Performance statistics and event history
+  - [x] Advanced DJ filtering and search optimization
 - [ ] Set up blog post listing
   - [ ] Infinite scroll
   - [ ] Category filtering
@@ -113,6 +119,9 @@
   - [x] Endpoint documentation (using `/wp-json/tmd/v3`)
   - [x] Data structures
   - [x] Error handling
+  - [x] **DJ-Event relationships and embedded data**
+  - [x] **v3 API endpoints with comprehensive examples**
+  - [x] **Response structure documentation**
 - [x] Write deployment guide
   - [x] Build process
   - [x] Environment setup

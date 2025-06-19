@@ -63,6 +63,7 @@
         <q-tabs v-model="tab" class="text-primary q-mb-md" dense>
           <q-tab name="overview" label="About" icon="info" />
           <q-tab name="activities" label="Activities & Experience" icon="music_note" />
+          <q-tab name="events" label="Events & Performances" icon="event" />
           <q-tab name="contact" label="Contact & Links" icon="link" />
         </q-tabs>
         <q-separator />
@@ -176,6 +177,186 @@
             </div>
           </q-tab-panel>
 
+          <!-- Events & Performances Panel -->
+          <q-tab-panel name="events" class="q-pa-md">
+            <!-- Data Quality Notice -->
+            <q-banner
+              v-if="eventsStats.hasDataIssues && djEvents.length > 0"
+              class="bg-warning text-dark q-mb-md"
+              dense
+            >
+              <q-icon name="warning" size="sm" class="q-mr-sm" />
+              Some event data may be incomplete. Statistics might not reflect all available
+              information.
+            </q-banner>
+
+            <div class="row q-col-gutter-lg">
+              <!-- Events Statistics -->
+              <div class="col-12">
+                <q-card flat bordered class="bg-primary text-white q-mb-lg">
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">Performance Statistics</div>
+
+                    <!-- Loading State -->
+                    <div v-if="eventsLoading" class="text-center q-py-lg">
+                      <q-spinner color="white" size="2em" class="q-mb-sm" />
+                      <div class="text-caption">Loading performance data...</div>
+                    </div>
+
+                    <!-- No Events Fallback -->
+                    <div v-else-if="djEvents.length === 0" class="text-center q-py-lg">
+                      <q-icon name="event_busy" size="3em" class="q-mb-sm opacity-70" />
+                      <div class="text-body2 q-mb-xs">No Events Data</div>
+                      <div class="text-caption opacity-70">
+                        This DJ doesn't have any recorded events yet
+                      </div>
+                    </div>
+
+                    <!-- Statistics Display -->
+                    <div v-else class="row q-col-gutter-md">
+                      <div class="col-6 col-sm-3 text-center">
+                        <div class="text-h4 text-weight-bold">{{ eventsStats.total }}</div>
+                        <div class="text-caption">Total Events</div>
+                      </div>
+                      <div class="col-6 col-sm-3 text-center">
+                        <div class="text-h4 text-weight-bold">{{ eventsStats.upcoming }}</div>
+                        <div class="text-caption">Upcoming</div>
+                      </div>
+                      <div class="col-6 col-sm-3 text-center">
+                        <div class="text-h4 text-weight-bold">
+                          {{ eventsStats.countries }}
+                          <q-tooltip
+                            v-if="eventsStats.countriesWithIssues > 0"
+                            class="bg-warning text-dark"
+                          >
+                            {{ eventsStats.countriesWithIssues }} events missing country data
+                          </q-tooltip>
+                        </div>
+                        <div class="text-caption">Countries</div>
+                      </div>
+                      <div class="col-6 col-sm-3 text-center">
+                        <div class="text-h4 text-weight-bold">{{ eventsStats.years }}</div>
+                        <div class="text-caption">Years Active</div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <!-- Upcoming Events -->
+              <div class="col-12 col-lg-6">
+                <q-card flat>
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">
+                      <q-icon name="schedule" class="q-mr-sm" />
+                      Upcoming Events ({{ upcomingEvents.length }})
+                    </div>
+                    <div v-if="eventsLoading" class="text-center q-pa-md">
+                      <q-spinner color="primary" size="2em" />
+                      <div class="text-caption q-mt-sm">Loading events...</div>
+                    </div>
+                    <div v-else-if="djEvents.length === 0" class="text-center q-pa-md text-grey-6">
+                      <q-icon name="event_note" size="3em" class="q-mb-sm" />
+                      <div class="text-weight-medium">No Events Data</div>
+                      <div class="text-caption">This DJ doesn't have any recorded events</div>
+                    </div>
+                    <div
+                      v-else-if="upcomingEvents.length === 0"
+                      class="text-center q-pa-md text-grey-6"
+                    >
+                      <q-icon name="event_busy" size="3em" class="q-mb-sm" />
+                      <div>No upcoming events scheduled</div>
+                    </div>
+                    <q-list v-else separator>
+                      <q-item
+                        v-for="event in upcomingEvents"
+                        :key="event.id"
+                        clickable
+                        @click="goToEvent(event.id)"
+                        class="event-item"
+                      >
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">{{ event.title }}</q-item-label>
+                          <q-item-label caption>
+                            <q-icon name="event" size="xs" class="q-mr-xs" />
+                            {{ formatDate(event.start_date) }}
+                            <span v-if="event.edition" class="q-ml-sm">
+                              <q-badge color="grey-6" :label="`Edition ${event.edition}`" />
+                            </span>
+                          </q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <q-icon name="chevron_right" color="grey-5" />
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <!-- Past Events -->
+              <div class="col-12 col-lg-6">
+                <q-card flat>
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">
+                      <q-icon name="history" class="q-mr-sm" />
+                      Past Events ({{ pastEvents.length }})
+                    </div>
+                    <div v-if="eventsLoading" class="text-center q-pa-md">
+                      <q-spinner color="primary" size="2em" />
+                      <div class="text-caption q-mt-sm">Loading events...</div>
+                    </div>
+                    <div v-else-if="djEvents.length === 0" class="text-center q-pa-md text-grey-6">
+                      <q-icon name="event_note" size="3em" class="q-mb-sm" />
+                      <div class="text-weight-medium">No Events Data</div>
+                      <div class="text-caption">This DJ doesn't have any recorded events</div>
+                    </div>
+                    <div
+                      v-else-if="pastEvents.length === 0"
+                      class="text-center q-pa-md text-grey-6"
+                    >
+                      <q-icon name="event_available" size="3em" class="q-mb-sm" />
+                      <div>No past events recorded</div>
+                    </div>
+                    <q-list v-else separator>
+                      <q-item
+                        v-for="event in pastEvents.slice(0, 10)"
+                        :key="event.id"
+                        clickable
+                        @click="goToEvent(event.id)"
+                        class="event-item"
+                      >
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">{{ event.title }}</q-item-label>
+                          <q-item-label caption>
+                            <q-icon name="event" size="xs" class="q-mr-xs" />
+                            {{ formatDate(event.start_date) }}
+                            <span v-if="event.edition" class="q-ml-sm">
+                              <q-badge color="grey-6" :label="`Edition ${event.edition}`" />
+                            </span>
+                          </q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <q-icon name="chevron_right" color="grey-5" />
+                        </q-item-section>
+                      </q-item>
+                      <q-item v-if="pastEvents.length > 10" class="text-center">
+                        <q-item-section>
+                          <q-btn
+                            flat
+                            color="primary"
+                            :label="`View all ${pastEvents.length} past events`"
+                            @click="showAllPastEvents = !showAllPastEvents"
+                          />
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
+          </q-tab-panel>
+
           <!-- Contact & Links Panel -->
           <q-tab-panel name="contact" class="q-pa-md">
             <div class="row q-col-gutter-lg">
@@ -233,21 +414,25 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { djService } from '../services';
-import type { DJ } from '../services/types';
+import type { DJ, BaseEvent } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 
 defineOptions({ name: 'DJDetails' });
 
 const route = useRoute();
+const router = useRouter();
 const $q = useQuasar();
 
 const dj = ref<DJ | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const tab = ref<'overview' | 'activities' | 'contact'>('overview');
+const tab = ref<'overview' | 'activities' | 'events' | 'contact'>('overview');
+const djEvents = ref<BaseEvent[]>([]);
+const eventsLoading = ref(false);
+const showAllPastEvents = ref(false);
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax2.jpg';
 
@@ -501,6 +686,101 @@ const hasContactInfo = computed(
     ),
 );
 
+// Events-related computed properties
+const upcomingEvents = computed(() => {
+  const now = new Date();
+  return djEvents.value
+    .filter((event) => new Date(event.start_date) >= now)
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+});
+
+const pastEvents = computed(() => {
+  const now = new Date();
+  return djEvents.value
+    .filter((event) => new Date(event.start_date) < now)
+    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+});
+
+const eventsStats = computed(() => {
+  const events = djEvents.value;
+
+  // Data validation for countries
+  const countryValues = events.map((e) => e.country);
+  const validCountries = countryValues.filter(Boolean); // Remove null, undefined, empty strings
+  const countries = new Set(validCountries);
+  const countriesWithIssues = events.length - validCountries.length;
+
+  // Data validation for years
+  const yearValues = events.map((e) => {
+    if (!e.start_date) return null;
+    const year = new Date(e.start_date).getFullYear();
+    return !isNaN(year) ? year : null;
+  });
+  const validYears = yearValues.filter((year) => year !== null);
+  const years = new Set(validYears);
+
+  return {
+    total: events.length,
+    upcoming: upcomingEvents.value.length,
+    countries: countries.size,
+    countriesWithIssues,
+    years: years.size,
+    // Additional metadata for debugging/tooltips
+    hasDataIssues: countriesWithIssues > 0 || events.length - validYears.length > 0,
+  };
+});
+
+// Methods
+const loadDJEvents = async () => {
+  if (!dj.value?.id) return;
+
+  eventsLoading.value = true;
+  try {
+    // Use the embedded events if available, otherwise fetch directly
+    if (dj.value._embedded?.related?.[0]) {
+      djEvents.value = dj.value._embedded.related[0];
+
+      // Validate embedded data quality
+      const eventsWithoutCountry = djEvents.value.filter((e) => !e.country).length;
+      if (eventsWithoutCountry > 0) {
+        console.warn(`${eventsWithoutCountry} events missing country data for DJ ${dj.value.id}`);
+      }
+    } else {
+      // Fetch events directly from the API
+      const response = await fetch(
+        `http://localhost:10014/wp-json/tmd/v3/events?dj=${dj.value.id}&per_page=100`,
+      );
+
+      if (response.ok) {
+        djEvents.value = await response.json();
+
+        // Validate fetched data quality
+        const eventsWithoutCountry = djEvents.value.filter((e) => !e.country).length;
+        if (eventsWithoutCountry > 0) {
+          console.warn(`${eventsWithoutCountry} events missing country data for DJ ${dj.value.id}`);
+        }
+      } else {
+        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+      }
+    }
+  } catch (err) {
+    console.error('Error loading DJ events:', err);
+    djEvents.value = []; // Reset to empty array on error
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load DJ events. Some statistics may be incomplete.',
+      position: 'top',
+      timeout: 5000,
+    });
+  } finally {
+    eventsLoading.value = false;
+  }
+};
+
+const goToEvent = (eventId: number) => {
+  void router.push(`/events/${eventId}`);
+};
+
 const loadDJ = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
@@ -513,6 +793,8 @@ const loadDJ = async (done?: () => void) => {
 
   try {
     dj.value = await djService.getDJ(djId);
+    // Load events after DJ is loaded
+    await loadDJEvents();
   } catch (err) {
     console.error('Error loading DJ:', err);
     error.value = 'Failed to load DJ details';
@@ -571,6 +853,14 @@ onMounted(loadDJ);
       margin: 2rem 0;
       border: none;
       border-top: 1px solid rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  .event-item {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
     }
   }
 }

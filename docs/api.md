@@ -1,271 +1,188 @@
 # TMD API Documentation
 
-## Base URL
+## Base URLs
 
-`http://localhost:10014/wp-json/tmd/v3`
+- **Production**: `https://www.tangomarathons.com/wp-json/`
+- **Local Development**: `http://localhost:10014/wp-json/`
 
-## Available Endpoints
+## Available Namespaces
+
+### TMD Custom API
+
+- `tmd/v1` - Legacy version
+- `tmd/v2` - Current production version
+- `tmd/v3` - Development version (available locally)
+
+### WordPress Core API
+
+- `wp/v2` - Standard WordPress REST API
+
+## TMD v3 API Endpoints (Local Development)
 
 ### Events
 
-#### List Events
+- `GET /tmd/v3/events` - List all events
+- `GET /tmd/v3/events/{id}` - Get specific event
+- `GET /tmd/v3/events?dj={dj_id}` - Get events by DJ
 
-- **GET** `/events` - List all events with extensive filtering and sorting options
+**Query Parameters:**
 
-**Parameters:**
-
-**Pagination:**
-
-- `page` (int, default: 1) - Page number for pagination
-- `per_page` (int, default: 10) - Number of items per page
-
-**Search & Filtering:**
-
-- `search` (string) - Limit results to those matching a string
-- `country` (string) - Filter by country meta field
-- `category` (string) - Filter by event category (taxonomy term slug)
-- `category_id` (int) - Filter by event category (taxonomy term ID)
-
-**Date Filtering:**
-
-- `start_date_min` (ISO date) - Filter events with start_date ≥ this date
-- `start_date_max` (ISO date) - Filter events with start_date ≤ this date
-- `registration_date_min` (ISO date) - Filter events with registration_start_date ≥ this date
-- `registration_date_max` (ISO date) - Filter events with registration_start_date ≤ this date
-
-**Sorting:**
-
-- `orderby` (enum: `date`, `title`, `ID`, `start_date`, `end_date`, `registration_start_date`, default: `date`) - Sort collection by object attribute
-- `order` (enum: `asc`, `desc`, default: `desc`) - Order sort attribute ascending or descending
-
-**Meta Field Filtering:**
-
-- `meta_key` (string) - Meta key to filter by
-- `meta_value` (string) - Meta value to filter by
-
-**Data Enrichment:**
-
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `include_taxonomies` (bool, default: false) - Include event taxonomies (categories) in response
-- `include_relationships` (bool, default: false) - Include related entities (DJs, teachers, series) in response
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return, or "all"
-
-**Available Meta Fields:**
-
-- `start_date`, `end_date`, `registration_start_date`
-- `country`, `city`, `urgent_change_status`, `edition`
-- `role_balanced`, `invitation_only`, `have_registration`, `have_registration_mode`
-- `price`, `currency`, `number_of_participants`, `music_hours`
-- `have_milongas`, `have_tickets`, `have_live_music`, `have_lessons`
-- `have_show`, `have_separated_seating`, `have_folklore`, `have_non_tango`
-
-**Response Headers:**
-
-- `X-WP-Total` - Total number of events matching the query
-- `X-WP-TotalPages` - Total number of pages available
-
-**Response Structure:**
-
-```json
-[
-  {
-    "id": 54102,
-    "title": "La Maravillosa",
-    "slug": "3101-la-maravillosa-edition-4",
-    "date": "2024-11-12T15:43:19+01:00",
-    "date_gmt": "2024-11-12T14:43:19+01:00",
-    "modified": "2024-11-12T15:43:19+01:00",
-    "modified_gmt": "2024-11-12T14:43:19+01:00",
-    "status": "publish",
-    "link": "http://localhost:10014/events/3101-la-maravillosa-edition-4/",
-    "start_date": "2025-01-31T00:00:00+00:00",
-    "registration_start_date": "",
-    "edition": "4",
-    "taxonomies": {
-      "event-categories-2020": [
-        {
-          "id": 68,
-          "name": "Marathon",
-          "slug": "marathon",
-          "description": ""
-        }
-      ]
-    },
-    "relationships": [],
-    "_links": {
-      "self": [{ "href": "http://localhost:10014/wp-json/tmd/v3/events/54102" }],
-      "collection": [{ "href": "http://localhost:10014/wp-json/tmd/v3/events" }]
-    }
-  }
-]
-```
-
-#### Get Single Event
-
-- **GET** `/events/{id}` - Get specific event details
-
-**Parameters:**
-
-- `id` (int, required) - Unique identifier for the event
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return, or "all"
-- `include_taxonomies` (bool, default: false) - Include event taxonomies (categories) in response
-- `include_relationships` (bool, default: false) - Include related entities (DJs, teachers, series) in response
+- `page` - Page number for pagination
+- `per_page` - Number of items per page (default: 20)
+- `search` - Search term
+- `country` - Filter by country code
+- `category` - Filter by event category
+- `start_date_from` - Filter events starting from date
+- `start_date_to` - Filter events ending before date
+- `dj` - Filter events by DJ ID
+- `_embed` - Include embedded related data
 
 ### DJs
 
-#### List DJs
+- `GET /tmd/v3/djs` - List all DJs
+- `GET /tmd/v3/djs/{id}` - Get specific DJ
+- `GET /tmd/v3/djs/{id}?_embed` - Get DJ with embedded events
 
-- **GET** `/djs` - List all DJs
+**Query Parameters:**
 
-**Parameters:**
+- `page` - Page number for pagination
+- `per_page` - Number of items per page (default: 20)
+- `search` - Search by DJ name
+- `country` - Filter by country code
+- `meta_fields` - Comma-separated list of meta fields to include
+- `_embed` - Include embedded related events
 
-- `page` (int, default: 1) - Page number for pagination
-- `per_page` (int, default: 10) - Number of items per page
-- `search` (string) - Limit results to those matching a string
-- `orderby` (enum: `date`, `title`, `ID`, default: `date`) - Sort collection by object attribute
-- `order` (enum: `asc`, `desc`, default: `desc`) - Order sort attribute ascending or descending
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_key` (string) - Meta key to filter by
-- `meta_value` (string) - Meta value to filter by
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return
+**DJ Meta Fields:**
 
-#### Get Single DJ
+- `tmd_dj_name` - DJ's display name
+- `tmd_dj_country` - Country code (ISO 2-letter)
+- `tmd_dj_city` - City name
+- `tmd_dj_e_mail` - Email address
+- `tmd_dj_webpage` - Personal website
+- `tmd_dj_link_to_facebook` - Facebook profile
+- `tmd_dj_link_to_facebook_page` - Facebook page
+- `abstract` - Short description
+- `tmd_dj_about_the_dj` - Full biography
+- `gender` - Gender (male/female)
+- Activity fields:
+  - `tmd_dj_activity_marathons` - DJs marathons (1/0)
+  - `tmd_dj_activity_marathons_since` - Year started
+  - `tmd_dj_activity_festivals` - DJs festivals (1/0)
+  - `tmd_dj_activity_festivals_since` - Year started
+  - `tmd_dj_activity_encuentros` - DJs encuentros (1/0)
+  - `tmd_dj_activity_encuentros_since` - Year started
+  - `tmd_dj_activity_milongas` - DJs local milongas (1/0)
+  - `tmd_dj_activity_milongas_since` - Year started
+  - `tmd_dj_activity_milongas_travel` - Travel DJ (1/0)
+  - `tmd_dj_activity_milongas_travel_since` - Year started
 
-- **GET** `/djs/{id}` - Get specific DJ details
+### DJ-Event Relationships
 
-**Parameters:**
+The API provides bidirectional relationships between DJs and events:
 
-- `id` (int, required) - Unique identifier for the DJ
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return
+#### Getting Events for a DJ:
 
-**Response Structure:**
+1. **Direct Query**: `GET /tmd/v3/events?dj={dj_id}`
+2. **Embedded in DJ**: `GET /tmd/v3/djs/{id}?_embed`
+
+#### Response Structure with Embedded Events:
 
 ```json
 {
   "id": 54082,
-  "title": "Eunsook Kim",
-  "date": "2024-11-06T02:18:16+01:00",
-  "link": "http://localhost:10014/dj/eunsook-kim/"
+  "title": "DJ Name",
+  "_embedded": {
+    "related": [
+      [
+        {
+          "id": 53998,
+          "title": "Event Name",
+          "start_date": "2025-09-25T00:00:00+00:00",
+          "edition": "3",
+          "_links": {
+            "related": [
+              {
+                "href": "/wp-json/tmd/v3/djs/54082",
+                "title": "DJ Name",
+                "type": "dj"
+              }
+            ]
+          }
+        }
+      ]
+    ]
+  },
+  "_links": {
+    "related": [
+      {
+        "href": "/wp-json/tmd/v3/events?dj=54082",
+        "embeddable": true
+      }
+    ]
+  }
 }
 ```
 
 ### Teachers
 
-#### List Teachers
-
-- **GET** `/teachers` - List all teachers
-
-**Parameters:**
-
-- `page` (int, default: 1) - Page number for pagination
-- `per_page` (int, default: 10) - Number of items per page
-- `search` (string) - Limit results to those matching a string
-- `orderby` (enum: `date`, `title`, `ID`, default: `date`) - Sort collection by object attribute
-- `order` (enum: `asc`, `desc`, default: `desc`) - Order sort attribute ascending or descending
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_key` (string) - Meta key to filter by
-- `meta_value` (string) - Meta value to filter by
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return
-
-#### Get Single Teacher
-
-- **GET** `/teachers/{id}` - Get specific teacher details
-
-**Parameters:**
-
-- `id` (int, required) - Unique identifier for the teacher
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return
-
-**Response Structure:**
-
-```json
-{
-  "id": 53452,
-  "title": "Eugenia  Parrilla",
-  "date": "2024-07-21T13:16:10+02:00",
-  "link": "http://localhost:10014/teachers/eugenia-parrilla/"
-}
-```
+- `GET /tmd/v3/teachers` - List all teachers
+- `GET /tmd/v3/teachers/{id}` - Get specific teacher
 
 ### Event Series
 
-#### List Event Series
+- `GET /tmd/v3/event-series` - List all event series
+- `GET /tmd/v3/event-series/{id}` - Get specific event series
 
-- **GET** `/event-series` - List all event series
+## TMD v2 API Endpoints (Production)
 
-**Parameters:**
+### Events Only
 
-- `page` (int, default: 1) - Page number for pagination
-- `per_page` (int, default: 10) - Number of items per page
-- `search` (string) - Limit results to those matching a string
-- `orderby` (enum: `date`, `title`, `ID`, default: `date`) - Sort collection by object attribute
-- `order` (enum: `asc`, `desc`, default: `desc`) - Order sort attribute ascending or descending
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_key` (string) - Meta key to filter by
-- `meta_value` (string) - Meta value to filter by
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return
+- `GET /tmd/v2/events` - List all events
+- `GET /tmd/v2/events/{id}` - Get specific event
+- `GET /tmd/v2/events/future` - Future events only
+- `GET /tmd/v2/events/marathons` - Marathon events only
+- `GET /tmd/v2/events/festivals` - Festival events only
+- `GET /tmd/v2/events/calendar` - Calendar format
+- `GET /tmd/v2/events/registration` - Events with registration
+- `GET /tmd/v2/events/map-data` - Map data format
 
-#### Get Single Event Series
+## WordPress v2 API (Both Environments)
 
-- **GET** `/event-series/{id}` - Get specific event series details
+### Custom Post Types
 
-**Parameters:**
+- `GET /wp/v2/tmd_dj` - DJ posts
+- `GET /wp/v2/tmd_dj/{id}` - Specific DJ post
+- `GET /wp/v2/dj-category` - DJ categories
 
-- `id` (int, required) - Unique identifier for the event series
-- `_embed` (bool, default: false) - Include embedded related resources in response
-- `meta_fields` (string) - Comma-separated list of custom meta keys to return, or "all"
+## Response Headers
 
-**Response Structure:**
+- `X-WP-Total` - Total number of items
+- `X-WP-TotalPages` - Total number of pages
+
+## Error Handling
+
+Standard HTTP status codes:
+
+- `200` - Success
+- `404` - Not found
+- `500` - Server error
+
+Error response format:
 
 ```json
 {
-  "id": 53875,
-  "title": "CHAMPAGNETANGO DRESDEN MARATHON",
-  "date": "2024-09-17T09:07:23+02:00",
-  "link": "http://localhost:10014/event_series/champagnetango-dresden-marathon/",
-  "start_date": "",
-  "registration_start_date": ""
+  "code": "rest_no_route",
+  "message": "No route was found matching the URL and request method.",
+  "data": {
+    "status": 404
+  }
 }
 ```
 
-## API Features
+## Rate Limiting
 
-### Pagination
+No specific rate limiting is documented, but standard WordPress REST API practices apply.
 
-- Standard WordPress REST API pagination with `X-WP-Total` and `X-WP-TotalPages` headers
-- Current total: 2,989 events across 598 pages (with per_page=5)
+## Authentication
 
-### Taxonomies
-
-- Event categories are available via `include_taxonomies=true`
-- Categories use the `event-categories-2020` taxonomy
-- Filter by category using `category` (slug) or `category_id` (ID) parameters
-
-### Date Filtering
-
-- Comprehensive date filtering with min/max ranges
-- Support for both start dates and registration dates
-- ISO 8601 date format required
-
-### Meta Fields
-
-- Extensive custom meta field support
-- Use `meta_fields=all` to get all available meta data
-- Specific meta fields can be requested via comma-separated list
-
-### Search & Sorting
-
-- Full-text search across event titles
-- Multiple sorting options including date-based sorting
-- Ascending/descending order support
-
-## Notes
-
-- All endpoints return JSON responses
-- Date fields use ISO 8601 format
-- The API supports WordPress standard pagination headers
-- Error responses follow standard WordPress REST API format
-- CORS headers are properly configured for cross-origin requests
+Most endpoints are publicly accessible. Authentication may be required for write operations (not documented here).

@@ -1,45 +1,51 @@
-# Tango Marathons Nuxt Project
+# TMD Quasar Frontend
 
-A modern, mobile-first frontend application for the Tango Marathons website, built with Nuxt.js and WordPress as a headless CMS, **integrated as a WordPress theme or plugin.**
+A modern, mobile-first frontend application for the Tango Marathons website,
+built with Quasar Vue.js and WordPress as a headless CMS.
 
 ## Overview
 
 This project implements a headless WordPress architecture where:
 
-- WordPress serves as the Content Management System (CMS) and backend, handling all content editing and management.
-- The Nuxt.js application provides the modern, performant frontend interface, consuming data via the WordPress REST API.
-- **The compiled Nuxt frontend code is designed to be deployed and integrated within the WordPress `wp-content/` directory, functioning as an active WordPress theme or loaded via a plugin.** This allows WordPress to serve the Nuxt application directly.
+- WordPress serves as the Content Management System (CMS) and backend,
+  handling all content editing and management
+- The Quasar application provides the modern, performant frontend interface,
+  consuming data via the WordPress REST API v3
+- The application is designed to work with the TMD WordPress plugin's custom
+  API endpoints
 
 ## Features
 
-- Modern, responsive frontend for existing WordPress content
-- Mobile-first design with touch-optimized interactions
-- Dark mode support with system preference detection
-- Event listings with virtual scrolling and filtering
-- Calendar integration for events
-- DJ and teacher profiles
-- Festival and marathon listings
-- Blog posts and news content
-- WordPress pages and static content
-- Performance optimized for large datasets
+- **Modern DJ Management**: Complete DJ profiles with activity tracking,
+  experience timelines, and linked events
+- **Event & Performance Tracking**: Comprehensive event listings with
+  DJ-event relationships and performance statistics
+- **Mobile-First Design**: Touch-optimized interactions with responsive
+  layouts for all screen sizes
+- **Advanced Filtering**: Server-side search and filtering with optimized
+  performance
+- **Dark Mode Support**: System preference detection with persistent settings
+- **Performance Optimized**: Efficient API calls, request cancellation, and
+  optimized data loading
+- **TypeScript Integration**: Full type safety with strict null checks and
+  ESLint compliance
 
 ## Tech Stack
 
-- **Frontend Framework**: Nuxt.js 3.x
-- **UI Framework**: Vuetify 3.x
+- **Frontend Framework**: Quasar Framework (Vue.js 3)
+- **UI Components**: Quasar Material Design components
 - **Icons**: Material Design Icons
-- **Calendar Component**: vue-simple-calendar
-- **Code Quality**: ESLint + Prettier
-- **Git Hooks**: Husky
-- **Performance**: Service Workers, Caching, Lazy Loading
+- **Language**: TypeScript with strict mode
+- **Code Quality**: ESLint + Prettier with strict rules
+- **API Integration**: WordPress REST API v3 (TMD custom endpoints)
+- **Performance**: Request debouncing, caching, lazy loading
 
 ## Prerequisites
 
 - Node.js (v16 or higher)
-- npm or yarn
-- WordPress installation with REST API enabled
-- WordPress content already set up and managed
-- **A WordPress theme or plugin structure within `wp-content/` capable of booting the Nuxt application.**
+- pnpm (recommended) or npm
+- WordPress installation with TMD plugin and REST API v3 enabled
+- Local development environment at `http://localhost:10014` (for API testing)
 
 ## Quick Start
 
@@ -47,116 +53,133 @@ This project implements a headless WordPress architecture where:
 
 ```bash
 git clone [repository-url]
-cd tmd_nuxt
+cd tmd_quasar
 ```
 
 2. Install dependencies:
 
 ```bash
+pnpm install
+# or
 npm install
+```
+
+3. Configure API endpoint:
+
+   - Local development: `http://localhost:10014/wp-json/tmd/v3`
+   - Production: `https://www.tangomarathons.com/wp-json/tmd/v2`
+
+4. Start development server:
+
+```bash
+pnpm dev
 # or
-yarn install
-```
-
-3. Create environment file:
-
-```bash
-cp .env.example .env
-```
-
-4. Configure environment variables in `.env`:
-
-```
-WP_APPLICATION_USERNAME=your_username  # For protected API endpoints
-WP_APPLICATION_PASSWORD=your_password  # For protected API endpoints
-API_URL=your_wordpress_api_url        # WordPress REST API URL
-```
-
-5. Start development server:
-
-```bash
 npm run dev
-# or
-yarn dev
 ```
 
 ## Development
 
 ### Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run generate` - Generate static site
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
-- `npm run format` - Format code with Prettier
-- `npm run format:check` - Check code formatting
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm preview` - Preview production build
+- `pnpm lint` - Run ESLint with strict rules
+- `pnpm lint:fix` - Fix ESLint issues automatically
 
 ### Project Structure
 
 ```
 ./
-├── assets/         # Uncompiled assets (e.g., global CSS, images, fonts)
-├── components/     # Reusable Vue components (auto-imported)
-├── composables/    # Vue Composition API functions for reusable logic
-├── layouts/        # Application layouts (e.g., default, error)
-├── middleware/     # Nuxt middleware functions
-├── pages/          # Application views and routes (file-system based routing)
-├── plugins/        # Vue plugins to run before the root app
-├── static/         # Static files served directly (e.g., favicon.ico)
-├── types/          # TypeScript type definitions
-├── wp-content/     # WordPress theme/plugin code for Nuxt integration
-└── ... (other root-level config files)
+├── src/
+│   ├── components/     # Reusable Vue components
+│   ├── composables/    # Vue Composition API functions
+│   ├── layouts/        # Quasar layouts
+│   ├── pages/          # Application pages/routes
+│   ├── services/       # API services and types
+│   ├── interfaces/     # TypeScript interfaces
+│   └── boot/          # Quasar boot files (axios, etc.)
+├── docs/              # API and project documentation
+├── public/            # Static assets
+└── quasar.config.ts   # Quasar configuration
 ```
 
 ## WordPress Integration
 
-The project integrates with WordPress REST API for content consumption. All content management is done through WordPress. **Crucially, the compiled Nuxt.js frontend is designed to be built and placed within a WordPress theme or plugin inside the `wp-content/` directory.** This setup enables WordPress to load and display the Nuxt.js application dynamically.
+The project integrates with WordPress REST API v3 for content consumption. All
+content management is done through WordPress using the TMD plugin's custom
+endpoints.
+
+### API Endpoints
+
+**TMD v3 API (Local Development)**:
+
+- `/tmd/v3/events` - Event listings with advanced filtering
+- `/tmd/v3/djs` - DJ profiles with embedded events
+- `/tmd/v3/teachers` - Teacher profiles
+- `/tmd/v3/event-series` - Event series management
+
+**TMD v2 API (Production)**:
+
+- `/tmd/v2/events` - Production event listings
 
 ### Custom Post Types
 
 - `tmd_event` - Events and festivals
-  - Marathons
-  - Festivals
-  - Future events
-- `tmd_event_series` - Series of related events
-- `tmd_teacher` - Individual teachers
-- `tmd_teacher_couple` - Teaching couples
+  - Marathons with comprehensive metadata
+  - Festivals with DJ lineups
+  - Registration and pricing information
 - `tmd_dj` - DJ profiles
+  - Activity tracking (marathons, festivals, encuentros, milongas)
+  - Experience timelines and statistics
+  - Linked events and performance history
+- `tmd_teacher` - Teacher profiles
+- `tmd_event_series` - Series of related events
 
-### Standard WordPress Content
+### DJ-Event Relationships
 
-- Posts and blog content
-  - News and updates
-  - Event announcements
-  - Community content
-- Pages and static content
-  - Information pages
-  - About and contact pages
+The API provides bidirectional relationships:
+
+- DJs have embedded related events (`?_embed`)
+- Events link back to their DJs
+- Performance statistics calculated from relationships
 
 ## Performance
 
-- Server-Side Rendering (SSR) for improved initial load
-- Static site generation for static content
-- Image optimization and WebP support
-- Code splitting and lazy loading
-- Service Worker for offline support
-- API response caching
-- Virtual scrolling for long lists
+- **Optimized API Calls**: Request debouncing and cancellation
+- **Efficient Data Loading**: Server-side pagination and filtering
+- **TypeScript Safety**: Strict null checks and proper error handling
+- **Responsive Design**: Mobile-first with touch optimization
+- **Smart Caching**: Reduced API payloads with essential fields only
+- **Loading States**: Visual feedback with Quasar spinners and skeletons
 
 ## Todo
 
-- [ ] Implement proper error handling and loading states
-- [ ] Add comprehensive form validation
-- [ ] Implement user authentication and authorization
-- [ ] Add unit and integration tests
-- [ ] Set up CI/CD pipeline
-- [ ] Add documentation for WordPress integration
-- [ ] Implement proper SEO optimization
-- [ ] Add analytics tracking
-- [ ] Implement proper caching strategy
-- [ ] Add proper logging and monitoring
+### Completed ✅
+
+- [x] DJ profiles with comprehensive metadata and activity tracking
+- [x] DJ-Event relationships with embedded data and performance statistics
+- [x] Advanced filtering and search with server-side optimization
+- [x] Mobile-first responsive design with touch optimization
+- [x] TypeScript integration with strict mode and ESLint compliance
+- [x] API documentation with v3 endpoints and relationship examples
+
+### Current Priorities
+
+- [ ] Teacher profiles and teacher-event relationships
+- [ ] Event series management and linking
+- [ ] Enhanced event filtering (by DJ, date ranges, categories)
+- [ ] User authentication and personalized features
+- [ ] Advanced caching strategy and offline support
+
+### Future Enhancements
+
+- [ ] PWA support with service workers
+- [ ] Internationalization (i18n) support
+- [ ] Analytics and performance monitoring
+- [ ] CI/CD pipeline setup
+- [ ] Comprehensive testing suite
+- [ ] SEO optimization and meta tags
 
 ## Contributing
 

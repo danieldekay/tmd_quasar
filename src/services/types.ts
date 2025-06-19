@@ -101,6 +101,10 @@ export interface DJ extends BaseEntity {
     photo: string;
     website: string;
   };
+  // Embedded related data
+  _embedded?: {
+    related?: BaseEvent[][];
+  };
   // Meta fields from v3 API
   abstract?: string;
   gender?: string;

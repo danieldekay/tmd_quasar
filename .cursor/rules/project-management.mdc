@@ -14,6 +14,11 @@ alwaysApply: true
 - tangomarathons.com
 - a wordpress page with my custom tmd_core plugin, that uses metabox.io for custom post types and fields.
 
+## Development setup and capabilities
+
+- The TMD is actively developed in parallel, and a local dev environment is hosted on http://localhost:10014
+- Use curl to test it before you make any assumptions
+
 ## General Rules
 
 - DESIGN.md contains the overall project design, and may be updated based on user feedback.
