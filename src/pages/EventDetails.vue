@@ -187,7 +187,7 @@
           <!-- DJs & Music Panel -->
           <q-tab-panel name="djs" class="q-pa-md">
             <div class="row q-col-gutter-lg">
-              <!-- DJs List -->
+              <!-- DJs Section -->
               <div class="col-12">
                 <q-card flat>
                   <q-card-section>
@@ -231,83 +231,149 @@
                         :key="dj.id"
                         class="col-12 col-sm-6 col-md-4 col-lg-3"
                       >
-                        <q-card flat bordered class="dj-card cursor-pointer" @click="goToDJ(dj.id)">
-                          <q-card-section>
-                            <div class="text-weight-bold q-mb-xs">{{ dj.displayName }}</div>
-                            <div v-if="dj.location" class="text-caption text-grey-6 q-mb-sm">
-                              <q-icon name="location_on" size="xs" class="q-mr-xs" />
-                              {{ dj.location }}
-                            </div>
-
-                            <div v-if="dj.activities.length > 0" class="q-mt-sm">
-                              <q-chip
-                                v-for="activity in dj.activities.slice(0, 2)"
-                                :key="activity"
-                                dense
-                                size="sm"
-                                color="primary"
-                                text-color="white"
-                                class="q-mr-xs q-mb-xs"
-                              >
-                                {{ activity }}
-                              </q-chip>
-                              <q-chip
-                                v-if="dj.activities.length > 2"
-                                dense
-                                size="sm"
-                                color="grey-5"
-                                text-color="white"
-                                class="q-mr-xs q-mb-xs"
-                              >
-                                +{{ dj.activities.length - 2 }}
-                              </q-chip>
-                            </div>
-                          </q-card-section>
-
-                          <q-card-actions align="right">
-                            <q-btn flat size="sm" color="primary" icon="chevron_right" />
-                          </q-card-actions>
-                        </q-card>
+                        <DJCard :dj="dj" @click="goToDJ" />
                       </div>
                     </div>
 
                     <!-- Additional Music Info -->
-                    <div v-if="djs.length > 0" class="q-mt-lg">
-                      <q-separator class="q-mb-md" />
-                      <div class="text-subtitle2 q-mb-sm">Music Information</div>
-                      <q-list dense>
-                        <q-item v-if="event.music_hours">
-                          <q-item-section avatar>
-                            <q-icon name="schedule" color="primary" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>Music Duration</q-item-label>
-                            <q-item-label caption
-                              >{{ event.music_hours }} hours of dancing</q-item-label
+                    <div v-if="djs.length > 0" class="q-mt-xl">
+                      <q-separator class="q-mb-lg" />
+                      <div class="text-h6 q-mb-md">
+                        <q-icon name="audiotrack" class="q-mr-sm" />
+                        Music Information
+                      </div>
+                      <div class="row q-col-gutter-md">
+                        <div v-if="event.music_hours" class="col-12 col-sm-6 col-md-4">
+                          <q-card flat bordered class="music-info-card">
+                            <q-card-section class="text-center">
+                              <q-icon
+                                name="schedule"
+                                color="primary"
+                                size="2.5em"
+                                class="q-mb-sm"
+                              />
+                              <div class="text-h6 text-weight-bold">
+                                {{ event.music_hours }} Hours
+                              </div>
+                              <div class="text-caption text-grey-6">of dancing music</div>
+                            </q-card-section>
+                          </q-card>
+                        </div>
+                        <div
+                          v-if="event.meta_box?.have_live_music"
+                          class="col-12 col-sm-6 col-md-4"
+                        >
+                          <q-card flat bordered class="music-info-card">
+                            <q-card-section class="text-center">
+                              <q-icon name="campaign" color="red" size="2.5em" class="q-mb-sm" />
+                              <div class="text-h6 text-weight-bold">Live Music</div>
+                              <div class="text-caption text-grey-6">orchestras & musicians</div>
+                            </q-card-section>
+                          </q-card>
+                        </div>
+                        <div v-if="event.have_non_tango" class="col-12 col-sm-6 col-md-4">
+                          <q-card flat bordered class="music-info-card">
+                            <q-card-section class="text-center">
+                              <q-icon
+                                name="music_video"
+                                color="teal"
+                                size="2.5em"
+                                class="q-mb-sm"
+                              />
+                              <div class="text-h6 text-weight-bold">Mixed Styles</div>
+                              <div class="text-caption text-grey-6">beyond traditional tango</div>
+                            </q-card-section>
+                          </q-card>
+                        </div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <!-- Teachers Section -->
+              <div v-if="teachers.length > 0" class="col-12">
+                <q-card flat>
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">
+                      <q-icon name="school" class="q-mr-sm" />
+                      Teachers & Instructors
+                    </div>
+
+                    <!-- Loading State -->
+                    <div v-if="teachersLoading" class="text-center q-pa-md">
+                      <q-spinner color="secondary" size="2em" />
+                      <div class="text-caption q-mt-sm">Loading Teachers...</div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div v-else-if="teachersError" class="text-center q-pa-md text-grey-6">
+                      <q-icon name="error_outline" size="3em" class="q-mb-sm" />
+                      <div class="text-weight-medium">Failed to Load Teachers</div>
+                      <div class="text-caption">{{ teachersError }}</div>
+                      <q-btn
+                        flat
+                        color="secondary"
+                        class="q-mt-sm"
+                        @click="loadTeachers"
+                        label="Try Again"
+                        icon="refresh"
+                      />
+                    </div>
+
+                    <!-- Teachers Grid -->
+                    <div v-else class="row q-col-gutter-md">
+                      <div
+                        v-for="teacher in teachersWithDetails"
+                        :key="teacher.id"
+                        class="col-12 col-sm-6 col-lg-4"
+                      >
+                        <q-card
+                          flat
+                          bordered
+                          class="teacher-card cursor-pointer full-height"
+                          @click="goToTeacher(teacher.id)"
+                        >
+                          <q-card-section class="q-pb-sm">
+                            <div class="text-h6 text-weight-bold q-mb-sm">
+                              {{ teacher.displayName }}
+                            </div>
+
+                            <div
+                              v-if="teacher.acf?.teaching_style"
+                              class="text-body2 text-secondary q-mb-sm"
                             >
-                          </q-item-section>
-                        </q-item>
-                        <q-item v-if="event.meta_box?.have_live_music">
-                          <q-item-section avatar>
-                            <q-icon name="campaign" color="red" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>Live Music</q-item-label>
-                            <q-item-label caption
-                              >Live orchestras or musicians will perform</q-item-label
-                            >
-                          </q-item-section>
-                        </q-item>
-                        <q-item v-if="event.have_non_tango">
-                          <q-item-section avatar>
-                            <q-icon name="music_video" color="teal" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>Non-Tango Music</q-item-label>
-                            <q-item-label caption>Other dance styles will be included</q-item-label>
-                          </q-item-section>
-                        </q-item>
-                      </q-list>
+                              <q-icon name="school" size="sm" class="q-mr-xs" />
+                              {{ teacher.acf.teaching_style }}
+                            </div>
+
+                            <div v-if="teacher.acf?.bio" class="text-body2 text-grey-8 q-mb-sm">
+                              {{
+                                teacher.acf.bio.length > 120
+                                  ? teacher.acf.bio.substring(0, 120) + '...'
+                                  : teacher.acf.bio
+                              }}
+                            </div>
+                          </q-card-section>
+
+                          <q-card-actions align="between" class="q-pt-none">
+                            <div class="row q-gutter-xs">
+                              <q-btn
+                                v-if="teacher.acf?.website"
+                                flat
+                                dense
+                                size="sm"
+                                color="secondary"
+                                icon="language"
+                                @click.stop="openExternalLink(teacher.acf.website)"
+                              >
+                                <q-tooltip>Visit Website</q-tooltip>
+                              </q-btn>
+                            </div>
+                            <q-btn flat size="sm" color="secondary" icon="chevron_right" />
+                          </q-card-actions>
+                        </q-card>
+                      </div>
                     </div>
                   </q-card-section>
                 </q-card>
@@ -459,7 +525,8 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { eventDetailsService as eventService } from '../services';
-import type { EventDetails, DJ } from '../services/types';
+import type { EventDetails, DJ, Teacher } from '../services/types';
+import DJCard from '../components/DJCard.vue';
 import { useFormatters } from '../composables/useFormatters';
 
 defineOptions({ name: 'EventDetails' });
@@ -477,6 +544,11 @@ const tab = ref<'overview' | 'details' | 'djs' | 'venue' | 'contact'>('overview'
 const djs = ref<DJ[]>([]);
 const djsLoading = ref(false);
 const djsError = ref<string | null>(null);
+
+// Teacher-related state
+const teachers = ref<Teacher[]>([]);
+const teachersLoading = ref(false);
+const teachersError = ref<string | null>(null);
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
@@ -905,23 +977,95 @@ const loadDJs = () => {
   }
 };
 
+// Teacher-related methods
+const loadTeachers = () => {
+  if (!event.value?.id) return;
+
+  teachersLoading.value = true;
+  teachersError.value = null;
+  try {
+    // Only use embedded Teachers - similar to DJs
+    if (event.value._embedded?.teachers && Array.isArray(event.value._embedded.teachers)) {
+      teachers.value = event.value._embedded.teachers;
+      console.info(`Using ${teachers.value.length} embedded Teachers for event ${event.value.id}`);
+    } else {
+      // No embedded Teachers means this event has no teachers
+      teachers.value = [];
+      console.info(
+        `No embedded Teachers found for event ${event.value.id} - event has no associated teachers`,
+      );
+    }
+  } catch (err) {
+    console.error('Error loading Teacher events:', err);
+    teachersError.value = 'Failed to load Teacher information';
+    teachers.value = [];
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load Teacher information for this event.',
+      position: 'top',
+      timeout: 5000,
+    });
+  } finally {
+    teachersLoading.value = false;
+  }
+};
+
 const djsWithDetails = computed(() =>
-  djs.value.map((dj) => ({
-    ...dj,
-    displayName: dj.tmd_dj_name || dj.title,
-    location: [dj.tmd_dj_city, dj.tmd_dj_country].filter(Boolean).join(', '),
-    activities: [
+  djs.value.map((dj) => {
+    const activities = [
       dj.tmd_dj_activity_marathons === '1' ? 'Marathons' : null,
       dj.tmd_dj_activity_festivals === '1' ? 'Festivals' : null,
       dj.tmd_dj_activity_encuentros === '1' ? 'Encuentros' : null,
       dj.tmd_dj_activity_milongas === '1' ? 'Milongas' : null,
       dj.tmd_dj_activity_milongas_travel === '1' ? 'Travel' : null,
-    ].filter((activity): activity is string => activity !== null),
+    ].filter((activity): activity is string => activity !== null);
+
+    // Build years since text
+    const yearsSinceItems = [
+      dj.tmd_dj_activity_marathons === '1' && dj.tmd_dj_activity_marathons_since
+        ? `Marathons since ${dj.tmd_dj_activity_marathons_since}`
+        : null,
+      dj.tmd_dj_activity_festivals === '1' && dj.tmd_dj_activity_festivals_since
+        ? `Festivals since ${dj.tmd_dj_activity_festivals_since}`
+        : null,
+      dj.tmd_dj_activity_encuentros === '1' && dj.tmd_dj_activity_encuentros_since
+        ? `Encuentros since ${dj.tmd_dj_activity_encuentros_since}`
+        : null,
+      dj.tmd_dj_activity_milongas === '1' && dj.tmd_dj_activity_milongas_since
+        ? `Milongas since ${dj.tmd_dj_activity_milongas_since}`
+        : null,
+      dj.tmd_dj_activity_milongas_travel === '1' && dj.tmd_dj_activity_milongas_travel_since
+        ? `Travel since ${dj.tmd_dj_activity_milongas_travel_since}`
+        : null,
+    ].filter((item): item is string => item !== null);
+
+    return {
+      ...dj,
+      displayName: dj.tmd_dj_name || dj.title,
+      location: [dj.tmd_dj_city, dj.tmd_dj_country].filter(Boolean).join(', '),
+      activities,
+      yearsSince: yearsSinceItems.length > 0 ? yearsSinceItems.join(', ') : '',
+    };
+  }),
+);
+
+const teachersWithDetails = computed(() =>
+  teachers.value.map((teacher) => ({
+    ...teacher,
+    displayName: teacher.title,
   })),
 );
 
 const goToDJ = (djId: number) => {
   void router.push(`/djs/${djId}`);
+};
+
+const goToTeacher = (teacherId: number) => {
+  void router.push(`/teachers/${teacherId}`);
+};
+
+const openExternalLink = (url: string) => {
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 const loadEvent = async (done?: () => void) => {
@@ -936,8 +1080,9 @@ const loadEvent = async (done?: () => void) => {
 
   try {
     event.value = await eventService.getEvent(eventId);
-    // Load DJs after event is loaded
+    // Load DJs and Teachers after event is loaded
     loadDJs();
+    loadTeachers();
   } catch (err) {
     console.error('Error loading event:', err);
     error.value = 'Failed to load event';
@@ -999,13 +1144,40 @@ onMounted(loadEvent);
     }
   }
 
-  .dj-card {
+  .teacher-card {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    min-height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .full-height {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .q-card__section:last-of-type {
+      margin-top: auto;
+    }
+  }
+
+  .music-info-card {
     transition: all 0.2s ease;
-    min-height: 120px;
+    border-radius: 8px;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .q-card__section {
+      padding: 1.5rem;
     }
   }
 }

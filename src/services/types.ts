@@ -88,6 +88,7 @@ export interface EventDetails extends BaseEvent {
   // Embedded related data
   _embedded?: {
     djs?: DJ[];
+    teachers?: Teacher[];
     author?: unknown[];
     'wp:featuredmedia'?: unknown[];
     'wp:term'?: unknown[][];
