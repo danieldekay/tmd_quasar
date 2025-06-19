@@ -49,7 +49,7 @@
                   <div class="q-mb-md">
                     <q-input
                       :model-value="filters.searchQuery"
-                      @update:model-value="(val) => updateFilter('searchQuery', val || '')"
+                      @update:model-value="(val) => updateFilter('searchQuery', String(val || ''))"
                       label="Search events, cities, or countries"
                       dense
                       outlined
@@ -206,7 +206,7 @@
                 <div class="col-12">
                   <q-input
                     :model-value="filters.searchQuery"
-                    @update:model-value="(val) => updateFilter('searchQuery', val || '')"
+                    @update:model-value="(val) => updateFilter('searchQuery', String(val || ''))"
                     label="Search events, cities, or countries"
                     dense
                     outlined
