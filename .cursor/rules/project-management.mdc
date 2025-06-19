@@ -7,8 +7,8 @@ alwaysApply: true
 
 - This project is a frontend for a headless wordpress site.
 - Follow best practices for NUXT and frontend projects.
+- It is a Quasar App
 - We use pnpm package manager
-- We use vuetify and materio
 
 # What is TMD?
 - tangomarathons.com
@@ -21,6 +21,7 @@ alwaysApply: true
   - Keep them updated based on user feedback. Act as a good product owner and be very helpful for the user to tell you what he wants. The user's name is Daniel.
 - Do only one thing at a time.
 - Use *git-flow*, start and close new features, and regularly check code in after the user approves.
+- Don't check in code automatically. Do a code review, before you propose check-in.
 
 ## Quasar / Vue
 - when you create new pages, also add them to nav and add routes
