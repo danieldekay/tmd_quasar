@@ -458,7 +458,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { eventDetailsService as eventService, djService } from '../services';
+import { eventDetailsService as eventService } from '../services';
 import type { EventDetails, DJ } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 
@@ -873,18 +873,25 @@ const openInMaps = (lat: number, lon: number) => {
 };
 
 // DJ-related methods and computed properties
-const loadDJs = async () => {
+const loadDJs = () => {
   if (!event.value?.id) return;
 
   djsLoading.value = true;
   djsError.value = null;
   try {
-    const response = await djService.getDJs(
-      { event: event.value.id, per_page: 50 }, // Get up to 50 DJs for the event
-    );
-    djs.value = response.djs;
+    // Only use embedded DJs - the API cannot filter DJs by event
+    if (event.value._embedded?.djs && Array.isArray(event.value._embedded.djs)) {
+      djs.value = event.value._embedded.djs;
+      console.info(`Using ${djs.value.length} embedded DJs for event ${event.value.id}`);
+    } else {
+      // No embedded DJs means this event has no DJs
+      djs.value = [];
+      console.info(
+        `No embedded DJs found for event ${event.value.id} - event has no associated DJs`,
+      );
+    }
   } catch (err) {
-    console.error('Error loading DJs:', err);
+    console.error('Error loading DJ events:', err);
     djsError.value = 'Failed to load DJ information';
     djs.value = [];
     $q.notify({
@@ -930,7 +937,7 @@ const loadEvent = async (done?: () => void) => {
   try {
     event.value = await eventService.getEvent(eventId);
     // Load DJs after event is loaded
-    await loadDJs();
+    loadDJs();
   } catch (err) {
     console.error('Error loading event:', err);
     error.value = 'Failed to load event';

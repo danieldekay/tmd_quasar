@@ -553,6 +553,11 @@ import { useEventFilters } from '../composables/useEventFilters';
 const router = useRouter();
 const $q = useQuasar();
 
+// Validate $q object exists
+if (!$q || typeof $q.notify !== 'function') {
+  console.error('Quasar $q object not properly initialized:', $q);
+}
+
 // Mobile filter state
 const filtersExpanded = ref(false);
 
@@ -771,7 +776,7 @@ const loadEvents = async (page?: number, forceReload = false) => {
     updateCountrySet(response.events);
 
     if (forceReload) {
-      $q.notify({
+      $q?.notify?.({
         type: 'positive',
         message: 'Events refreshed successfully',
         position: 'top',
@@ -781,7 +786,7 @@ const loadEvents = async (page?: number, forceReload = false) => {
   } catch (err) {
     console.error('Error loading events:', err);
     state.value.error = 'Failed to load events';
-    $q.notify({
+    $q?.notify?.({
       type: 'negative',
       message: state.value.error,
       position: 'top',

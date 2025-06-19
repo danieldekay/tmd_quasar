@@ -85,6 +85,13 @@ export interface EventDetails extends BaseEvent {
   have_services?: boolean;
   service_options?: string;
   have_sales?: boolean;
+  // Embedded related data
+  _embedded?: {
+    djs?: DJ[];
+    author?: unknown[];
+    'wp:featuredmedia'?: unknown[];
+    'wp:term'?: unknown[][];
+  };
 }
 
 export interface DJ extends BaseEntity {
@@ -103,7 +110,8 @@ export interface DJ extends BaseEntity {
   };
   // Embedded related data
   _embedded?: {
-    related?: BaseEvent[][];
+    events?: BaseEvent[];
+    author?: unknown[];
   };
   // Meta fields from v3 API
   abstract?: string;
@@ -138,6 +146,11 @@ export interface Teacher extends BaseEntity {
     website: string;
     teaching_style: string;
   };
+  // Embedded related data
+  _embedded?: {
+    events?: BaseEvent[];
+    author?: unknown[];
+  };
 }
 
 export interface EventSeries extends BaseEntity {
@@ -150,6 +163,11 @@ export interface EventSeries extends BaseEntity {
     description: string;
     website: string;
     logo: string;
+  };
+  // Embedded related data
+  _embedded?: {
+    events?: BaseEvent[];
+    author?: unknown[];
   };
 }
 

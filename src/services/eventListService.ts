@@ -1,6 +1,33 @@
 import { api } from '../boot/axios';
 import type { EventListItem, EventParams, EventTaxonomies } from './types';
 
+/**
+ * Parse WordPress REST API response that might be an array or object with numeric keys
+ */
+const parseEventsResponse = (data: unknown): unknown[] => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (data && typeof data === 'object') {
+    // WordPress with _embed returns an object with numeric keys
+    const entries = Object.entries(data as Record<string, unknown>);
+    return entries
+      .filter(([key, value]) => {
+        // Filter out non-numeric keys (like _links)
+        return (
+          /^\d+$/.test(key) &&
+          typeof value === 'object' &&
+          value !== null &&
+          'id' in (value as Record<string, unknown>)
+        );
+      })
+      .map(([, value]) => value);
+  }
+
+  throw new Error('Invalid API response format');
+};
+
 // Only request meta fields that are actually used in the list view
 const LIST_META_FIELDS = [
   'start_date',
@@ -93,7 +120,8 @@ export const eventListService = {
         },
       });
 
-      const events = response.data as unknown[];
+      // Handle WordPress REST API with _embed returning object instead of array
+      const events = parseEventsResponse(response.data);
       const transformedEvents = events.map((event: unknown) =>
         transformRawEvent(event as Record<string, unknown>),
       );
@@ -142,7 +170,8 @@ export const eventListService = {
         },
       });
 
-      const events = response.data as unknown[];
+      // Handle WordPress REST API with _embed returning object instead of array
+      const events = parseEventsResponse(response.data);
       return events.map((event: unknown) => transformRawEvent(event as Record<string, unknown>));
     } catch (error) {
       console.error('API Error:', error);
@@ -165,7 +194,8 @@ export const eventListService = {
         },
       });
 
-      const events = response.data as unknown[];
+      // Handle WordPress REST API with _embed returning object instead of array
+      const events = parseEventsResponse(response.data);
       return events.map((event: unknown) => transformRawEvent(event as Record<string, unknown>));
     } catch (error) {
       console.error('API Error:', error);

@@ -535,7 +535,7 @@ const mainActivities = computed(() => [
     icon: 'run_circle',
     color: 'red',
     label: 'Tango Marathons',
-    description: 'DJing at tango marathons worldwide',
+    description: 'DJing at tango marathons',
     since: dj.value?.tmd_dj_activity_marathons_since,
   },
   {
@@ -543,7 +543,7 @@ const mainActivities = computed(() => [
     icon: 'celebration',
     color: 'purple',
     label: 'Tango Festivals',
-    description: 'Performing at major tango festivals',
+    description: 'DJing at tango festivals',
     since: dj.value?.tmd_dj_activity_festivals_since,
   },
   {
@@ -551,7 +551,7 @@ const mainActivities = computed(() => [
     icon: 'groups',
     color: 'blue',
     label: 'Encuentros',
-    description: 'DJing at intimate encuentro events',
+    description: 'DJing at  encuentro events',
     since: dj.value?.tmd_dj_activity_encuentros_since,
   },
   {
@@ -731,14 +731,15 @@ const eventsStats = computed(() => {
 });
 
 // Methods
-const loadDJEvents = async () => {
+const loadDJEvents = () => {
   if (!dj.value?.id) return;
 
   eventsLoading.value = true;
   try {
-    // Use the embedded events if available, otherwise fetch directly
-    if (dj.value._embedded?.related?.[0]) {
-      djEvents.value = dj.value._embedded.related[0];
+    // Use the embedded events if available
+    if (dj.value._embedded?.events && Array.isArray(dj.value._embedded.events)) {
+      djEvents.value = dj.value._embedded.events;
+      console.info(`Using ${djEvents.value.length} embedded events for DJ ${dj.value.id}`);
 
       // Validate embedded data quality
       const eventsWithoutCountry = djEvents.value.filter((e) => !e.country).length;
@@ -746,22 +747,9 @@ const loadDJEvents = async () => {
         console.warn(`${eventsWithoutCountry} events missing country data for DJ ${dj.value.id}`);
       }
     } else {
-      // Fetch events directly from the API
-      const response = await fetch(
-        `http://localhost:10014/wp-json/tmd/v3/events?dj=${dj.value.id}&per_page=100`,
-      );
-
-      if (response.ok) {
-        djEvents.value = await response.json();
-
-        // Validate fetched data quality
-        const eventsWithoutCountry = djEvents.value.filter((e) => !e.country).length;
-        if (eventsWithoutCountry > 0) {
-          console.warn(`${eventsWithoutCountry} events missing country data for DJ ${dj.value.id}`);
-        }
-      } else {
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
-      }
+      // No embedded events available - this DJ has no events
+      djEvents.value = [];
+      console.info(`No embedded events found for DJ ${dj.value.id} - DJ has no associated events`);
     }
   } catch (err) {
     console.error('Error loading DJ events:', err);
@@ -794,7 +782,7 @@ const loadDJ = async (done?: () => void) => {
   try {
     dj.value = await djService.getDJ(djId);
     // Load events after DJ is loaded
-    await loadDJEvents();
+    loadDJEvents();
   } catch (err) {
     console.error('Error loading DJ:', err);
     error.value = 'Failed to load DJ details';
