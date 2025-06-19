@@ -5,6 +5,17 @@ export interface BaseEntity {
   link: string;
 }
 
+export interface TaxonomyTerm {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+}
+
+export interface EventTaxonomies {
+  'event-categories-2020'?: TaxonomyTerm[];
+}
+
 export interface BaseEvent extends BaseEntity {
   start_date: string;
   end_date: string;
@@ -15,6 +26,7 @@ export interface BaseEvent extends BaseEntity {
   featured_image?: string;
   city?: string;
   country?: string;
+  taxonomies?: EventTaxonomies;
 }
 
 export interface EventListItem extends BaseEvent {

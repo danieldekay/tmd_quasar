@@ -25,8 +25,13 @@
                 <q-icon name="location_on" size="18px" class="q-mr-xs" />
                 {{ location }}
               </div>
-              <q-chip v-if="event.event_category" dense color="primary" text-color="white">
-                {{ event.event_category }}
+              <q-chip
+                v-if="getEventCategory(event.taxonomies)"
+                dense
+                color="primary"
+                text-color="white"
+              >
+                {{ getEventCategory(event.taxonomies) }}
               </q-chip>
             </div>
             <!-- Quick Stats Chips -->
@@ -336,7 +341,7 @@ const tab = ref<'overview' | 'details' | 'venue' | 'contact'>('overview');
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
-const { formatDate } = useFormatters();
+const { formatDate, getEventCategory } = useFormatters();
 
 const formattedDates = computed(() => {
   if (!event.value) return '';
@@ -439,6 +444,13 @@ const eventInfoItems = computed(() => [
     color: 'primary',
     label: 'Duration',
     value: formattedDates.value,
+  },
+  {
+    show: !!getEventCategory(event.value?.taxonomies),
+    icon: 'category',
+    color: 'primary',
+    label: 'Category',
+    value: getEventCategory(event.value?.taxonomies),
   },
   {
     show: !!location.value,

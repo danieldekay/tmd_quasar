@@ -2,7 +2,12 @@
   <q-page padding>
     <div class="row q-col-gutter-lg">
       <div class="col-12">
-        <h1 class="text-h4 q-mb-lg">Events</h1>
+        <h1 class="text-h4 q-mb-lg">
+          Events
+          <span v-if="!showPastEvents" class="text-subtitle2 text-grey-6">
+            (Future Events Only)
+          </span>
+        </h1>
       </div>
 
       <!-- Filter Controls Section -->
@@ -355,8 +360,11 @@
               >
                 <q-card-section>
                   <div class="text-h6 event-title">{{ event.title }}</div>
-                  <div class="text-caption text-grey-6 q-mb-sm" v-if="event.event_category">
-                    {{ event.event_category }}
+                  <div
+                    class="text-caption text-grey-6 q-mb-sm"
+                    v-if="getEventCategory(event.taxonomies)"
+                  >
+                    {{ getEventCategory(event.taxonomies) }}
                   </div>
 
                   <div class="row q-col-gutter-sm q-mb-sm">
@@ -387,12 +395,12 @@
                         {{ event.venue_name }}
                       </div>
                     </div>
-                    <div class="col-auto">
+                    <div class="col-auto" v-if="getEventCategory(event.taxonomies)">
                       <q-chip
-                        :color="getRegistrationStatusColor(event)"
+                        color="primary"
                         text-color="white"
                         size="sm"
-                        :label="getRegistrationStatus(event)"
+                        :label="getEventCategory(event.taxonomies)"
                       />
                     </div>
                   </div>
@@ -454,16 +462,15 @@
                         {{ props.row.venue_name }}
                       </div>
                     </q-td>
-                    <q-td key="duration" :props="props">
-                      {{ getEventDuration(props.row.start_date, props.row.end_date) }}
-                    </q-td>
-                    <q-td key="status" :props="props">
+                    <q-td key="category" :props="props">
                       <q-chip
-                        :color="getRegistrationStatusColor(props.row)"
+                        v-if="getEventCategory(props.row.taxonomies)"
+                        color="primary"
                         text-color="white"
                         size="sm"
-                        :label="getRegistrationStatus(props.row)"
+                        :label="getEventCategory(props.row.taxonomies)"
                       />
+                      <span v-else class="text-grey-5">—</span>
                     </q-td>
                   </q-tr>
                 </template>
@@ -559,46 +566,9 @@ const getCountryName = (code: string): string => {
 };
 
 // Use shared formatters
-const { formatDate, formatLocation } = useFormatters();
+const { formatDate, formatLocation, getEventCategory } = useFormatters();
 
 // Helper functions for better data display
-const getEventDuration = (startDate: string, endDate: string): string => {
-  if (!startDate) return 'Unknown';
-  if (!endDate || endDate === startDate) return '1 day';
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-  return `${diffDays} days`;
-};
-
-const getRegistrationStatus = (event: EventListItem): string => {
-  if (!event.registration_start_date) return 'TBD';
-
-  const now = new Date();
-  const regStart = new Date(event.registration_start_date);
-  const eventStart = new Date(event.start_date);
-
-  if (now < regStart) return 'Soon';
-  if (now < eventStart) return 'Open';
-  return 'Closed';
-};
-
-const getRegistrationStatusColor = (event: EventListItem): string => {
-  const status = getRegistrationStatus(event);
-  switch (status) {
-    case 'Open':
-      return 'positive';
-    case 'Soon':
-      return 'warning';
-    case 'Closed':
-      return 'negative';
-    default:
-      return 'grey';
-  }
-};
 
 // Keep a master list of all countries we have encountered
 const allCountries = ref<Set<string>>(new Set());
@@ -652,20 +622,12 @@ const columns: EventTableColumn[] = [
     style: 'width: 20%;',
   },
   {
-    name: 'duration',
-    label: 'Duration',
-    field: (row: EventListItem) => getEventDuration(row.start_date, row.end_date),
+    name: 'category',
+    label: 'Category',
+    field: (row: EventListItem) => getEventCategory(row.taxonomies),
     sortable: true,
     align: 'center',
-    style: 'width: 10%;',
-  },
-  {
-    name: 'status',
-    label: 'Status',
-    field: (row: EventListItem) => getRegistrationStatus(row),
-    sortable: true,
-    align: 'center',
-    style: 'width: 10%;',
+    style: 'width: 15%;',
   },
 ];
 
@@ -801,7 +763,14 @@ const filteredEvents = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
 
-  return events.filter((event: EventListItem) => {
+  console.log('Filtering events:', {
+    totalEvents: events.length,
+    showPastEvents: showPastEvents.value,
+    searchQuery: state.value.searchQuery,
+    today: today.toISOString().split('T')[0],
+  });
+
+  const filtered = events.filter((event: EventListItem) => {
     // Filter by search query
     const matchesSearch =
       !state.value.searchQuery ||
@@ -814,13 +783,34 @@ const filteredEvents = computed(() => {
         .includes(state.value.searchQuery.toLowerCase());
 
     // Filter by date (show only future events unless showPastEvents is true)
-    const eventDate = new Date(event.start_date);
-    eventDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
-    const isFutureEvent = eventDate >= today;
-    const matchesDateFilter = showPastEvents.value || isFutureEvent;
+    let matchesDateFilter = true;
+    if (!showPastEvents.value) {
+      // Only show future events (default behavior)
+      const eventDate = new Date(event.start_date);
+      if (eventDate && !isNaN(eventDate.getTime())) {
+        eventDate.setHours(0, 0, 0, 0);
+        matchesDateFilter = eventDate >= today;
+      } else {
+        console.warn('Invalid event date:', event.start_date, 'for event:', event.title);
+        matchesDateFilter = false; // Exclude events with invalid dates
+      }
+    }
 
-    return matchesSearch && matchesDateFilter;
+    const result = matchesSearch && matchesDateFilter;
+    if (!result) {
+      console.log('Filtered out event:', {
+        title: event.title,
+        start_date: event.start_date,
+        matchesSearch,
+        matchesDateFilter,
+      });
+    }
+
+    return result;
   });
+
+  console.log('Filtered events:', filtered.length);
+  return filtered;
 });
 
 // Custom sort function for the table
@@ -850,13 +840,9 @@ const customSort = (
           aVal = formatLocation(a.city, a.country).toLowerCase();
           bVal = formatLocation(b.city, b.country).toLowerCase();
           break;
-        case 'status':
-          aVal = getRegistrationStatus(a);
-          bVal = getRegistrationStatus(b);
-          break;
-        case 'duration':
-          aVal = getEventDuration(a.start_date, a.end_date);
-          bVal = getEventDuration(b.start_date, b.end_date);
+        case 'category':
+          aVal = getEventCategory(a.taxonomies).toLowerCase();
+          bVal = getEventCategory(b.taxonomies).toLowerCase();
           break;
         default:
           aVal = (a[sortBy as keyof EventListItem] as string) || '';
@@ -899,6 +885,7 @@ const loadEvents = async () => {
       page: state.value.pagination.page,
       perPage: state.value.pagination.rowsPerPage,
     });
+    console.log('Loaded events:', events.length, events);
     state.value.events = events;
     updateCountrySet(events);
     state.value.pagination.rowsNumber = events.length;

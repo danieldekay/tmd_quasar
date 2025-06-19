@@ -11,6 +11,8 @@ alwaysApply: true
 
       Quasar
       - When adding a new page, also update the router
+      - Run a linter
+      - Don't run a server automatically, the user has the server usually running in the terminal
       
       Code Style and Structure
       - Write concise, technical TypeScript code with accurate examples.

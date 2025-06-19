@@ -1,3 +1,5 @@
+import type { EventTaxonomies } from '../services/types';
+
 export const useFormatters = () => {
   /**
    * Format a date-like value to ISO YYYY-MM-DD (empty string on failure)
@@ -23,8 +25,22 @@ export const useFormatters = () => {
     return '—';
   };
 
+  /**
+   * Extract event category names from taxonomies
+   */
+  const getEventCategory = (taxonomies?: EventTaxonomies): string => {
+    if (!taxonomies || !taxonomies['event-categories-2020']) return '';
+
+    const categories = taxonomies['event-categories-2020'];
+    if (!Array.isArray(categories) || categories.length === 0) return '';
+
+    // Return the first category name, or join multiple categories with commas
+    return categories.map((cat) => cat.name).join(', ');
+  };
+
   return {
     formatDate,
     formatLocation,
+    getEventCategory,
   };
 };
