@@ -88,7 +88,12 @@ export interface EventDetails extends BaseEvent {
 }
 
 export interface DJ extends BaseEntity {
-  content: {
+  slug?: string;
+  date_gmt?: string;
+  modified?: string;
+  modified_gmt?: string;
+  status?: string;
+  content?: {
     rendered: string;
   };
   acf?: {
@@ -96,6 +101,27 @@ export interface DJ extends BaseEntity {
     photo: string;
     website: string;
   };
+  // Meta fields from v3 API
+  abstract?: string;
+  gender?: string;
+  tmd_dj_about_the_dj?: string;
+  tmd_dj_activity_encuentros?: string;
+  tmd_dj_activity_encuentros_since?: string;
+  tmd_dj_activity_festivals?: string;
+  tmd_dj_activity_festivals_since?: string;
+  tmd_dj_activity_marathons?: string;
+  tmd_dj_activity_marathons_since?: string;
+  tmd_dj_activity_milongas?: string;
+  tmd_dj_activity_milongas_since?: string;
+  tmd_dj_activity_milongas_travel?: string;
+  tmd_dj_activity_milongas_travel_since?: string;
+  tmd_dj_city?: string;
+  tmd_dj_country?: string;
+  tmd_dj_e_mail?: string;
+  tmd_dj_link_to_facebook?: string;
+  tmd_dj_link_to_facebook_page?: string;
+  tmd_dj_name?: string;
+  tmd_dj_webpage?: string;
 }
 
 export interface Teacher extends BaseEntity {

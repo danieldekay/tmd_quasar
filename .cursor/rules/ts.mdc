@@ -3,9 +3,12 @@ description:
 globs: *.ts
 alwaysApply: false
 ---
-Automatically fix before finishing a task
-- type errors
-- import errors
-- all errors
+# Code Quality
 
-Run `pnpm lint`to check for errors
+- Run `pnpm lint`to check for errors
+- Always check for and handle undefined values when dealing with optional properties (property?: type). Use null coalescing operators (||, ??) or explicit checks to provide default values before assignment to non-nullable types.
+
+
+# Rules
+
+- Always check for and handle undefined values when dealing with optional properties (property?: type). Use null coalescing operators (||, ??) or explicit checks to provide default values before assignment to non-nullable types.
