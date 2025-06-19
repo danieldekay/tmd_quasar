@@ -394,17 +394,73 @@
                     <div class="text-h6 q-mb-md">Location Map</div>
                     <div
                       class="map-container"
-                      style="height: 300px; border-radius: 8px; overflow: hidden"
+                      style="
+                        height: 300px;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        position: relative;
+                        cursor: pointer;
+                      "
+                      @click="openInMaps(event.lat!, event.lon!)"
                     >
+                      <!-- Use Google Maps embed without API key -->
                       <iframe
-                        :src="`https://www.openstreetmap.org/export/embed.html?bbox=${event.lon! - 0.01},${event.lat! - 0.01},${event.lon! + 0.01},${event.lat! + 0.01}&layer=mapnik&marker=${event.lat},${event.lon}`"
+                        v-if="!mapImageError"
+                        :src="`https://maps.google.com/maps?q=${event.lat},${event.lon}&hl=en&z=8&output=embed`"
                         width="100%"
                         height="300"
-                        frameborder="0"
-                        scrolling="no"
-                        style="border: 0"
+                        style="border: 0; border-radius: 8px"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
                         title="Event Location Map"
+                        @error="handleMapImageError"
                       ></iframe>
+
+                      <!-- Fallback display when iframe fails -->
+                      <div
+                        v-if="mapImageError"
+                        class="fallback-map bg-grey-2 column items-center justify-center text-center q-pa-lg"
+                        style="width: 100%; height: 100%; border-radius: 8px"
+                      >
+                        <q-icon name="location_on" size="4em" color="primary" class="q-mb-md" />
+                        <div class="text-h6 text-primary q-mb-sm">
+                          {{ event.city }}, {{ event.country }}
+                        </div>
+                        <div class="text-body2 text-grey-7 q-mb-md" v-if="fullAddress">
+                          <strong>{{ fullAddress }}</strong>
+                        </div>
+                        <div class="text-caption text-grey-6 q-mb-md">
+                          {{ formattedCoordinates }}
+                        </div>
+                        <q-btn
+                          color="primary"
+                          icon="open_in_new"
+                          label="Open in Maps"
+                          @click.stop="openInMaps(event.lat!, event.lon!)"
+                        />
+                      </div>
+
+                      <!-- Interactive overlay for successful iframe -->
+                      <div
+                        v-if="!mapImageError"
+                        class="map-click-overlay absolute-full"
+                        style="background: transparent; z-index: 10"
+                        @click="openInMaps(event.lat!, event.lon!)"
+                      >
+                        <div class="absolute-bottom-right q-ma-sm">
+                          <q-btn
+                            round
+                            size="sm"
+                            color="white"
+                            text-color="primary"
+                            icon="open_in_new"
+                            class="shadow-2"
+                            @click.stop="openInMaps(event.lat!, event.lon!)"
+                          >
+                            <q-tooltip>Open in Maps</q-tooltip>
+                          </q-btn>
+                        </div>
+                      </div>
                     </div>
                     <div class="q-mt-sm text-center">
                       <q-btn
@@ -553,6 +609,9 @@ const teachers = ref<Teacher[]>([]);
 const teachersLoading = ref(false);
 const teachersError = ref<string | null>(null);
 
+// Map-related state
+const mapImageError = ref(false);
+
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
 const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
@@ -596,6 +655,15 @@ const fullAddress = computed(() => {
     event.value.country,
   ].filter(Boolean);
   return parts.join(', ');
+});
+
+const formattedCoordinates = computed(() => {
+  if (!event.value?.lat || !event.value?.lon) return '';
+  const lat = Math.abs(event.value.lat);
+  const lon = Math.abs(event.value.lon);
+  const latDir = event.value.lat >= 0 ? 'N' : 'S';
+  const lonDir = event.value.lon >= 0 ? 'E' : 'W';
+  return `Lat: ${lat.toFixed(4)}°${latDir}, Lon: ${lon.toFixed(4)}°${lonDir}`;
 });
 
 // Hero chips configuration
@@ -858,7 +926,7 @@ const venueDetails = computed(() => [
     icon: 'gps_fixed',
     color: 'primary',
     label: 'Coordinates',
-    value: `${event.value?.lat}, ${event.value?.lon}`,
+    value: formattedCoordinates.value,
     action: {
       icon: 'map',
       title: 'Open in Maps',
@@ -939,6 +1007,11 @@ const hasContactInfo = computed(
 const openInMaps = (lat: number, lon: number) => {
   const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
   window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+};
+
+// Map error handling
+const handleMapImageError = () => {
+  mapImageError.value = true;
 };
 
 // DJ-related methods and computed properties
@@ -1227,6 +1300,16 @@ onMounted(loadEvent);
       border: none;
       border-top: 1px solid rgba(0, 0, 0, 0.12);
     }
+  }
+
+  .map-container {
+    &:hover .map-click-overlay {
+      background: rgba(0, 0, 0, 0.02) !important;
+    }
+  }
+
+  .map-click-overlay {
+    transition: background 0.3s ease;
   }
 
   .teacher-card {
