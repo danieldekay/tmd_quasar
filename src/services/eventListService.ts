@@ -34,14 +34,6 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
   // WordPress might store meta fields under a 'meta' or 'acf' property, or directly on the event
   const meta = (rawEvent.meta || rawEvent.acf || {}) as Record<string, unknown>;
 
-  console.log('Transforming raw event:', {
-    id: rawEvent.id,
-    title: rawEvent.title,
-    meta_keys: Object.keys(meta),
-    start_date_raw: rawEvent.start_date,
-    start_date_meta: meta.start_date,
-  });
-
   const result: EventListItem = {
     id: Number(rawEvent.id) || 0,
     title: getString(rawEvent.title),
@@ -72,7 +64,6 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
     taxonomies: rawEvent.taxonomies as EventTaxonomies,
   };
 
-  console.log('Transformed event:', result);
   return result;
 };
 

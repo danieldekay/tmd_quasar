@@ -763,13 +763,6 @@ const filteredEvents = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
 
-  console.log('Filtering events:', {
-    totalEvents: events.length,
-    showPastEvents: showPastEvents.value,
-    searchQuery: state.value.searchQuery,
-    today: today.toISOString().split('T')[0],
-  });
-
   const filtered = events.filter((event: EventListItem) => {
     // Filter by search query
     const matchesSearch =
@@ -796,20 +789,9 @@ const filteredEvents = computed(() => {
       }
     }
 
-    const result = matchesSearch && matchesDateFilter;
-    if (!result) {
-      console.log('Filtered out event:', {
-        title: event.title,
-        start_date: event.start_date,
-        matchesSearch,
-        matchesDateFilter,
-      });
-    }
-
-    return result;
+    return matchesSearch && matchesDateFilter;
   });
 
-  console.log('Filtered events:', filtered.length);
   return filtered;
 });
 
@@ -885,7 +867,6 @@ const loadEvents = async () => {
       page: state.value.pagination.page,
       perPage: state.value.pagination.rowsPerPage,
     });
-    console.log('Loaded events:', events.length, events);
     state.value.events = events;
     updateCountrySet(events);
     state.value.pagination.rowsNumber = events.length;
