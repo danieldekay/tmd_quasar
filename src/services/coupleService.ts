@@ -1,24 +1,24 @@
 import { BaseService } from './baseService';
-import type { EventSeries } from './types';
+import type { Couple } from './types';
 import type { BaseParams } from './baseService';
 
-export interface EventSeriesParams extends BaseParams {
+export interface CoupleParams extends BaseParams {
   country?: string;
   orderby?: string;
   order?: 'asc' | 'desc';
 }
 
-class EventSeriesService extends BaseService<EventSeries> {
+class CoupleService extends BaseService<Couple> {
   constructor() {
-    super('/event-series', {
+    super('/couples', {
       _embed: false, // Disable embeds for better performance by default
     });
   }
 
   /**
-   * Get event series with enhanced filtering and pagination
+   * Get couples with enhanced filtering and pagination
    */
-  async getEventSeries(params: EventSeriesParams = {}, signal?: AbortSignal) {
+  async getCouples(params: CoupleParams = {}, signal?: AbortSignal) {
     const response = await this.getAll(params, signal);
 
     // Return just the data array like the DJ service does
@@ -26,12 +26,12 @@ class EventSeriesService extends BaseService<EventSeries> {
   }
 
   /**
-   * Get a single event series with full metadata
+   * Get a single couple with full metadata
    */
-  async getEventSeriesById(id: number, signal?: AbortSignal): Promise<EventSeries> {
+  async getCouple(id: number, signal?: AbortSignal): Promise<Couple> {
     return this.getById(id, { _embed: true }, signal);
   }
 }
 
 // Export singleton instance to maintain compatibility with existing code
-export const eventSeriesService = new EventSeriesService();
+export const coupleService = new CoupleService();

@@ -4,6 +4,7 @@ export * from './baseService';
 // Service implementations
 export * from './djService';
 export * from './teacherService';
+export * from './coupleService';
 export * from './eventService';
 export * from './eventListService';
 export * from './eventDetailsService';

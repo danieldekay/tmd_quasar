@@ -167,6 +167,27 @@ export interface Teacher extends BaseEntity {
   };
 }
 
+export interface Couple extends BaseEntity {
+  slug?: string;
+  date_gmt?: string;
+  modified?: string;
+  modified_gmt?: string;
+  status?: string;
+  city?: string;
+  country?: string;
+  leader_id?: number;
+  leader_name?: string;
+  follower_id?: number;
+  follower_name?: string;
+  // Embedded related data
+  _embedded?: {
+    events?: BaseEvent[];
+    leader?: Teacher[];
+    follower?: Teacher[];
+    author?: unknown[];
+  };
+}
+
 export interface EventSeries extends BaseEntity {
   start_date?: string;
   registration_start_date?: string;
