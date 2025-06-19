@@ -1,5 +1,14 @@
 # TMD v3 API Documentation
 
+## GraphQL
+
+### JSON API Documentation Endpoints
+
+- /wp-json/tmd/v1/graphql/docs - Complete API documentation in JSON format
+- /wp-json/tmd/v1/graphql/schema - Schema introspection endpoint
+
+Both endpoints are publicly accessible and provide comprehensive information about your GraphQL API
+
 ## Events Endpoint
 
 Base URL: `http://localhost:10014/wp-json/tmd/v3/events`
