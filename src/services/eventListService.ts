@@ -1,5 +1,6 @@
-import { api } from '../boot/axios';
+import { BaseService } from './baseService';
 import type { EventListItem, EventParams, EventTaxonomies } from './types';
+import type { BaseParams } from './baseService';
 
 /**
  * Parse WordPress REST API response that might be an array or object with numeric keys
@@ -103,55 +104,68 @@ export interface PaginatedEventsResponse {
   hasPrevPage: boolean;
 }
 
-export const eventListService = {
+export interface ExtendedEventParams extends BaseParams, EventParams {}
+
+class EventListService extends BaseService<EventListItem> {
+  constructor() {
+    super('/events', {
+      meta_fields: LIST_META_FIELDS,
+      include_taxonomies: true,
+      _embed: true,
+    });
+  }
+
+  /**
+   * Override makeRequest to handle WordPress quirks and transformations
+   */
+  protected override async makeRequest<R = EventListItem>(
+    path: string,
+    params: BaseParams = {},
+    signal?: AbortSignal,
+  ): Promise<{ data: R; headers: Record<string, string> }> {
+    const response = await super.makeRequest<unknown>(path, params, signal);
+
+    // Handle WordPress REST API with _embed returning object instead of array
+    const events = parseEventsResponse(response.data);
+    const transformedEvents = events.map((event: unknown) =>
+      transformRawEvent(event as Record<string, unknown>),
+    );
+
+    return {
+      data: transformedEvents as R,
+      headers: response.headers,
+    };
+  }
+
   /**
    * Fetch events with server-side pagination and filtering
    */
-  async getEvents(params: EventParams = {}): Promise<PaginatedEventsResponse> {
-    try {
-      const response = await api.get('/events', {
-        params: {
-          meta_fields: LIST_META_FIELDS,
-          include_taxonomies: true,
-          _embed: true,
-          per_page: params.perPage || 20,
-          page: params.page || 1,
-          ...params,
-        },
-      });
+  async getEvents(params: ExtendedEventParams = {}): Promise<PaginatedEventsResponse> {
+    const requestParams = {
+      per_page: params.perPage || 20,
+      page: params.page || 1,
+      ...params,
+    };
 
-      // Handle WordPress REST API with _embed returning object instead of array
-      const events = parseEventsResponse(response.data);
-      const transformedEvents = events.map((event: unknown) =>
-        transformRawEvent(event as Record<string, unknown>),
-      );
+    const response = await this.getAll(requestParams);
 
-      // Extract pagination info from headers (WordPress REST API standard)
-      const totalCount = parseInt(response.headers['x-wp-total'] || '0', 10);
-      const totalPages = parseInt(response.headers['x-wp-totalpages'] || '1', 10);
-      const currentPage = params.page || 1;
-
-      return {
-        events: transformedEvents,
-        totalCount,
-        totalPages,
-        currentPage,
-        hasNextPage: currentPage < totalPages,
-        hasPrevPage: currentPage > 1,
-      };
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  },
+    return {
+      events: response.data,
+      totalCount: response.totalCount,
+      totalPages: response.totalPages,
+      currentPage: response.currentPage,
+      hasNextPage: response.hasNextPage,
+      hasPrevPage: response.hasPrevPage,
+    };
+  }
 
   /**
    * Fetch events for backward compatibility (returns just the events array)
    */
-  async getEventsLegacy(params: EventParams = {}): Promise<EventListItem[]> {
+  async getEventsLegacy(params: ExtendedEventParams = {}): Promise<EventListItem[]> {
     const response = await this.getEvents(params);
     return response.events;
-  },
+  }
 
   /**
    * Fetch additional pages for infinite scrolling / pagination.
@@ -160,46 +174,22 @@ export const eventListService = {
     page: number,
     params: Record<string, unknown> = {},
   ): Promise<EventListItem[]> {
-    try {
-      const response = await api.get('/events', {
-        params: {
-          meta_fields: LIST_META_FIELDS,
-          include_taxonomies: true,
-          page,
-          ...params,
-        },
-      });
-
-      // Handle WordPress REST API with _embed returning object instead of array
-      const events = parseEventsResponse(response.data);
-      return events.map((event: unknown) => transformRawEvent(event as Record<string, unknown>));
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  },
+    return this.loadMore(page, params);
+  }
 
   /**
    * Search events by query
    */
-  async searchEvents(query: string, params: EventParams = {}): Promise<EventListItem[]> {
-    try {
-      const response = await api.get('/events', {
-        params: {
-          search: query,
-          per_page: params.perPage || 10,
-          page: params.page || 1,
-          meta_fields: LIST_META_FIELDS,
-          _embed: true,
-        },
-      });
+  async searchEvents(query: string, params: ExtendedEventParams = {}): Promise<EventListItem[]> {
+    const searchParams = {
+      per_page: params.perPage || 10,
+      page: params.page || 1,
+      ...params,
+    };
 
-      // Handle WordPress REST API with _embed returning object instead of array
-      const events = parseEventsResponse(response.data);
-      return events.map((event: unknown) => transformRawEvent(event as Record<string, unknown>));
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  },
-};
+    return this.searchLegacy(query, searchParams);
+  }
+}
+
+// Export singleton instance to maintain compatibility with existing code
+export const eventListService = new EventListService();

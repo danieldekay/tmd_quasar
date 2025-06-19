@@ -1,33 +1,27 @@
-import { api } from '../boot/axios';
+import { BaseService } from './baseService';
 import type { Teacher } from './types';
 
-export const teacherService = {
-  async getTeachers(params = {}) {
-    try {
-      const response = await api.get('/teachers', {
-        params: {
-          _embed: true,
-          ...params,
-        },
-      });
-      return response.data as Teacher[];
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  },
+class TeacherService extends BaseService<Teacher> {
+  constructor() {
+    super('/teachers', {
+      _embed: true,
+    });
+  }
 
+  /**
+   * Get all teachers (legacy method name for compatibility)
+   */
+  async getTeachers(params = {}) {
+    return this.getAllLegacy(params);
+  }
+
+  /**
+   * Get a single teacher (legacy method name for compatibility)
+   */
   async getTeacher(id: number) {
-    try {
-      const response = await api.get(`/teachers/${id}`, {
-        params: {
-          _embed: true,
-        },
-      });
-      return response.data as Teacher;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  },
-};
+    return this.getById(id);
+  }
+}
+
+// Export singleton instance to maintain compatibility with existing code
+export const teacherService = new TeacherService();

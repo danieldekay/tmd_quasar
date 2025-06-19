@@ -1,6 +1,6 @@
-import { api } from '../boot/axios';
+import { BaseService } from './baseService';
 import type { DJ } from './types';
-import type { AxiosRequestConfig } from 'axios';
+import type { BaseParams } from './baseService';
 
 // Essential meta fields for table view (reduced from 20 to 8 for better performance)
 const ESSENTIAL_DJ_META_FIELDS = [
@@ -38,77 +38,58 @@ const ALL_DJ_META_FIELDS = [
   'tmd_dj_webpage',
 ].join(',');
 
-export interface DJParams {
-  page?: number;
-  per_page?: number;
-  search?: string;
+export interface DJParams extends BaseParams {
   country?: string;
   event?: number;
   orderby?: string;
   order?: 'asc' | 'desc';
 }
 
-export const djService = {
+class DJService extends BaseService<DJ> {
+  constructor() {
+    super('/djs', {
+      _embed: false, // Disable embeds for better performance by default
+      meta_fields: ESSENTIAL_DJ_META_FIELDS, // Use essential fields only by default
+    });
+  }
+
+  /**
+   * Get DJs with enhanced filtering and pagination
+   */
   async getDJs(params: DJParams = {}, signal?: AbortSignal) {
-    try {
-      const apiParams: Record<string, string | number | boolean> = {
-        _embed: false, // Disable embeds for better performance
-        meta_fields: ESSENTIAL_DJ_META_FIELDS, // Use essential fields only
-      };
+    const apiParams = { ...params };
 
-      // Handle country filtering using meta_key/meta_value
-      if (params.country) {
-        apiParams.meta_key = 'tmd_dj_country';
-        apiParams.meta_value = params.country;
-      }
-
-      // Add other parameters
-      if (params.page) apiParams.page = params.page;
-      if (params.per_page) apiParams.per_page = params.per_page;
-      if (params.search) apiParams.search = params.search;
-      if (params.event) apiParams.event = params.event;
-      if (params.orderby) apiParams.orderby = params.orderby;
-      if (params.order) apiParams.order = params.order;
-
-      const requestConfig: AxiosRequestConfig = {
-        params: apiParams,
-      };
-
-      if (signal) {
-        requestConfig.signal = signal;
-      }
-
-      const response = await api.get('/djs', requestConfig);
-
-      return {
-        djs: response.data as DJ[],
-        totalPages: parseInt(response.headers['x-wp-totalpages'] || '1'),
-        total: parseInt(response.headers['x-wp-total'] || '0'),
-      };
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+    // Handle country filtering using meta_key/meta_value
+    if (params.country) {
+      apiParams.meta_key = 'tmd_dj_country';
+      apiParams.meta_value = params.country;
+      delete apiParams.country; // Remove country from params to avoid conflicts
     }
-  },
 
-  async getDJ(id: number, signal?: AbortSignal) {
-    try {
-      const requestConfig: AxiosRequestConfig = {
-        params: {
-          _embed: true, // Full embeds for detail view
-          meta_fields: ALL_DJ_META_FIELDS, // All fields for detail view
-        },
-      };
+    const response = await this.getAll(apiParams, signal);
 
-      if (signal) {
-        requestConfig.signal = signal;
-      }
+    // Return in the expected legacy format
+    return {
+      djs: response.data,
+      totalPages: response.totalPages,
+      total: response.totalCount,
+    };
+  }
 
-      const response = await api.get(`/djs/${id}`, requestConfig);
-      return response.data as DJ;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  },
-};
+  /**
+   * Get a single DJ with full metadata
+   */
+  async getDJ(id: number, signal?: AbortSignal): Promise<DJ> {
+    return this.getById(
+      id,
+      {
+        _embed: true, // Full embeds for detail view
+        meta_fields: ALL_DJ_META_FIELDS, // All fields for detail view
+      },
+      signal,
+    );
+  }
+}
+
+// Export singleton instance to maintain compatibility with existing code
+export const djService = new DJService();
