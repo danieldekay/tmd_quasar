@@ -246,7 +246,7 @@ Required environment variables:
 
 ### 6.2 Development Configuration
 
-- Port: 3000 (development)
+- Port: 9000 (development) - Quasar
 - Host: localhost
 - Target: Client-side rendering with SSR support
 - **Cookie Settings**: 30-day expiry for filter persistence
