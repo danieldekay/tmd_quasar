@@ -235,56 +235,59 @@
                       </div>
                     </div>
 
-                    <!-- Additional Music Info -->
-                    <div v-if="djs.length > 0" class="q-mt-xl">
+                    <!-- Event Features -->
+                    <div class="q-mt-xl">
                       <q-separator class="q-mb-lg" />
                       <div class="text-h6 q-mb-md">
-                        <q-icon name="audiotrack" class="q-mr-sm" />
-                        Music Information
+                        <q-icon name="featured_play_list" class="q-mr-sm" />
+                        Event Features
                       </div>
                       <div class="row q-col-gutter-md">
-                        <div v-if="event.music_hours" class="col-12 col-sm-6 col-md-4">
-                          <q-card flat bordered class="music-info-card">
-                            <q-card-section class="text-center">
-                              <q-icon
-                                name="schedule"
-                                color="primary"
-                                size="2.5em"
-                                class="q-mb-sm"
-                              />
-                              <div class="text-h6 text-weight-bold">
-                                {{ event.music_hours }} Hours
-                              </div>
-                              <div class="text-caption text-grey-6">of dancing music</div>
-                            </q-card-section>
-                          </q-card>
-                        </div>
-                        <div
-                          v-if="event.meta_box?.have_live_music"
-                          class="col-12 col-sm-6 col-md-4"
-                        >
-                          <q-card flat bordered class="music-info-card">
-                            <q-card-section class="text-center">
-                              <q-icon name="campaign" color="red" size="2.5em" class="q-mb-sm" />
-                              <div class="text-h6 text-weight-bold">Live Music</div>
-                              <div class="text-caption text-grey-6">orchestras & musicians</div>
-                            </q-card-section>
-                          </q-card>
-                        </div>
-                        <div v-if="event.have_non_tango" class="col-12 col-sm-6 col-md-4">
-                          <q-card flat bordered class="music-info-card">
-                            <q-card-section class="text-center">
-                              <q-icon
-                                name="music_video"
-                                color="teal"
-                                size="2.5em"
-                                class="q-mb-sm"
-                              />
-                              <div class="text-h6 text-weight-bold">Mixed Styles</div>
-                              <div class="text-caption text-grey-6">beyond traditional tango</div>
-                            </q-card-section>
-                          </q-card>
-                        </div>
+                        <!-- Music Features -->
+                        <template v-for="feature in musicFeatures" :key="feature.key">
+                          <div v-if="feature.show" class="col-12 col-sm-6 col-md-4">
+                            <q-card flat bordered class="music-info-card">
+                              <q-card-section class="text-center">
+                                <q-icon
+                                  :name="feature.icon"
+                                  :color="feature.available ? feature.color : 'grey-5'"
+                                  size="2.5em"
+                                  class="q-mb-sm"
+                                />
+                                <div class="text-h6 text-weight-bold">{{ feature.title }}</div>
+                                <div
+                                  class="text-caption"
+                                  :class="feature.available ? 'text-grey-6' : 'text-grey-5'"
+                                >
+                                  {{ feature.description }}
+                                </div>
+                              </q-card-section>
+                            </q-card>
+                          </div>
+                        </template>
+
+                        <!-- Other Features -->
+                        <template v-for="feature in otherFeatures" :key="feature.key">
+                          <div v-if="feature.show" class="col-12 col-sm-6 col-md-4">
+                            <q-card flat bordered class="music-info-card">
+                              <q-card-section class="text-center">
+                                <q-icon
+                                  :name="feature.icon"
+                                  :color="feature.available ? feature.color : 'grey-5'"
+                                  size="2.5em"
+                                  class="q-mb-sm"
+                                />
+                                <div class="text-h6 text-weight-bold">{{ feature.title }}</div>
+                                <div
+                                  class="text-caption"
+                                  :class="feature.available ? 'text-grey-6' : 'text-grey-5'"
+                                >
+                                  {{ feature.description }}
+                                </div>
+                              </q-card-section>
+                            </q-card>
+                          </div>
+                        </template>
                       </div>
                     </div>
                   </q-card-section>
@@ -604,19 +607,19 @@ const heroChips = computed(() => [
     label: 'Milongas',
   },
   {
-    show: event.value?.meta_box?.have_live_music,
+    show: isFeatureAvailable(event.value?.have_live_music),
     icon: 'campaign',
     color: 'accent',
     label: 'Live Music',
   },
   {
-    show: event.value?.meta_box?.have_lessons,
+    show: isFeatureAvailable(event.value?.have_lessons),
     icon: 'school',
     color: 'secondary',
     label: 'Lessons',
   },
   {
-    show: event.value?.meta_box?.have_show,
+    show: isFeatureAvailable(event.value?.have_show),
     icon: 'theater_comedy',
     color: 'info',
     label: 'Shows',
@@ -634,13 +637,13 @@ const heroChips = computed(() => [
     label: `${event.value?.number_of_participants} dancers`,
   },
   {
-    show: event.value?.role_balanced,
+    show: isFeatureAvailable(event.value?.role_balanced),
     icon: 'balance',
     color: 'purple',
     label: 'Role Balanced',
   },
   {
-    show: event.value?.invitation_only,
+    show: isFeatureAvailable(event.value?.invitation_only),
     icon: 'lock',
     color: 'orange',
     label: 'Invitation Only',
@@ -684,13 +687,7 @@ const eventInfoItems = computed(() => [
     label: 'Participants',
     value: `${event.value?.number_of_participants} dancers`,
   },
-  {
-    show: !!event.value?.music_hours,
-    icon: 'schedule',
-    color: 'primary',
-    label: 'Music Hours',
-    value: `${event.value?.music_hours} hours`,
-  },
+
   {
     show: !!event.value?.price,
     icon: 'paid',
@@ -708,92 +705,92 @@ const eventInfoItems = computed(() => [
 ]);
 
 // Registration items
-const registrationItems = computed(() => [
-  {
-    show: true,
-    icon: event.value?.have_registration ? 'how_to_reg' : 'help_outline',
-    color: event.value?.have_registration ? 'positive' : 'grey',
-    label: 'Registration',
-    value: event.value?.have_registration
-      ? `Required${event.value?.have_registration_mode ? ` (${event.value.have_registration_mode})` : ''}`
-      : 'Open access',
-  },
-  {
-    show: !!event.value?.registration_start_date,
-    icon: 'start',
-    color: 'primary',
-    label: 'Registration Opens',
-    value: formatDate(event.value?.registration_start_date || ''),
-  },
-  {
-    show: event.value?.role_balanced,
-    icon: 'balance',
-    color: 'purple',
-    label: 'Role Balanced',
-    value: 'Leaders and followers balanced',
-  },
-  {
-    show: event.value?.invitation_only,
-    icon: 'lock',
-    color: 'orange',
-    label: 'Invitation Only',
-    value: 'Exclusive event',
-  },
-  {
-    show: event.value?.have_tickets,
-    icon: 'confirmation_number',
-    color: 'blue',
-    label: 'Single Milonga Tickets',
-    value: 'Tickets available for individual milongas',
-  },
-]);
+const registrationItems = computed(() => {
+  const isInvitationOnly = isFeatureAvailable(event.value?.invitation_only);
+  const hasRegistration = isFeatureAvailable(event.value?.have_registration);
 
-// Dance and music features
+  return [
+    {
+      show: isInvitationOnly || hasRegistration,
+      icon: isInvitationOnly ? 'lock' : hasRegistration ? 'how_to_reg' : 'help_outline',
+      color: isInvitationOnly ? 'orange' : hasRegistration ? 'positive' : 'grey',
+      label: isInvitationOnly ? 'Invitation Only' : 'Registration',
+      value: isInvitationOnly
+        ? 'Exclusive event by invitation'
+        : hasRegistration
+          ? `Required${event.value?.have_registration_mode ? ` (${event.value.have_registration_mode})` : ''}`
+          : 'Open access',
+    },
+    {
+      show: !!event.value?.registration_start_date,
+      icon: 'start',
+      color: 'primary',
+      label: 'Registration Opens',
+      value: formatDate(event.value?.registration_start_date || ''),
+    },
+    {
+      show: isFeatureAvailable(event.value?.role_balanced),
+      icon: 'balance',
+      color: 'purple',
+      label: 'Role Balanced',
+      value: 'Leaders and followers balanced',
+    },
+    {
+      show: isFeatureAvailable(event.value?.have_tickets),
+      icon: 'confirmation_number',
+      color: 'blue',
+      label: 'Single Milonga Tickets',
+      value: 'Tickets available for individual milongas',
+    },
+  ];
+});
+
+// Dance and music features - only show if value is "1"
 const danceFeatures = computed(() => [
   {
-    show: event.value?.have_milongas,
+    show: isFeatureAvailable(event.value?.have_milongas),
     icon: 'music_note',
     color: 'primary',
     label: 'Milongas',
     description: 'Traditional tango social dancing',
   },
   {
-    show: event.value?.meta_box?.have_lessons,
+    show: isFeatureAvailable(event.value?.have_lessons),
     icon: 'school',
     color: 'blue',
     label: 'Dance Lessons',
     description: 'Classes and workshops available',
   },
   {
-    show: event.value?.meta_box?.have_show,
+    show: isFeatureAvailable(event.value?.have_show),
     icon: 'theater_comedy',
     color: 'purple',
     label: 'Shows & Performances',
     description: 'Professional tango performances',
   },
   {
-    show: event.value?.meta_box?.have_live_music,
+    show: isFeatureAvailable(event.value?.have_live_music),
     icon: 'campaign',
     color: 'red',
     label: 'Live Music',
     description: 'Live orchestras or musicians',
   },
   {
-    show: event.value?.have_folklore,
+    show: isFeatureAvailable(event.value?.have_folklore),
     icon: 'celebration',
     color: 'orange',
     label: 'Folklore',
     description: 'Traditional folk dances included',
   },
   {
-    show: event.value?.have_non_tango,
+    show: isFeatureAvailable(event.value?.have_non_tango),
     icon: 'music_video',
     color: 'teal',
     label: 'Non-Tango Music',
     description: 'Other dance styles included',
   },
   {
-    show: event.value?.have_separated_seating,
+    show: isFeatureAvailable(event.value?.have_separated_seating),
     icon: 'event_seat',
     color: 'indigo',
     label: 'Separated Seating',
@@ -801,31 +798,31 @@ const danceFeatures = computed(() => [
   },
 ]);
 
-// Practical services
+// Practical services - only show if value is "1"
 const practicalServices = computed(() => [
   {
-    show: event.value?.have_food,
+    show: isFeatureAvailable(event.value?.have_food),
     icon: 'restaurant',
     color: 'green',
     label: 'Food Available',
     value: event.value?.food_options || 'Food will be available at the event',
   },
   {
-    show: event.value?.have_sleep,
+    show: isFeatureAvailable(event.value?.have_sleep),
     icon: 'hotel',
     color: 'purple',
     label: 'Accommodation',
     value: event.value?.sleeping_options || 'Accommodation information available',
   },
   {
-    show: event.value?.have_services,
+    show: isFeatureAvailable(event.value?.have_services),
     icon: 'room_service',
     color: 'teal',
     label: 'Additional Services',
     value: event.value?.service_options || 'Additional services available',
   },
   {
-    show: event.value?.have_sales,
+    show: isFeatureAvailable(event.value?.have_sales),
     icon: 'shopping_cart',
     color: 'pink',
     label: 'Sales & Shopping',
@@ -1055,6 +1052,94 @@ const teachersWithDetails = computed(() =>
     displayName: teacher.title,
   })),
 );
+
+// Helper function to check if a feature is available
+const isFeatureAvailable = (value: string | undefined): boolean => value === '1';
+
+// Music Features
+const musicFeatures = computed(() => [
+  {
+    key: 'live_music',
+    show: event.value?.have_live_music !== undefined,
+    available: isFeatureAvailable(event.value?.have_live_music),
+    icon: 'campaign',
+    color: 'red',
+    title: 'Live Music',
+    description: isFeatureAvailable(event.value?.have_live_music)
+      ? 'Live orchestras & musicians'
+      : 'No live music planned',
+  },
+  {
+    key: 'non_tango',
+    show: event.value?.have_non_tango !== undefined,
+    available: isFeatureAvailable(event.value?.have_non_tango),
+    icon: 'music_video',
+    color: 'teal',
+    title: 'Mixed Styles',
+    description: isFeatureAvailable(event.value?.have_non_tango)
+      ? 'Beyond traditional tango'
+      : 'Traditional tango only',
+  },
+  {
+    key: 'show',
+    show: event.value?.have_show !== undefined,
+    available: isFeatureAvailable(event.value?.have_show),
+    icon: 'theater_comedy',
+    color: 'purple',
+    title: 'Shows',
+    description: isFeatureAvailable(event.value?.have_show)
+      ? 'Performances included'
+      : 'No shows planned',
+  },
+]);
+
+// Other Features
+const otherFeatures = computed(() => [
+  {
+    key: 'lessons',
+    show: event.value?.have_lessons !== undefined,
+    available: isFeatureAvailable(event.value?.have_lessons),
+    icon: 'school',
+    color: 'blue',
+    title: 'Lessons',
+    description: isFeatureAvailable(event.value?.have_lessons)
+      ? 'Classes & workshops'
+      : 'No lessons available',
+  },
+  {
+    key: 'food',
+    show: event.value?.have_food !== undefined,
+    available: isFeatureAvailable(event.value?.have_food),
+    icon: 'restaurant',
+    color: 'orange',
+    title: 'Food',
+    description: isFeatureAvailable(event.value?.have_food)
+      ? 'Food service available'
+      : 'No food service',
+  },
+  {
+    key: 'sleep',
+    show: event.value?.have_sleep !== undefined,
+    available: isFeatureAvailable(event.value?.have_sleep),
+    icon: 'hotel',
+    color: 'indigo',
+    title: 'Accommodation',
+    description: isFeatureAvailable(event.value?.have_sleep)
+      ? 'Lodging available'
+      : 'No accommodation provided',
+  },
+  {
+    key: 'sales',
+    show: event.value?.have_sales !== undefined,
+    available: isFeatureAvailable(event.value?.have_sales),
+    icon: 'shopping_cart',
+    color: 'green',
+    title: 'Shopping',
+    description: isFeatureAvailable(event.value?.have_sales)
+      ? 'Vendors & merchandise'
+      : 'No vendors present',
+  },
+]);
 
 const goToDJ = (djId: number) => {
   void router.push(`/djs/${djId}`);

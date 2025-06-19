@@ -47,44 +47,47 @@ export interface EventDetails extends BaseEvent {
   email?: string;
   facebook_event?: string;
   facebook_page?: string;
-  have_milongas?: boolean;
-  have_tickets?: boolean;
-  have_food?: boolean;
-  have_sleep?: boolean;
-  food_options?: string;
-  sleeping_options?: string;
-  have_registration?: boolean;
-  have_registration_mode?: string;
-  role_balanced?: boolean;
-  invitation_only?: boolean;
+  facebook_group?: string;
   price?: string;
   currency?: string;
-  number_of_participants?: number;
-  music_hours?: string;
   event_description?: string;
   /** Full post content (HTML) */
   post_content?: string;
   lat?: number;
   lon?: number;
-  meta_box?: {
-    have_live_music?: boolean;
-    have_lessons?: boolean;
-    have_show?: boolean;
-  };
+
   /* Venue & location */
-  venue_name?: string;
+  'venue-name'?: string; // API returns with hyphen
+  venue_name?: string; // For compatibility
   street?: string;
   venue_features?: string;
   type_of_floor?: string;
-  /* Social */
-  facebook_group?: string;
-  /* Additional options */
-  have_separated_seating?: boolean;
-  have_folklore?: boolean;
-  have_non_tango?: boolean;
-  have_services?: boolean;
+
+  /* Event features - API returns as "0" or "1" strings */
+  have_milongas?: string;
+  have_tickets?: string;
+  have_food?: string;
+  have_sleep?: string;
+  have_registration?: string;
+  have_registration_mode?: string; // "mandatory" | "optional" | etc.
+  have_live_music?: string;
+  have_lessons?: string;
+  have_show?: string;
+  have_separated_seating?: string;
+  have_folklore?: string;
+  have_non_tango?: string;
+  have_services?: string;
+  have_sales?: string;
+
+  /* Registration & access */
+  invitation_only?: string; // "0" = open registration, "1" = invitation only
+  role_balanced?: string;
+
+  /* Additional metadata */
+  number_of_participants?: string;
+  food_options?: string;
+  sleeping_options?: string;
   service_options?: string;
-  have_sales?: boolean;
   // Embedded related data
   _embedded?: {
     djs?: DJ[];
