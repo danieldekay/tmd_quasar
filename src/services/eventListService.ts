@@ -67,27 +67,62 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
   return result;
 };
 
+export interface PaginatedEventsResponse {
+  events: EventListItem[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export const eventListService = {
   /**
-   * Fetch the first page of events for list views.
+   * Fetch events with server-side pagination and filtering
    */
-  async getEvents(params: EventParams = {}): Promise<EventListItem[]> {
+  async getEvents(params: EventParams = {}): Promise<PaginatedEventsResponse> {
     try {
       const response = await api.get('/events', {
         params: {
           meta_fields: LIST_META_FIELDS,
           include_taxonomies: true,
           _embed: true,
+          per_page: params.perPage || 20,
+          page: params.page || 1,
           ...params,
         },
       });
 
       const events = response.data as unknown[];
-      return events.map((event: unknown) => transformRawEvent(event as Record<string, unknown>));
+      const transformedEvents = events.map((event: unknown) =>
+        transformRawEvent(event as Record<string, unknown>),
+      );
+
+      // Extract pagination info from headers (WordPress REST API standard)
+      const totalCount = parseInt(response.headers['x-wp-total'] || '0', 10);
+      const totalPages = parseInt(response.headers['x-wp-totalpages'] || '1', 10);
+      const currentPage = params.page || 1;
+
+      return {
+        events: transformedEvents,
+        totalCount,
+        totalPages,
+        currentPage,
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1,
+      };
     } catch (error) {
       console.error('API Error:', error);
       throw error;
     }
+  },
+
+  /**
+   * Fetch events for backward compatibility (returns just the events array)
+   */
+  async getEventsLegacy(params: EventParams = {}): Promise<EventListItem[]> {
+    const response = await this.getEvents(params);
+    return response.events;
   },
 
   /**

@@ -6,7 +6,7 @@
           <div class="row items-center justify-between q-mb-lg">
             <h1 class="text-h4 q-my-none">
               Events
-              <span v-if="!showPastEvents" class="text-subtitle2 text-grey-6">
+              <span v-if="!filters.showPastEvents" class="text-subtitle2 text-grey-6">
                 (Future Events Only)
               </span>
             </h1>
@@ -37,8 +37,8 @@
                     flat
                     round
                     @click="filtersExpanded = !filtersExpanded"
-                    :label="hasActiveFilters ? `${activeFilterCount} active` : ''"
-                    :color="hasActiveFilters ? 'primary' : 'grey'"
+                    :label="hasFilters() ? `${filterCount()} active` : ''"
+                    :color="hasFilters() ? 'primary' : 'grey'"
                   />
                 </div>
               </div>
@@ -48,7 +48,8 @@
                   <!-- Search Row -->
                   <div class="q-mb-md">
                     <q-input
-                      v-model="state.searchQuery"
+                      :model-value="filters.searchQuery"
+                      @update:model-value="(val) => updateFilter('searchQuery', val || '')"
                       label="Search events, cities, or countries"
                       dense
                       outlined
@@ -64,7 +65,8 @@
                   <!-- Filter Controls - Stacked on mobile -->
                   <div class="column q-gutter-md">
                     <q-select
-                      v-model="state.selectedCountry"
+                      :model-value="filters.selectedCountry"
+                      @update:model-value="(val) => updateFilter('selectedCountry', val)"
                       :options="countryOptions"
                       label="Filter by Country"
                       clearable
@@ -82,19 +84,20 @@
 
                     <!-- Show Past Events Toggle -->
                     <q-checkbox
-                      v-model="showPastEvents"
+                      :model-value="filters.showPastEvents"
+                      @update:model-value="(val) => updateFilter('showPastEvents', val)"
                       label="Include past events"
                       color="primary"
                     />
 
                     <div>
                       <q-input
-                        :model-value="formatDateRange(startDateRange)"
+                        :model-value="formatDateRange(filters.startDateRange)"
                         label="Event Date Range"
                         dense
                         outlined
                         clearable
-                        @clear="startDateRange = { from: null, to: null }"
+                        @clear="updateFilter('startDateRange', { from: null, to: null })"
                       >
                         <template v-slot:prepend>
                           <q-icon name="event" />
@@ -102,7 +105,13 @@
                         <template v-slot:append>
                           <q-icon name="event" class="cursor-pointer">
                             <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                              <q-date v-model="startDateRange" range mask="YYYY-MM-DD" today-btn />
+                              <q-date
+                                :model-value="filters.startDateRange"
+                                @update:model-value="(val) => updateFilter('startDateRange', val)"
+                                range
+                                mask="YYYY-MM-DD"
+                                today-btn
+                              />
                             </q-popup-proxy>
                           </q-icon>
                         </template>
@@ -121,7 +130,7 @@
                           flat
                           color="grey"
                           label="Clear"
-                          @click="startDateRange = { from: null, to: null }"
+                          @click="updateFilter('startDateRange', { from: null, to: null })"
                         />
                       </div>
                     </div>
@@ -511,8 +520,9 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { eventListService as eventService } from '../services';
 import type { EventListItem } from '../services/types';
-import type { EventViewState, EventTableColumn } from '../interfaces/EventView';
+import type { EventTableColumn } from '../interfaces/EventView';
 import { useFormatters } from '../composables/useFormatters';
+import { useEventFilters } from '../composables/useEventFilters';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -520,33 +530,45 @@ const $q = useQuasar();
 // Mobile filter state
 const filtersExpanded = ref(false);
 
-// Show past events toggle (default to false - only show future events)
-const showPastEvents = ref(false);
+// Use filter composable with cookie persistence
+const {
+  filters,
+  updateFilter,
+  clearAllFilters: clearFilters,
+  hasActiveFilters: hasFilters,
+  activeFilterCount: filterCount,
+  applyQuickStartDateFilter,
+  applyQuickRegistrationFilter,
+  formatDateRange,
+  initializeFilters,
+} = useEventFilters();
 
-const state = ref<EventViewState>({
-  events: [],
+const state = ref({
+  events: [] as EventListItem[],
   loading: false,
-  error: null,
-  searchQuery: '',
-  selectedCountry: null,
-  selectedDateRange: {
-    from: null,
-    to: null,
-  },
-  pagination: {
-    page: 1,
-    rowsPerPage: 20,
-    rowsNumber: 0,
-  },
+  error: null as string | null,
+  totalCount: 0,
+  totalPages: 0,
+  currentPage: 1,
+  hasNextPage: false,
+  hasPrevPage: false,
 });
 
-// Separate pagination state for table with sorting
-const tablePagination = ref({
-  sortBy: 'start_date',
-  descending: false,
-  page: 1,
-  rowsPerPage: 20,
-  rowsNumber: 0,
+// Table pagination state (synced with filters)
+const tablePagination = computed({
+  get: () => ({
+    sortBy: filters.value.sortBy,
+    descending: filters.value.descending,
+    page: state.value.currentPage,
+    rowsPerPage: filters.value.rowsPerPage,
+    rowsNumber: state.value.totalCount,
+  }),
+  set: (val) => {
+    updateFilter('sortBy', val.sortBy);
+    updateFilter('descending', val.descending);
+    updateFilter('rowsPerPage', val.rowsPerPage);
+    // Page changes are handled by onRequest
+  },
 });
 
 // Add country mapping
