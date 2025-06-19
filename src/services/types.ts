@@ -26,6 +26,7 @@ export interface EventListItem extends BaseEvent {
   have_registration?: boolean;
   price?: string;
   currency?: string;
+  venue_name?: string;
 }
 
 export interface EventDetails extends BaseEvent {
