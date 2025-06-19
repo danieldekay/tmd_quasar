@@ -43,6 +43,7 @@ export interface DJParams {
   per_page?: number;
   search?: string;
   country?: string;
+  event?: number;
   orderby?: string;
   order?: 'asc' | 'desc';
 }
@@ -65,6 +66,7 @@ export const djService = {
       if (params.page) apiParams.page = params.page;
       if (params.per_page) apiParams.per_page = params.per_page;
       if (params.search) apiParams.search = params.search;
+      if (params.event) apiParams.event = params.event;
       if (params.orderby) apiParams.orderby = params.orderby;
       if (params.order) apiParams.order = params.order;
 

@@ -66,6 +66,7 @@
         <q-tabs v-model="tab" class="text-primary q-mb-md" dense>
           <q-tab name="overview" label="About" icon="info" />
           <q-tab name="details" label="Details & Registration" icon="how_to_reg" />
+          <q-tab name="djs" label="DJs & Music" icon="library_music" />
           <q-tab name="venue" label="Venue & Location" icon="location_on" />
           <q-tab name="contact" label="Contact & Links" icon="link" />
         </q-tabs>
@@ -177,6 +178,137 @@
                         </q-item>
                       </template>
                     </q-list>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
+          </q-tab-panel>
+
+          <!-- DJs & Music Panel -->
+          <q-tab-panel name="djs" class="q-pa-md">
+            <div class="row q-col-gutter-lg">
+              <!-- DJs List -->
+              <div class="col-12">
+                <q-card flat>
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">
+                      <q-icon name="library_music" class="q-mr-sm" />
+                      DJs & Music for This Event
+                    </div>
+
+                    <!-- Loading State -->
+                    <div v-if="djsLoading" class="text-center q-pa-md">
+                      <q-spinner color="primary" size="2em" />
+                      <div class="text-caption q-mt-sm">Loading DJs...</div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div v-else-if="djsError" class="text-center q-pa-md text-grey-6">
+                      <q-icon name="error_outline" size="3em" class="q-mb-sm" />
+                      <div class="text-weight-medium">Failed to Load DJs</div>
+                      <div class="text-caption">{{ djsError }}</div>
+                      <q-btn
+                        flat
+                        color="primary"
+                        class="q-mt-sm"
+                        @click="loadDJs"
+                        label="Try Again"
+                        icon="refresh"
+                      />
+                    </div>
+
+                    <!-- No DJs Fallback -->
+                    <div v-else-if="djs.length === 0" class="text-center q-pa-md text-grey-6">
+                      <q-icon name="music_off" size="3em" class="q-mb-sm" />
+                      <div class="text-weight-medium">No DJ Information</div>
+                      <div class="text-caption">No DJs have been announced for this event yet</div>
+                    </div>
+
+                    <!-- DJs Grid -->
+                    <div v-else class="row q-col-gutter-md">
+                      <div
+                        v-for="dj in djsWithDetails"
+                        :key="dj.id"
+                        class="col-12 col-sm-6 col-md-4 col-lg-3"
+                      >
+                        <q-card flat bordered class="dj-card cursor-pointer" @click="goToDJ(dj.id)">
+                          <q-card-section>
+                            <div class="text-weight-bold q-mb-xs">{{ dj.displayName }}</div>
+                            <div v-if="dj.location" class="text-caption text-grey-6 q-mb-sm">
+                              <q-icon name="location_on" size="xs" class="q-mr-xs" />
+                              {{ dj.location }}
+                            </div>
+
+                            <div v-if="dj.activities.length > 0" class="q-mt-sm">
+                              <q-chip
+                                v-for="activity in dj.activities.slice(0, 2)"
+                                :key="activity"
+                                dense
+                                size="sm"
+                                color="primary"
+                                text-color="white"
+                                class="q-mr-xs q-mb-xs"
+                              >
+                                {{ activity }}
+                              </q-chip>
+                              <q-chip
+                                v-if="dj.activities.length > 2"
+                                dense
+                                size="sm"
+                                color="grey-5"
+                                text-color="white"
+                                class="q-mr-xs q-mb-xs"
+                              >
+                                +{{ dj.activities.length - 2 }}
+                              </q-chip>
+                            </div>
+                          </q-card-section>
+
+                          <q-card-actions align="right">
+                            <q-btn flat size="sm" color="primary" icon="chevron_right" />
+                          </q-card-actions>
+                        </q-card>
+                      </div>
+                    </div>
+
+                    <!-- Additional Music Info -->
+                    <div v-if="djs.length > 0" class="q-mt-lg">
+                      <q-separator class="q-mb-md" />
+                      <div class="text-subtitle2 q-mb-sm">Music Information</div>
+                      <q-list dense>
+                        <q-item v-if="event.music_hours">
+                          <q-item-section avatar>
+                            <q-icon name="schedule" color="primary" />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>Music Duration</q-item-label>
+                            <q-item-label caption
+                              >{{ event.music_hours }} hours of dancing</q-item-label
+                            >
+                          </q-item-section>
+                        </q-item>
+                        <q-item v-if="event.meta_box?.have_live_music">
+                          <q-item-section avatar>
+                            <q-icon name="campaign" color="red" />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>Live Music</q-item-label>
+                            <q-item-label caption
+                              >Live orchestras or musicians will perform</q-item-label
+                            >
+                          </q-item-section>
+                        </q-item>
+                        <q-item v-if="event.have_non_tango">
+                          <q-item-section avatar>
+                            <q-icon name="music_video" color="teal" />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>Non-Tango Music</q-item-label>
+                            <q-item-label caption>Other dance styles will be included</q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </div>
                   </q-card-section>
                 </q-card>
               </div>
@@ -324,21 +456,27 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { eventDetailsService as eventService } from '../services';
-import type { EventDetails } from '../services/types';
+import { eventDetailsService as eventService, djService } from '../services';
+import type { EventDetails, DJ } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 
 defineOptions({ name: 'EventDetails' });
 
 const route = useRoute();
+const router = useRouter();
 const $q = useQuasar();
 
 const event = ref<EventDetails>({} as EventDetails);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const tab = ref<'overview' | 'details' | 'venue' | 'contact'>('overview');
+const tab = ref<'overview' | 'details' | 'djs' | 'venue' | 'contact'>('overview');
+
+// DJ-related state
+const djs = ref<DJ[]>([]);
+const djsLoading = ref(false);
+const djsError = ref<string | null>(null);
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
@@ -734,6 +872,51 @@ const openInMaps = (lat: number, lon: number) => {
   window.open(mapsUrl, '_blank', 'noopener,noreferrer');
 };
 
+// DJ-related methods and computed properties
+const loadDJs = async () => {
+  if (!event.value?.id) return;
+
+  djsLoading.value = true;
+  djsError.value = null;
+  try {
+    const response = await djService.getDJs(
+      { event: event.value.id, per_page: 50 }, // Get up to 50 DJs for the event
+    );
+    djs.value = response.djs;
+  } catch (err) {
+    console.error('Error loading DJs:', err);
+    djsError.value = 'Failed to load DJ information';
+    djs.value = [];
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load DJ information for this event.',
+      position: 'top',
+      timeout: 5000,
+    });
+  } finally {
+    djsLoading.value = false;
+  }
+};
+
+const djsWithDetails = computed(() =>
+  djs.value.map((dj) => ({
+    ...dj,
+    displayName: dj.tmd_dj_name || dj.title,
+    location: [dj.tmd_dj_city, dj.tmd_dj_country].filter(Boolean).join(', '),
+    activities: [
+      dj.tmd_dj_activity_marathons === '1' ? 'Marathons' : null,
+      dj.tmd_dj_activity_festivals === '1' ? 'Festivals' : null,
+      dj.tmd_dj_activity_encuentros === '1' ? 'Encuentros' : null,
+      dj.tmd_dj_activity_milongas === '1' ? 'Milongas' : null,
+      dj.tmd_dj_activity_milongas_travel === '1' ? 'Travel' : null,
+    ].filter((activity): activity is string => activity !== null),
+  })),
+);
+
+const goToDJ = (djId: number) => {
+  void router.push(`/djs/${djId}`);
+};
+
 const loadEvent = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
@@ -746,6 +929,8 @@ const loadEvent = async (done?: () => void) => {
 
   try {
     event.value = await eventService.getEvent(eventId);
+    // Load DJs after event is loaded
+    await loadDJs();
   } catch (err) {
     console.error('Error loading event:', err);
     error.value = 'Failed to load event';
@@ -804,6 +989,16 @@ onMounted(loadEvent);
       margin: 2rem 0;
       border: none;
       border-top: 1px solid rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  .dj-card {
+    transition: all 0.2s ease;
+    min-height: 120px;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
   }
 }
