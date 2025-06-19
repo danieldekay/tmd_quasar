@@ -3,5 +3,9 @@ description:
 globs: *.md
 alwaysApply: false
 ---
-Maximum line length: 80 characters
-Follow Markdown rules and fix linter errors.
+# Markdown Files Rules
+
+- Maximum line length: 80 characters
+- Follow Markdown rules and fix linter errors.
+
+- Work with existing texts, and don't delete large portions of what we have, unles it is outdated.

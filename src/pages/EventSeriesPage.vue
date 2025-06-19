@@ -2,13 +2,13 @@
   <q-page padding>
     <div class="row q-col-gutter-lg">
       <div class="col-12">
-        <h1 class="text-h4 q-mb-lg">Teachers</h1>
+        <h1 class="text-h4 q-mb-lg">Event Series</h1>
       </div>
 
       <!-- Loading State -->
       <div v-if="loading" class="col-12 text-center">
         <q-spinner color="primary" size="3em" />
-        <p class="q-mt-md">Loading teachers...</p>
+        <p class="q-mt-md">Loading event series...</p>
       </div>
 
       <!-- Error State -->
@@ -18,59 +18,57 @@
         </q-banner>
       </div>
 
-      <!-- Teachers List -->
+      <!-- Event Series List -->
       <div v-else class="col-12">
         <q-card flat bordered>
           <q-list separator>
             <q-item
-              v-for="teacher in teachers"
-              :key="teacher.id"
+              v-for="series in eventSeries"
+              :key="series.id"
               clickable
               v-ripple
-              :to="`/teachers/${teacher.id}`"
-              class="teacher-item"
+              :to="`/event-series/${series.id}`"
+              class="series-item"
             >
               <q-item-section avatar>
-                <q-avatar size="56px">
+                <q-avatar size="56px" rounded>
                   <img
-                    :src="teacher.acf?.photo || 'https://cdn.quasar.dev/img/avatar.png'"
-                    :alt="`Photo of ${teacher.title}`"
+                    :src="series.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
+                    :alt="`Logo of ${series.title}`"
                   />
                 </q-avatar>
               </q-item-section>
 
               <q-item-section>
                 <q-item-label class="text-h6 text-weight-medium">
-                  {{ teacher.title }}
+                  {{ series.title }}
                 </q-item-label>
-                <q-item-label
-                  caption
-                  v-if="teacher.acf?.teaching_style"
-                  class="text-secondary q-mb-xs"
-                >
-                  <q-icon name="school" size="xs" class="q-mr-xs" />
-                  {{ teacher.acf.teaching_style }}
-                </q-item-label>
-                <q-item-label caption v-if="teacher.acf?.bio" lines="2">
-                  {{ teacher.acf.bio.substring(0, 150)
-                  }}{{ teacher.acf.bio.length > 150 ? '...' : '' }}
-                </q-item-label>
-                <q-item-label caption class="text-grey-6 q-mt-xs">
-                  <q-icon name="event" size="xs" class="q-mr-xs" />
-                  Added: {{ formatDate(teacher.date) }}
+                <div class="row q-gutter-sm q-mb-xs">
+                  <q-item-label caption v-if="series.start_date" class="text-secondary">
+                    <q-icon name="event" size="xs" class="q-mr-xs" />
+                    Start: {{ formatDate(series.start_date) }}
+                  </q-item-label>
+                  <q-item-label caption v-if="series.registration_start_date" class="text-accent">
+                    <q-icon name="how_to_reg" size="xs" class="q-mr-xs" />
+                    Registration: {{ formatDate(series.registration_start_date) }}
+                  </q-item-label>
+                </div>
+                <q-item-label caption class="text-grey-6">
+                  <q-icon name="calendar_today" size="xs" class="q-mr-xs" />
+                  Added: {{ formatDate(series.date) }}
                 </q-item-label>
               </q-item-section>
 
               <q-item-section side>
                 <div class="row q-gutter-sm">
                   <q-btn
-                    v-if="teacher.acf?.website"
+                    v-if="series.acf?.website"
                     flat
                     round
                     color="secondary"
                     icon="launch"
                     size="sm"
-                    :href="teacher.acf.website"
+                    :href="series.acf.website"
                     target="_blank"
                     @click.stop
                   >
@@ -91,32 +89,32 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { teacherService } from '../services';
-import type { Teacher } from '../services/types';
+import { eventSeriesService } from '../services';
+import type { EventSeries } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 
 const { formatDate } = useFormatters();
 
-const teachers = ref<Teacher[]>([]);
+const eventSeries = ref<EventSeries[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
-const loadTeachers = async () => {
+const loadEventSeries = async () => {
   try {
-    teachers.value = await teacherService.getTeachers();
+    eventSeries.value = await eventSeriesService.getEventSeries();
   } catch (err) {
-    console.error('Error loading teachers:', err);
-    error.value = 'Failed to load teachers';
+    console.error('Error loading event series:', err);
+    error.value = 'Failed to load event series';
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(loadTeachers);
+onMounted(loadEventSeries);
 </script>
 
 <style lang="scss" scoped>
-.teacher-item {
+.series-item {
   &:hover {
     background-color: rgba(0, 0, 0, 0.04);
   }

@@ -88,6 +88,11 @@ const linksList: LinkProps[] = [
     link: '/teachers',
   },
   {
+    title: 'Event Series',
+    icon: 'event_repeat',
+    link: '/event-series',
+  },
+  {
     title: 'About',
     icon: 'info',
     link: '/about',

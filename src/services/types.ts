@@ -98,6 +98,19 @@ export interface Teacher extends BaseEntity {
   };
 }
 
+export interface EventSeries extends BaseEntity {
+  start_date?: string;
+  registration_start_date?: string;
+  content?: {
+    rendered: string;
+  };
+  acf?: {
+    description: string;
+    website: string;
+    logo: string;
+  };
+}
+
 export interface EventParams {
   page?: number;
   perPage?: number;
