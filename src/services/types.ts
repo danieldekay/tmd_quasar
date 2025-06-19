@@ -141,15 +141,25 @@ export interface DJ extends BaseEntity {
 }
 
 export interface Teacher extends BaseEntity {
-  content: {
+  slug?: string;
+  date_gmt?: string;
+  modified?: string;
+  modified_gmt?: string;
+  status?: string;
+  city?: string;
+  country?: string;
+  content?: {
     rendered: string;
   };
+  // TMD v3 API might have these fields
   acf?: {
-    bio: string;
-    photo: string;
-    website: string;
-    teaching_style: string;
+    bio?: string;
+    photo?: string;
+    website?: string;
+    teaching_style?: string;
   };
+  // TMD v3 API meta fields (when using meta_fields=all)
+  all?: string; // Contains all meta fields
   // Embedded related data
   _embedded?: {
     events?: BaseEvent[];
