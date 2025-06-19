@@ -9,3 +9,10 @@ alwaysApply: false
 - Follow Markdown rules and fix linter errors.
 
 - Work with existing texts, and don't delete large portions of what we have, unles it is outdated.
+
+## Documentation
+
+- Maintain the CHANGELOG.md -- utilize git history if needed
+- DESIGN.md contains the architecture of the app
+- README.md must be updated less often.
+- TODO.md contains mid- to long-term tasks
