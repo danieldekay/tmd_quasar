@@ -1,40 +1,197 @@
 <template>
-  <q-page padding>
-    <div class="row q-col-gutter-lg">
-      <div class="col-12">
-        <h1 class="text-h4 q-mb-lg">
-          Events
-          <span v-if="!showPastEvents" class="text-subtitle2 text-grey-6">
-            (Future Events Only)
-          </span>
-        </h1>
-      </div>
+  <q-pull-to-refresh @refresh="handlePullToRefresh">
+    <q-page padding>
+      <div class="row q-col-gutter-lg">
+        <div class="col-12">
+          <div class="row items-center justify-between q-mb-lg">
+            <h1 class="text-h4 q-my-none">
+              Events
+              <span v-if="!showPastEvents" class="text-subtitle2 text-grey-6">
+                (Future Events Only)
+              </span>
+            </h1>
+            <q-btn
+              round
+              color="primary"
+              icon="refresh"
+              :loading="state.loading"
+              @click="handleRefresh"
+              :title="'Refresh events'"
+              size="md"
+            />
+          </div>
+        </div>
 
-      <!-- Filter Controls Section -->
-      <div class="col-12">
-        <q-card flat bordered class="q-pa-md q-mb-lg">
-          <!-- Mobile: Collapsible filters -->
-          <div class="lt-md">
-            <div class="row items-center q-mb-md">
-              <div class="col">
-                <div class="text-h6">Filters</div>
+        <!-- Filter Controls Section -->
+        <div class="col-12">
+          <q-card flat bordered class="q-pa-md q-mb-lg">
+            <!-- Mobile: Collapsible filters -->
+            <div class="lt-md">
+              <div class="row items-center q-mb-md">
+                <div class="col">
+                  <div class="text-h6">Filters</div>
+                </div>
+                <div class="col-auto">
+                  <q-btn
+                    :icon="filtersExpanded ? 'expand_less' : 'expand_more'"
+                    flat
+                    round
+                    @click="filtersExpanded = !filtersExpanded"
+                    :label="hasActiveFilters ? `${activeFilterCount} active` : ''"
+                    :color="hasActiveFilters ? 'primary' : 'grey'"
+                  />
+                </div>
               </div>
-              <div class="col-auto">
-                <q-btn
-                  :icon="filtersExpanded ? 'expand_less' : 'expand_more'"
-                  flat
-                  round
-                  @click="filtersExpanded = !filtersExpanded"
-                  :label="hasActiveFilters ? `${activeFilterCount} active` : ''"
-                  :color="hasActiveFilters ? 'primary' : 'grey'"
-                />
-              </div>
+
+              <q-slide-transition>
+                <div v-show="filtersExpanded">
+                  <!-- Search Row -->
+                  <div class="q-mb-md">
+                    <q-input
+                      v-model="state.searchQuery"
+                      label="Search events, cities, or countries"
+                      dense
+                      outlined
+                      clearable
+                      debounce="300"
+                    >
+                      <template v-slot:prepend>
+                        <q-icon name="search" />
+                      </template>
+                    </q-input>
+                  </div>
+
+                  <!-- Filter Controls - Stacked on mobile -->
+                  <div class="column q-gutter-md">
+                    <q-select
+                      v-model="state.selectedCountry"
+                      :options="countryOptions"
+                      label="Filter by Country"
+                      clearable
+                      dense
+                      outlined
+                      emit-value
+                      map-options
+                      :option-label="getCountryName"
+                      :option-value="(opt) => opt"
+                    >
+                      <template v-slot:prepend>
+                        <q-icon name="flag" />
+                      </template>
+                    </q-select>
+
+                    <!-- Show Past Events Toggle -->
+                    <q-checkbox
+                      v-model="showPastEvents"
+                      label="Include past events"
+                      color="primary"
+                    />
+
+                    <div>
+                      <q-input
+                        :model-value="formatDateRange(startDateRange)"
+                        label="Event Date Range"
+                        dense
+                        outlined
+                        clearable
+                        @clear="startDateRange = { from: null, to: null }"
+                      >
+                        <template v-slot:prepend>
+                          <q-icon name="event" />
+                        </template>
+                        <template v-slot:append>
+                          <q-icon name="event" class="cursor-pointer">
+                            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                              <q-date v-model="startDateRange" range mask="YYYY-MM-DD" today-btn />
+                            </q-popup-proxy>
+                          </q-icon>
+                        </template>
+                      </q-input>
+                      <div class="q-mt-xs">
+                        <q-btn
+                          size="sm"
+                          outline
+                          color="primary"
+                          label="Next 9 months"
+                          @click="applyQuickStartDateFilter"
+                          class="q-mr-xs"
+                        />
+                        <q-btn
+                          size="sm"
+                          flat
+                          color="grey"
+                          label="Clear"
+                          @click="startDateRange = { from: null, to: null }"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <q-input
+                        :model-value="formatDateRange(registrationDateRange)"
+                        label="Registration Date Range"
+                        dense
+                        outlined
+                        clearable
+                        @clear="registrationDateRange = { from: null, to: null }"
+                      >
+                        <template v-slot:prepend>
+                          <q-icon name="how_to_reg" />
+                        </template>
+                        <template v-slot:append>
+                          <q-icon name="event" class="cursor-pointer">
+                            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                              <q-date
+                                v-model="registrationDateRange"
+                                range
+                                mask="YYYY-MM-DD"
+                                today-btn
+                              />
+                            </q-popup-proxy>
+                          </q-icon>
+                        </template>
+                      </q-input>
+                      <div class="q-mt-xs">
+                        <q-btn
+                          size="sm"
+                          outline
+                          color="primary"
+                          label="Next 4 months"
+                          @click="applyQuickRegistrationFilter"
+                          class="q-mr-xs"
+                        />
+                        <q-btn
+                          size="sm"
+                          flat
+                          color="grey"
+                          label="Clear"
+                          @click="registrationDateRange = { from: null, to: null }"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Clear All Filters -->
+                  <div class="q-mt-md" v-if="hasActiveFilters">
+                    <q-btn
+                      outline
+                      color="negative"
+                      label="Clear All Filters"
+                      @click="clearAllFilters"
+                      size="sm"
+                    />
+                  </div>
+                </div>
+              </q-slide-transition>
             </div>
 
-            <q-slide-transition>
-              <div v-show="filtersExpanded">
-                <!-- Search Row -->
-                <div class="q-mb-md">
+            <!-- Desktop: Expanded filters -->
+            <div class="gt-sm">
+              <div class="text-h6 q-mb-md">Filters</div>
+
+              <!-- Search Row -->
+              <div class="row q-col-gutter-md q-mb-md">
+                <div class="col-12">
                   <q-input
                     v-model="state.searchQuery"
                     label="Search events, cities, or countries"
@@ -48,9 +205,11 @@
                     </template>
                   </q-input>
                 </div>
+              </div>
 
-                <!-- Filter Controls - Stacked on mobile -->
-                <div class="column q-gutter-md">
+              <!-- Filter Controls Row -->
+              <div class="row q-col-gutter-md">
+                <div class="col-xs-12 col-sm-6 col-md-3">
                   <q-select
                     v-model="state.selectedCountry"
                     :options="countryOptions"
@@ -67,100 +226,105 @@
                       <q-icon name="flag" />
                     </template>
                   </q-select>
+                </div>
 
-                  <!-- Show Past Events Toggle -->
-                  <q-checkbox
-                    v-model="showPastEvents"
-                    label="Include past events"
-                    color="primary"
-                  />
-
-                  <div>
-                    <q-input
-                      :model-value="formatDateRange(startDateRange)"
-                      label="Event Date Range"
-                      dense
-                      outlined
-                      clearable
-                      @clear="startDateRange = { from: null, to: null }"
-                    >
-                      <template v-slot:prepend>
-                        <q-icon name="event" />
-                      </template>
-                      <template v-slot:append>
-                        <q-icon name="event" class="cursor-pointer">
-                          <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                            <q-date v-model="startDateRange" range mask="YYYY-MM-DD" today-btn />
-                          </q-popup-proxy>
-                        </q-icon>
-                      </template>
-                    </q-input>
-                    <div class="q-mt-xs">
-                      <q-btn
-                        size="sm"
-                        outline
-                        color="primary"
-                        label="Next 9 months"
-                        @click="applyQuickStartDateFilter"
-                        class="q-mr-xs"
-                      />
-                      <q-btn
-                        size="sm"
-                        flat
-                        color="grey"
-                        label="Clear"
-                        @click="startDateRange = { from: null, to: null }"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <q-input
-                      :model-value="formatDateRange(registrationDateRange)"
-                      label="Registration Date Range"
-                      dense
-                      outlined
-                      clearable
-                      @clear="registrationDateRange = { from: null, to: null }"
-                    >
-                      <template v-slot:prepend>
-                        <q-icon name="how_to_reg" />
-                      </template>
-                      <template v-slot:append>
-                        <q-icon name="event" class="cursor-pointer">
-                          <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                            <q-date
-                              v-model="registrationDateRange"
-                              range
-                              mask="YYYY-MM-DD"
-                              today-btn
-                            />
-                          </q-popup-proxy>
-                        </q-icon>
-                      </template>
-                    </q-input>
-                    <div class="q-mt-xs">
-                      <q-btn
-                        size="sm"
-                        outline
-                        color="primary"
-                        label="Next 4 months"
-                        @click="applyQuickRegistrationFilter"
-                        class="q-mr-xs"
-                      />
-                      <q-btn
-                        size="sm"
-                        flat
-                        color="grey"
-                        label="Clear"
-                        @click="registrationDateRange = { from: null, to: null }"
-                      />
-                    </div>
+                <div class="col-xs-12 col-sm-6 col-md-2">
+                  <div class="q-mt-sm">
+                    <q-checkbox
+                      v-model="showPastEvents"
+                      label="Include past events"
+                      color="primary"
+                    />
                   </div>
                 </div>
 
-                <!-- Clear All Filters -->
-                <div class="q-mt-md" v-if="hasActiveFilters">
+                <div class="col-xs-12 col-sm-6 col-md-3">
+                  <q-input
+                    :model-value="formatDateRange(startDateRange)"
+                    label="Event Date Range"
+                    dense
+                    outlined
+                    clearable
+                    @clear="startDateRange = { from: null, to: null }"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="event" />
+                    </template>
+                    <template v-slot:append>
+                      <q-icon name="event" class="cursor-pointer">
+                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                          <q-date v-model="startDateRange" range mask="YYYY-MM-DD" today-btn />
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                  <div class="q-mt-xs">
+                    <q-btn
+                      size="sm"
+                      outline
+                      color="primary"
+                      label="Next 9 months"
+                      @click="applyQuickStartDateFilter"
+                      class="q-mr-xs"
+                    />
+                    <q-btn
+                      size="sm"
+                      flat
+                      color="grey"
+                      label="Clear"
+                      @click="startDateRange = { from: null, to: null }"
+                    />
+                  </div>
+                </div>
+
+                <div class="col-xs-12 col-sm-12 col-md-4">
+                  <q-input
+                    :model-value="formatDateRange(registrationDateRange)"
+                    label="Registration Date Range"
+                    dense
+                    outlined
+                    clearable
+                    @clear="registrationDateRange = { from: null, to: null }"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="how_to_reg" />
+                    </template>
+                    <template v-slot:append>
+                      <q-icon name="event" class="cursor-pointer">
+                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                          <q-date
+                            v-model="registrationDateRange"
+                            range
+                            mask="YYYY-MM-DD"
+                            today-btn
+                          />
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                  <div class="q-mt-xs">
+                    <q-btn
+                      size="sm"
+                      outline
+                      color="primary"
+                      label="Next 4 months"
+                      @click="applyQuickRegistrationFilter"
+                      class="q-mr-xs"
+                    />
+                    <q-btn
+                      size="sm"
+                      flat
+                      color="grey"
+                      label="Clear"
+                      @click="registrationDateRange = { from: null, to: null }"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Clear All Filters -->
+              <div class="row q-mt-md" v-if="hasActiveFilters">
+                <div class="col-12">
                   <q-btn
                     outline
                     color="negative"
@@ -170,317 +334,175 @@
                   />
                 </div>
               </div>
-            </q-slide-transition>
-          </div>
-
-          <!-- Desktop: Expanded filters -->
-          <div class="gt-sm">
-            <div class="text-h6 q-mb-md">Filters</div>
-
-            <!-- Search Row -->
-            <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12">
-                <q-input
-                  v-model="state.searchQuery"
-                  label="Search events, cities, or countries"
-                  dense
-                  outlined
-                  clearable
-                  debounce="300"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="search" />
-                  </template>
-                </q-input>
-              </div>
             </div>
-
-            <!-- Filter Controls Row -->
-            <div class="row q-col-gutter-md">
-              <div class="col-xs-12 col-sm-6 col-md-3">
-                <q-select
-                  v-model="state.selectedCountry"
-                  :options="countryOptions"
-                  label="Filter by Country"
-                  clearable
-                  dense
-                  outlined
-                  emit-value
-                  map-options
-                  :option-label="getCountryName"
-                  :option-value="(opt) => opt"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="flag" />
-                  </template>
-                </q-select>
-              </div>
-
-              <div class="col-xs-12 col-sm-6 col-md-2">
-                <div class="q-mt-sm">
-                  <q-checkbox
-                    v-model="showPastEvents"
-                    label="Include past events"
-                    color="primary"
-                  />
-                </div>
-              </div>
-
-              <div class="col-xs-12 col-sm-6 col-md-3">
-                <q-input
-                  :model-value="formatDateRange(startDateRange)"
-                  label="Event Date Range"
-                  dense
-                  outlined
-                  clearable
-                  @clear="startDateRange = { from: null, to: null }"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="event" />
-                  </template>
-                  <template v-slot:append>
-                    <q-icon name="event" class="cursor-pointer">
-                      <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                        <q-date v-model="startDateRange" range mask="YYYY-MM-DD" today-btn />
-                      </q-popup-proxy>
-                    </q-icon>
-                  </template>
-                </q-input>
-                <div class="q-mt-xs">
-                  <q-btn
-                    size="sm"
-                    outline
-                    color="primary"
-                    label="Next 9 months"
-                    @click="applyQuickStartDateFilter"
-                    class="q-mr-xs"
-                  />
-                  <q-btn
-                    size="sm"
-                    flat
-                    color="grey"
-                    label="Clear"
-                    @click="startDateRange = { from: null, to: null }"
-                  />
-                </div>
-              </div>
-
-              <div class="col-xs-12 col-sm-12 col-md-4">
-                <q-input
-                  :model-value="formatDateRange(registrationDateRange)"
-                  label="Registration Date Range"
-                  dense
-                  outlined
-                  clearable
-                  @clear="registrationDateRange = { from: null, to: null }"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="how_to_reg" />
-                  </template>
-                  <template v-slot:append>
-                    <q-icon name="event" class="cursor-pointer">
-                      <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                        <q-date v-model="registrationDateRange" range mask="YYYY-MM-DD" today-btn />
-                      </q-popup-proxy>
-                    </q-icon>
-                  </template>
-                </q-input>
-                <div class="q-mt-xs">
-                  <q-btn
-                    size="sm"
-                    outline
-                    color="primary"
-                    label="Next 4 months"
-                    @click="applyQuickRegistrationFilter"
-                    class="q-mr-xs"
-                  />
-                  <q-btn
-                    size="sm"
-                    flat
-                    color="grey"
-                    label="Clear"
-                    @click="registrationDateRange = { from: null, to: null }"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Clear All Filters -->
-            <div class="row q-mt-md" v-if="hasActiveFilters">
-              <div class="col-12">
-                <q-btn
-                  outline
-                  color="negative"
-                  label="Clear All Filters"
-                  @click="clearAllFilters"
-                  size="sm"
-                />
-              </div>
-            </div>
-          </div>
-        </q-card>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="state.loading" class="col-12 text-center">
-        <q-spinner color="primary" size="3em" />
-        <p class="q-mt-md">Loading events...</p>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="state.error" class="col-12 text-center">
-        <q-banner class="bg-negative text-white">
-          {{ state.error }}
-        </q-banner>
-      </div>
-
-      <!-- Events List -->
-      <template v-else>
-        <div class="col-12">
-          <!-- Results Summary -->
-          <div class="q-mb-md">
-            <div class="text-subtitle2 text-grey-7">
-              {{ sortedAndFilteredEvents.length }} event{{
-                sortedAndFilteredEvents.length !== 1 ? 's' : ''
-              }}
-              found
-            </div>
-          </div>
-
-          <!-- Mobile: Card View -->
-          <div class="lt-md">
-            <div class="q-gutter-md">
-              <q-card
-                v-for="event in sortedAndFilteredEvents"
-                :key="event.id"
-                flat
-                bordered
-                class="cursor-pointer hover-highlight"
-                @click="navigateToEvent(event)"
-              >
-                <q-card-section>
-                  <div class="text-h6 event-title">{{ event.title }}</div>
-                  <div
-                    class="text-caption text-grey-6 q-mb-sm"
-                    v-if="getEventCategory(event.taxonomies)"
-                  >
-                    {{ getEventCategory(event.taxonomies) }}
-                  </div>
-
-                  <div class="row q-col-gutter-sm q-mb-sm">
-                    <div class="col-6">
-                      <div class="text-caption text-grey-7">Event Date</div>
-                      <div class="text-body2">{{ formatDate(event.start_date) }}</div>
-                      <div
-                        class="text-caption text-grey-6"
-                        v-if="event.end_date && event.end_date !== event.start_date"
-                      >
-                        to {{ formatDate(event.end_date) }}
-                      </div>
-                    </div>
-                    <div class="col-6">
-                      <div class="text-caption text-grey-7">Registration</div>
-                      <div class="text-body2" v-if="event.registration_start_date">
-                        {{ formatDate(event.registration_start_date) }}
-                      </div>
-                      <div class="text-body2 text-grey-5" v-else>Not available</div>
-                    </div>
-                  </div>
-
-                  <div class="row q-col-gutter-sm items-center">
-                    <div class="col">
-                      <div class="text-caption text-grey-7">Location</div>
-                      <div class="text-body2">{{ formatLocation(event.city, event.country) }}</div>
-                      <div class="text-caption text-grey-6" v-if="event.venue_name">
-                        {{ event.venue_name }}
-                      </div>
-                    </div>
-                    <div class="col-auto" v-if="getEventCategory(event.taxonomies)">
-                      <q-chip
-                        color="primary"
-                        text-color="white"
-                        size="sm"
-                        :label="getEventCategory(event.taxonomies)"
-                      />
-                    </div>
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
-          </div>
-
-          <!-- Desktop: Table View -->
-          <div class="gt-sm">
-            <div class="table-container">
-              <q-table
-                :rows="sortedAndFilteredEvents"
-                :columns="columns"
-                row-key="id"
-                :loading="state.loading"
-                v-model:pagination="tablePagination"
-                @request="onRequest"
-                @scroll="onScroll"
-                virtual-scroll
-                :virtual-scroll-item-size="48"
-                :rows-per-page-options="[10, 20, 50, 100]"
-                dense
-                class="events-table"
-                :sort-method="customSort"
-              >
-                <template v-slot:body="props">
-                  <q-tr
-                    :props="props"
-                    @click="navigateToEvent(props.row)"
-                    class="cursor-pointer hover-highlight"
-                  >
-                    <q-td key="title" :props="props" class="event-title-cell">
-                      <div class="text-weight-medium event-title">{{ props.row.title }}</div>
-                      <div class="text-caption text-grey-6" v-if="props.row.event_category">
-                        {{ props.row.event_category }}
-                      </div>
-                    </q-td>
-                    <q-td key="start_date" :props="props">
-                      <div>{{ formatDate(props.row.start_date) }}</div>
-                      <div
-                        class="text-caption text-grey-6"
-                        v-if="props.row.end_date && props.row.end_date !== props.row.start_date"
-                      >
-                        to {{ formatDate(props.row.end_date) }}
-                      </div>
-                    </q-td>
-                    <q-td key="registration_start_date" :props="props">
-                      <div v-if="props.row.registration_start_date">
-                        {{ formatDate(props.row.registration_start_date) }}
-                      </div>
-                      <div v-else class="text-grey-5">Not available</div>
-                    </q-td>
-                    <q-td key="location" :props="props">
-                      <div class="text-weight-medium">
-                        {{ formatLocation(props.row.city, props.row.country) }}
-                      </div>
-                      <div class="text-caption text-grey-6" v-if="props.row.venue_name">
-                        {{ props.row.venue_name }}
-                      </div>
-                    </q-td>
-                    <q-td key="category" :props="props">
-                      <q-chip
-                        v-if="getEventCategory(props.row.taxonomies)"
-                        color="primary"
-                        text-color="white"
-                        size="sm"
-                        :label="getEventCategory(props.row.taxonomies)"
-                      />
-                      <span v-else class="text-grey-5">—</span>
-                    </q-td>
-                  </q-tr>
-                </template>
-              </q-table>
-            </div>
-          </div>
+          </q-card>
         </div>
-      </template>
-    </div>
-  </q-page>
+
+        <!-- Loading State -->
+        <div v-if="state.loading" class="col-12 text-center">
+          <q-spinner color="primary" size="3em" />
+          <p class="q-mt-md">Loading events...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="state.error" class="col-12 text-center">
+          <q-banner class="bg-negative text-white">
+            {{ state.error }}
+          </q-banner>
+        </div>
+
+        <!-- Events List -->
+        <template v-else>
+          <div class="col-12">
+            <!-- Results Summary -->
+            <div class="q-mb-md">
+              <div class="text-subtitle2 text-grey-7">
+                {{ sortedAndFilteredEvents.length }} event{{
+                  sortedAndFilteredEvents.length !== 1 ? 's' : ''
+                }}
+                found
+              </div>
+            </div>
+
+            <!-- Mobile: Card View -->
+            <div class="lt-md">
+              <div class="q-gutter-md">
+                <q-card
+                  v-for="event in sortedAndFilteredEvents"
+                  :key="event.id"
+                  flat
+                  bordered
+                  class="cursor-pointer hover-highlight"
+                  @click="navigateToEvent(event)"
+                >
+                  <q-card-section>
+                    <div class="text-h6 event-title">{{ event.title }}</div>
+                    <div
+                      class="text-caption text-grey-6 q-mb-sm"
+                      v-if="getEventCategory(event.taxonomies)"
+                    >
+                      {{ getEventCategory(event.taxonomies) }}
+                    </div>
+
+                    <div class="row q-col-gutter-sm q-mb-sm">
+                      <div class="col-6">
+                        <div class="text-caption text-grey-7">Event Date</div>
+                        <div class="text-body2">{{ formatDate(event.start_date) }}</div>
+                        <div
+                          class="text-caption text-grey-6"
+                          v-if="event.end_date && event.end_date !== event.start_date"
+                        >
+                          to {{ formatDate(event.end_date) }}
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="text-caption text-grey-7">Registration</div>
+                        <div class="text-body2" v-if="event.registration_start_date">
+                          {{ formatDate(event.registration_start_date) }}
+                        </div>
+                        <div class="text-body2 text-grey-5" v-else>Not available</div>
+                      </div>
+                    </div>
+
+                    <div class="row q-col-gutter-sm items-center">
+                      <div class="col">
+                        <div class="text-caption text-grey-7">Location</div>
+                        <div class="text-body2">
+                          {{ formatLocation(event.city, event.country) }}
+                        </div>
+                        <div class="text-caption text-grey-6" v-if="event.venue_name">
+                          {{ event.venue_name }}
+                        </div>
+                      </div>
+                      <div class="col-auto" v-if="getEventCategory(event.taxonomies)">
+                        <q-chip
+                          :color="getEventCategoryColor(event.taxonomies).color"
+                          :text-color="getEventCategoryColor(event.taxonomies).textColor"
+                          :icon="getEventCategoryColor(event.taxonomies).icon"
+                          size="sm"
+                          :label="getEventCategory(event.taxonomies)"
+                        />
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
+
+            <!-- Desktop: Table View -->
+            <div class="gt-sm">
+              <div class="table-container">
+                <q-table
+                  :rows="sortedAndFilteredEvents"
+                  :columns="columns"
+                  row-key="id"
+                  :loading="state.loading"
+                  v-model:pagination="tablePagination"
+                  @request="onRequest"
+                  @scroll="onScroll"
+                  virtual-scroll
+                  :virtual-scroll-item-size="48"
+                  :rows-per-page-options="[10, 20, 50, 100]"
+                  dense
+                  class="events-table"
+                  :sort-method="customSort"
+                >
+                  <template v-slot:body="props">
+                    <q-tr
+                      :props="props"
+                      @click="navigateToEvent(props.row)"
+                      class="cursor-pointer hover-highlight"
+                    >
+                      <q-td key="title" :props="props" class="event-title-cell">
+                        <div class="text-weight-medium event-title">{{ props.row.title }}</div>
+                        <div class="text-caption text-grey-6" v-if="props.row.event_category">
+                          {{ props.row.event_category }}
+                        </div>
+                      </q-td>
+                      <q-td key="start_date" :props="props">
+                        <div>{{ formatDate(props.row.start_date) }}</div>
+                        <div
+                          class="text-caption text-grey-6"
+                          v-if="props.row.end_date && props.row.end_date !== props.row.start_date"
+                        >
+                          to {{ formatDate(props.row.end_date) }}
+                        </div>
+                      </q-td>
+                      <q-td key="registration_start_date" :props="props">
+                        <div v-if="props.row.registration_start_date">
+                          {{ formatDate(props.row.registration_start_date) }}
+                        </div>
+                        <div v-else class="text-grey-5">Not available</div>
+                      </q-td>
+                      <q-td key="location" :props="props">
+                        <div class="text-weight-medium">
+                          {{ formatLocation(props.row.city, props.row.country) }}
+                        </div>
+                        <div class="text-caption text-grey-6" v-if="props.row.venue_name">
+                          {{ props.row.venue_name }}
+                        </div>
+                      </q-td>
+                      <q-td key="category" :props="props">
+                        <q-chip
+                          v-if="getEventCategory(props.row.taxonomies)"
+                          :color="getEventCategoryColor(props.row.taxonomies).color"
+                          :text-color="getEventCategoryColor(props.row.taxonomies).textColor"
+                          :icon="getEventCategoryColor(props.row.taxonomies).icon"
+                          size="sm"
+                          :label="getEventCategory(props.row.taxonomies)"
+                        />
+                        <span v-else class="text-grey-5">—</span>
+                      </q-td>
+                    </q-tr>
+                  </template>
+                </q-table>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </q-page>
+  </q-pull-to-refresh>
 </template>
 
 <script setup lang="ts">
@@ -566,7 +588,7 @@ const getCountryName = (code: string): string => {
 };
 
 // Use shared formatters
-const { formatDate, formatLocation, getEventCategory } = useFormatters();
+const { formatDate, formatLocation, getEventCategory, getEventCategoryColor } = useFormatters();
 
 // Helper functions for better data display
 
@@ -855,21 +877,98 @@ watch(
   { immediate: true },
 );
 
+// Watch for filter changes and reload events
+watch(
+  [
+    () => state.value.selectedCountry,
+    () => startDateRange.value.from,
+    () => startDateRange.value.to,
+    () => registrationDateRange.value.from,
+    () => registrationDateRange.value.to,
+  ],
+  () => {
+    void loadEvents();
+  },
+  { deep: true },
+);
+
+// Watch for search query changes with debounce
+watch(
+  () => state.value.searchQuery,
+  () => {
+    void loadEvents();
+  },
+  { immediate: false },
+);
+
 const navigateToEvent = (event: EventListItem) => {
   void router.push(`/events/${event.id}`);
 };
 
-const loadEvents = async () => {
+// Refresh handlers
+const handleRefresh = () => {
+  void loadEvents(true);
+};
+
+const handlePullToRefresh = (done: () => void) => {
+  void loadEvents(true).finally(() => {
+    done();
+  });
+};
+
+const loadEvents = async (forceReload = false) => {
   state.value.loading = true;
   state.value.error = null;
+
   try {
-    const events = await eventService.getEvents({
+    // Build query parameters based on current filters
+    const params: Record<string, unknown> = {
       page: state.value.pagination.page,
       perPage: state.value.pagination.rowsPerPage,
-    });
+    };
+
+    // Add country filter if selected
+    if (state.value.selectedCountry) {
+      params.country = state.value.selectedCountry;
+    }
+
+    // Add date range filters
+    if (startDateRange.value.from) {
+      params.start_date_from = startDateRange.value.from;
+    }
+    if (startDateRange.value.to) {
+      params.start_date_to = startDateRange.value.to;
+    }
+    if (registrationDateRange.value.from) {
+      params.registration_start_date_from = registrationDateRange.value.from;
+    }
+    if (registrationDateRange.value.to) {
+      params.registration_start_date_to = registrationDateRange.value.to;
+    }
+
+    // Add search query if present
+    if (state.value.searchQuery) {
+      params.search = state.value.searchQuery;
+    }
+
+    // Add cache busting parameter if force reload
+    if (forceReload) {
+      params._t = Date.now();
+    }
+
+    const events = await eventService.getEvents(params);
     state.value.events = events;
     updateCountrySet(events);
     state.value.pagination.rowsNumber = events.length;
+
+    if (forceReload) {
+      $q.notify({
+        type: 'positive',
+        message: 'Events refreshed successfully',
+        position: 'top',
+        timeout: 2000,
+      });
+    }
   } catch (err) {
     console.error('Error loading events:', err);
     state.value.error = 'Failed to load events';

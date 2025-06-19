@@ -28,8 +28,9 @@
               <q-chip
                 v-if="getEventCategory(event.taxonomies)"
                 dense
-                color="primary"
-                text-color="white"
+                :color="getEventCategoryColor(event.taxonomies).color"
+                :text-color="getEventCategoryColor(event.taxonomies).textColor"
+                :icon="getEventCategoryColor(event.taxonomies).icon"
               >
                 {{ getEventCategory(event.taxonomies) }}
               </q-chip>
@@ -341,7 +342,7 @@ const tab = ref<'overview' | 'details' | 'venue' | 'contact'>('overview');
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
-const { formatDate, getEventCategory } = useFormatters();
+const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
 
 const formattedDates = computed(() => {
   if (!event.value) return '';

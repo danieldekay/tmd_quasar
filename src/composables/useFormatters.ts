@@ -26,6 +26,55 @@ export const useFormatters = () => {
   };
 
   /**
+   * Color mapping for event categories
+   */
+  const categoryColorMap: Record<string, { color: string; textColor: string; icon?: string }> = {
+    // Marathon types
+    marathon: { color: 'red-7', textColor: 'white', icon: 'directions_run' },
+    'tango marathon': { color: 'red-7', textColor: 'white', icon: 'directions_run' },
+    'milonga marathon': { color: 'red-8', textColor: 'white', icon: 'directions_run' },
+
+    // Festival types
+    festival: { color: 'purple-6', textColor: 'white', icon: 'celebration' },
+    'tango festival': { color: 'purple-6', textColor: 'white', icon: 'celebration' },
+    'music festival': { color: 'purple-7', textColor: 'white', icon: 'music_note' },
+
+    // Encuentro types
+    encuentro: { color: 'blue-6', textColor: 'white', icon: 'groups' },
+    'tango encuentro': { color: 'blue-6', textColor: 'white', icon: 'groups' },
+    'milonga encuentro': { color: 'blue-7', textColor: 'white', icon: 'groups' },
+
+    // Weekend events
+    weekend: { color: 'green-6', textColor: 'white', icon: 'weekend' },
+    'tango weekend': { color: 'green-6', textColor: 'white', icon: 'weekend' },
+    'milonga weekend': { color: 'green-7', textColor: 'white', icon: 'weekend' },
+
+    // Special events
+    workshop: { color: 'orange-6', textColor: 'white', icon: 'school' },
+    masterclass: { color: 'orange-7', textColor: 'white', icon: 'star' },
+    seminar: { color: 'orange-5', textColor: 'white', icon: 'psychology' },
+
+    // Competition events
+    competition: { color: 'amber-7', textColor: 'black', icon: 'emoji_events' },
+    championship: { color: 'amber-8', textColor: 'white', icon: 'emoji_events' },
+    contest: { color: 'amber-6', textColor: 'black', icon: 'emoji_events' },
+
+    // Social events
+    milonga: { color: 'teal-6', textColor: 'white', icon: 'music_note' },
+    practica: { color: 'teal-5', textColor: 'white', icon: 'fitness_center' },
+    social: { color: 'teal-7', textColor: 'white', icon: 'people' },
+
+    // Special occasions
+    'new year': { color: 'indigo-6', textColor: 'white', icon: 'celebration' },
+    christmas: { color: 'red-6', textColor: 'white', icon: 'celebration' },
+    valentine: { color: 'pink-6', textColor: 'white', icon: 'favorite' },
+    anniversary: { color: 'deep-purple-6', textColor: 'white', icon: 'cake' },
+
+    // Default fallback
+    other: { color: 'grey-6', textColor: 'white', icon: 'event' },
+  };
+
+  /**
    * Extract event category names from taxonomies
    */
   const getEventCategory = (taxonomies?: EventTaxonomies): string => {
@@ -38,9 +87,47 @@ export const useFormatters = () => {
     return categories.map((cat) => cat.name).join(', ');
   };
 
+  /**
+   * Get color configuration for an event category
+   */
+  const getCategoryColor = (
+    category: string,
+  ): { color: string; textColor: string; icon?: string } => {
+    if (!category) return categoryColorMap['other']!;
+
+    const normalizedCategory = category.toLowerCase().trim();
+
+    // Try exact match first
+    if (categoryColorMap[normalizedCategory]) {
+      return categoryColorMap[normalizedCategory];
+    }
+
+    // Try partial matches for compound categories
+    for (const [key, value] of Object.entries(categoryColorMap)) {
+      if (normalizedCategory.includes(key)) {
+        return value;
+      }
+    }
+
+    // Default fallback
+    return categoryColorMap['other']!;
+  };
+
+  /**
+   * Get color configuration for event category from taxonomies
+   */
+  const getEventCategoryColor = (
+    taxonomies?: EventTaxonomies,
+  ): { color: string; textColor: string; icon?: string } => {
+    const category = getEventCategory(taxonomies);
+    return getCategoryColor(category);
+  };
+
   return {
     formatDate,
     formatLocation,
     getEventCategory,
+    getCategoryColor,
+    getEventCategoryColor,
   };
 };
