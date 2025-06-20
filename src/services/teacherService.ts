@@ -19,7 +19,14 @@ class TeacherService extends BaseService<Teacher> {
    * Get teachers with enhanced filtering and pagination
    */
   async getTeachers(params: TeacherParams = {}, signal?: AbortSignal) {
-    const response = await this.getAll(params, signal);
+    // Set a high per_page limit to get all teachers by default
+    // Use 200 to ensure we get all records even if the collection grows
+    const defaultParams = {
+      per_page: 200,
+      ...params,
+    };
+
+    const response = await this.getAll(defaultParams, signal);
 
     // Return just the data array like the DJ service does
     return response.data;

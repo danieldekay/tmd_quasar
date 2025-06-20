@@ -189,20 +189,52 @@ export interface Couple extends BaseEntity {
 }
 
 export interface EventSeries extends BaseEntity {
+  slug?: string;
+  modified?: string;
+  status?: string;
   start_date?: string;
   registration_start_date?: string;
+  city?: string;
+  country?: string;
+  website?: string;
   content?: {
     rendered: string;
   };
   acf?: {
-    description: string;
-    website: string;
-    logo: string;
+    description?: string;
+    website?: string;
+    logo?: string;
   };
   // Embedded related data
   _embedded?: {
     events?: BaseEvent[];
-    author?: unknown[];
+    author?: Array<{
+      id: number;
+      name: string;
+      url?: string;
+      description?: string;
+      avatar_urls: {
+        '24': string;
+        '48': string;
+        '96': string;
+      };
+    }>;
+    'wp:featuredmedia'?: Array<{
+      id: number;
+      source_url: string;
+      alt_text?: string;
+      title?: {
+        rendered: string;
+      };
+    }>;
+    'wp:term'?: Array<
+      Array<{
+        id: number;
+        name: string;
+        slug: string;
+        taxonomy: string;
+      }>
+    >;
   };
 }
 

@@ -10,7 +10,19 @@
             :show-stats="true"
             :total-count="state.totalCount"
             :stats-label="formatEventsText(state.totalCount)"
-          />
+          >
+            <template #actions>
+              <q-btn
+                round
+                color="primary"
+                icon="refresh"
+                :loading="state.loading"
+                @click="handleRefresh"
+                title="Refresh events"
+                size="md"
+              />
+            </template>
+          </ListPageHeader>
         </div>
 
         <!-- Use our standardized filters -->
@@ -85,238 +97,91 @@
         <!-- Content Section -->
         <div v-else class="content-section">
           <q-card flat bordered class="content-card">
-            <!-- Results Header -->
-            <q-card-section class="results-header border-bottom">
-              <div class="row items-center justify-between">
-                <div class="results-info">
-                  <div class="text-h6 text-weight-medium">
-                    {{ formatEventsText(filteredEvents.length) }}
-                    <span v-if="hasFilters()" class="text-grey-6">
-                      (filtered from {{ state.totalCount.toLocaleString() }})
-                    </span>
-                  </div>
-                  <div class="text-caption text-grey-6 q-mt-xs">
-                    Page {{ state.currentPage }} of {{ state.totalPages }}
-                    <span v-if="state.totalCount > 0" class="q-ml-sm">
-                      • Showing {{ (state.currentPage - 1) * filters.rowsPerPage + 1 }}-{{
-                        Math.min(state.currentPage * filters.rowsPerPage, state.totalCount)
-                      }}
-                      of {{ state.totalCount }}
-                    </span>
-                  </div>
-                </div>
-                <div class="results-actions">
-                  <div class="row items-center q-gutter-sm">
-                    <!-- Pagination Controls -->
-                    <div class="pagination-controls">
-                      <q-btn
-                        flat
-                        round
-                        icon="first_page"
-                        color="white"
-                        text-color="rgba(255,255,255,0.8)"
-                        size="sm"
-                        :disable="state.currentPage <= 1"
-                        @click="goToPage(1)"
-                        title="First page"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        icon="chevron_left"
-                        color="white"
-                        text-color="rgba(255,255,255,0.8)"
-                        size="sm"
-                        :disable="!state.hasPrevPage"
-                        @click="goToPage(state.currentPage - 1)"
-                        title="Previous page"
-                      />
-                      <span class="page-info text-caption q-mx-sm">
-                        {{ state.currentPage }} / {{ state.totalPages }}
-                      </span>
-                      <q-btn
-                        flat
-                        round
-                        icon="chevron_right"
-                        color="white"
-                        text-color="rgba(255,255,255,0.8)"
-                        size="sm"
-                        :disable="!state.hasNextPage"
-                        @click="goToPage(state.currentPage + 1)"
-                        title="Next page"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        icon="last_page"
-                        color="white"
-                        text-color="rgba(255,255,255,0.8)"
-                        size="sm"
-                        :disable="state.currentPage >= state.totalPages"
-                        @click="goToPage(state.totalPages)"
-                        title="Last page"
-                      />
-                    </div>
-
-                    <!-- Rows per page selector -->
-                    <q-select
-                      v-model="filters.rowsPerPage"
-                      :options="[10, 20, 50, 100]"
-                      dense
-                      borderless
-                      color="white"
-                      label-color="rgba(255,255,255,0.8)"
-                      popup-content-class="pagination-select-popup"
-                      class="rows-per-page-select"
-                      @update:model-value="handleRowsPerPageChange"
-                    >
-                      <template v-slot:prepend>
-                        <span class="text-caption text-white q-mr-xs">Rows:</span>
-                      </template>
-                    </q-select>
-
-                    <!-- Refresh button -->
-                    <q-btn
-                      round
-                      color="white"
-                      text-color="primary"
-                      icon="refresh"
-                      :loading="state.loading"
-                      @click="handleRefresh"
-                      title="Refresh events"
-                      size="sm"
-                      class="refresh-btn-small"
-                    />
-                  </div>
-                </div>
-              </div>
-            </q-card-section>
-
             <!-- Events Table -->
-            <q-table
+            <BaseTable
               :rows="filteredEvents"
               :columns="columns"
-              row-key="id"
-              :pagination="tablePagination"
-              @request="onTableRequest"
-              flat
-              class="events-table modern-table"
-              :rows-per-page-options="[10, 20, 50]"
-              separator="horizontal"
+              :current-page="tablePagination.page"
+              :rows-per-page="tablePagination.rowsPerPage"
+              :total-items="state.totalCount"
+              :loading="state.loading"
+              :error="state.error"
+              :clickable-rows="true"
+              :show-top-pagination="true"
+              loading-message="Loading events..."
+              empty-icon="event"
+              empty-title="No events found"
+              empty-message="No events match your current search and filter criteria."
+              @update:current-page="goToPage"
+              @update:rows-per-page="handleRowsPerPageChange"
+              @row-click="navigateToEvent"
             >
-              <template v-slot:header="props">
-                <q-tr :props="props" class="table-header">
-                  <q-th
-                    v-for="col in props.cols"
-                    :key="col.name"
-                    :props="props"
-                    class="table-header-cell"
-                  >
-                    <div class="flex items-center">
-                      <span class="text-weight-bold">{{ col.label }}</span>
-                      <q-icon
-                        v-if="col.sortable"
-                        :name="
-                          col.name === tablePagination.sortBy
-                            ? tablePagination.descending
-                              ? 'arrow_downward'
-                              : 'arrow_upward'
-                            : 'unfold_more'
-                        "
-                        size="xs"
-                        class="q-ml-xs sort-icon"
-                        :class="{ 'active-sort': col.name === tablePagination.sortBy }"
-                      />
+              <template #body="{ props }">
+                <q-td key="title" :props="props" class="event-title-cell">
+                  <div class="event-title-content">
+                    <div class="event-title text-weight-medium">{{ props.row.title }}</div>
+                    <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
+                      {{ props.row.subtitle }}
                     </div>
-                  </q-th>
-                </q-tr>
-              </template>
+                  </div>
+                </q-td>
 
-              <template v-slot:body="props">
-                <q-tr
-                  :props="props"
-                  class="table-row hover-highlight cursor-pointer"
-                  @click="navigateToEvent(props.row)"
-                >
-                  <q-td key="title" :props="props" class="event-title-cell">
-                    <div class="event-title-content">
-                      <div class="event-title text-weight-medium">{{ props.row.title }}</div>
-                      <div
-                        v-if="props.row.subtitle"
-                        class="event-subtitle text-caption text-grey-6"
-                      >
-                        {{ props.row.subtitle }}
+                <q-td key="edition" :props="props" class="edition-cell">
+                  <div class="edition-content">
+                    <span class="text-weight-medium">{{ props.row.edition }}</span>
+                  </div>
+                </q-td>
+
+                <q-td key="start_date" :props="props" class="date-cell">
+                  <div class="date-content">
+                    <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
+                    <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
+                  </div>
+                </q-td>
+
+                <q-td key="registration_start_date" :props="props" class="date-cell">
+                  <div class="date-content">
+                    <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
+                    <span
+                      :class="
+                        props.row.registration_start_date ? 'text-weight-medium' : 'text-grey-6'
+                      "
+                    >
+                      {{
+                        props.row.registration_start_date
+                          ? formatDate(props.row.registration_start_date)
+                          : 'TBD'
+                      }}
+                    </span>
+                  </div>
+                </q-td>
+
+                <q-td key="location" :props="props" class="location-cell">
+                  <div class="location-content">
+                    <q-icon name="place" size="xs" class="q-mr-xs text-accent" />
+                    <div>
+                      <div class="text-weight-medium">{{ capitalizeCity(props.row.city) }}</div>
+                      <div class="text-caption text-grey-6">
+                        {{ getCountryName(props.row.country) }}
                       </div>
                     </div>
-                  </q-td>
+                  </div>
+                </q-td>
 
-                  <q-td key="edition" :props="props" class="edition-cell">
-                    <div class="edition-content">
-                      <span class="text-weight-medium">{{ props.row.edition }}</span>
-                    </div>
-                  </q-td>
-
-                  <q-td key="start_date" :props="props" class="date-cell">
-                    <div class="date-content">
-                      <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
-                      <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
-                    </div>
-                  </q-td>
-
-                  <q-td key="registration_start_date" :props="props" class="date-cell">
-                    <div class="date-content">
-                      <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
-                      <span
-                        :class="
-                          props.row.registration_start_date ? 'text-weight-medium' : 'text-grey-6'
-                        "
-                      >
-                        {{
-                          props.row.registration_start_date
-                            ? formatDate(props.row.registration_start_date)
-                            : 'TBD'
-                        }}
-                      </span>
-                    </div>
-                  </q-td>
-
-                  <q-td key="location" :props="props" class="location-cell">
-                    <div class="location-content">
-                      <q-icon name="place" size="xs" class="q-mr-xs text-accent" />
-                      <div>
-                        <div class="text-weight-medium">{{ capitalizeCity(props.row.city) }}</div>
-                        <div class="text-caption text-grey-6">
-                          {{ getCountryName(props.row.country) }}
-                        </div>
-                      </div>
-                    </div>
-                  </q-td>
-
-                  <q-td key="category" :props="props" class="category-cell">
-                    <q-chip
-                      v-if="getEventCategory(props.row.taxonomies)"
-                      :label="getEventCategory(props.row.taxonomies)"
-                      :color="getEventCategoryColor(props.row.taxonomies).color"
-                      :text-color="getEventCategoryColor(props.row.taxonomies).textColor"
-                      size="sm"
-                      dense
-                      class="category-chip"
-                    />
-                    <span v-else class="text-grey-5">—</span>
-                  </q-td>
-                </q-tr>
-              </template>
-
-              <template v-slot:no-data>
-                <div class="full-width text-center q-pa-lg">
-                  <ListEmptyState
-                    icon="event"
-                    title="No events found"
-                    message="No events match your current filters. Try adjusting your search criteria."
+                <q-td key="category" :props="props" class="category-cell">
+                  <q-chip
+                    v-if="getEventCategory(props.row.taxonomies)"
+                    :label="getEventCategory(props.row.taxonomies)"
+                    :color="getEventCategoryColor(props.row.taxonomies).color"
+                    :text-color="getEventCategoryColor(props.row.taxonomies).textColor"
+                    size="sm"
+                    dense
+                    class="category-chip"
                   />
-                </div>
+                  <span v-else class="text-grey-5">—</span>
+                </q-td>
               </template>
-            </q-table>
+            </BaseTable>
           </q-card>
         </div>
       </div>
@@ -329,14 +194,13 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { eventListService, type EventListItem } from '../services';
-import type { EventTableColumn } from '../interfaces/EventView';
 import { useFormatters } from '../composables/useFormatters';
 import { useEventFilters } from '../composables/useEventFilters';
 import { useCountries } from '../composables/useCountries';
 import OfflineMessage from '../components/OfflineMessage.vue';
 import ListPageHeader from '../components/ListPageHeader.vue';
 import ListFilters from '../components/ListFilters.vue';
-import ListEmptyState from '../components/ListEmptyState.vue';
+import BaseTable from '../components/BaseTable.vue';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -386,7 +250,19 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const columns: EventTableColumn[] = [
+// Define column type compatible with BaseTable
+type EventColumn = {
+  name: string;
+  label: string;
+  field: string | ((row: EventListItem) => unknown);
+  align?: 'left' | 'center' | 'right';
+  sortable?: boolean;
+  style?: string;
+  format?: (val: unknown) => string;
+  classes?: string;
+};
+
+const columns: EventColumn[] = [
   {
     name: 'title',
     label: 'Event',
@@ -410,7 +286,7 @@ const columns: EventTableColumn[] = [
     field: (row) => row.start_date,
     sortable: true,
     align: 'left',
-    format: (val) => formatDate(val),
+    format: (val: unknown) => formatDate(val as string),
     style: 'width: 15%;',
   },
   {
@@ -419,7 +295,7 @@ const columns: EventTableColumn[] = [
     field: (row) => row.registration_start_date,
     sortable: true,
     align: 'left',
-    format: (val) => (val ? formatDate(val) : 'TBD'),
+    format: (val: unknown) => (val ? formatDate(val as string) : 'TBD'),
     style: 'width: 12%;',
   },
   {
@@ -537,20 +413,6 @@ const loadEvents = async (page?: number, forceReload = false) => {
   } finally {
     state.value.loading = false;
   }
-};
-
-const onTableRequest = (props: {
-  pagination: {
-    sortBy: string;
-    descending: boolean;
-    page: number;
-    rowsPerPage: number;
-  };
-}) => {
-  updateFilter('sortBy', props.pagination.sortBy);
-  updateFilter('descending', props.pagination.descending);
-  updateFilter('rowsPerPage', props.pagination.rowsPerPage);
-  void loadEvents(props.pagination.page);
 };
 
 const navigateToEvent = (event: EventListItem) => {

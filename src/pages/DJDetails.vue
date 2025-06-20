@@ -195,7 +195,7 @@
               <div class="col-12">
                 <q-card flat bordered class="bg-primary text-white q-mb-lg">
                   <q-card-section>
-                    <div class="text-h6 q-mb-md">Performance Statistics</div>
+                    <div class="text-h6 q-mb-md">Statistics of Data on TMD</div>
 
                     <!-- Loading State -->
                     <div v-if="eventsLoading" class="text-center q-py-lg">
@@ -243,13 +243,13 @@
                 </q-card>
               </div>
 
-              <!-- Upcoming Events -->
-              <div class="col-12 col-lg-6">
+              <!-- All Events Grouped by Year -->
+              <div class="col-12">
                 <q-card flat>
                   <q-card-section>
                     <div class="text-h6 q-mb-md">
-                      <q-icon name="schedule" class="q-mr-sm" />
-                      Upcoming Events ({{ upcomingEvents.length }})
+                      <q-icon name="event" class="q-mr-sm" />
+                      All Events ({{ djEvents.length }})
                     </div>
                     <div v-if="eventsLoading" class="text-center q-pa-md">
                       <q-spinner color="primary" size="2em" />
@@ -260,97 +260,46 @@
                       <div class="text-weight-medium">No Events Data</div>
                       <div class="text-caption">This DJ doesn't have any recorded events</div>
                     </div>
-                    <div
-                      v-else-if="upcomingEvents.length === 0"
-                      class="text-center q-pa-md text-grey-6"
-                    >
-                      <q-icon name="event_busy" size="3em" class="q-mb-sm" />
-                      <div>No upcoming events scheduled</div>
-                    </div>
-                    <q-list v-else separator>
-                      <q-item
-                        v-for="event in upcomingEvents"
-                        :key="event.id"
-                        clickable
-                        @click="goToEvent(event.id)"
-                        class="event-item"
-                      >
-                        <q-item-section>
-                          <q-item-label class="text-weight-medium">{{ event.title }}</q-item-label>
-                          <q-item-label caption>
-                            <q-icon name="event" size="xs" class="q-mr-xs" />
-                            {{ formatDate(event.start_date) }}
-                            <span v-if="event.edition" class="q-ml-sm">
-                              <q-badge color="grey-6" :label="`Edition ${event.edition}`" />
-                            </span>
-                          </q-item-label>
-                        </q-item-section>
-                        <q-item-section side>
-                          <q-icon name="chevron_right" color="grey-5" />
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </q-card-section>
-                </q-card>
-              </div>
-
-              <!-- Past Events -->
-              <div class="col-12 col-lg-6">
-                <q-card flat>
-                  <q-card-section>
-                    <div class="text-h6 q-mb-md">
-                      <q-icon name="history" class="q-mr-sm" />
-                      Past Events ({{ pastEvents.length }})
-                    </div>
-                    <div v-if="eventsLoading" class="text-center q-pa-md">
-                      <q-spinner color="primary" size="2em" />
-                      <div class="text-caption q-mt-sm">Loading events...</div>
-                    </div>
-                    <div v-else-if="djEvents.length === 0" class="text-center q-pa-md text-grey-6">
-                      <q-icon name="event_note" size="3em" class="q-mb-sm" />
-                      <div class="text-weight-medium">No Events Data</div>
-                      <div class="text-caption">This DJ doesn't have any recorded events</div>
-                    </div>
-                    <div
-                      v-else-if="pastEvents.length === 0"
-                      class="text-center q-pa-md text-grey-6"
-                    >
-                      <q-icon name="event_available" size="3em" class="q-mb-sm" />
-                      <div>No past events recorded</div>
-                    </div>
-                    <q-list v-else separator>
-                      <q-item
-                        v-for="event in pastEvents.slice(0, 10)"
-                        :key="event.id"
-                        clickable
-                        @click="goToEvent(event.id)"
-                        class="event-item"
-                      >
-                        <q-item-section>
-                          <q-item-label class="text-weight-medium">{{ event.title }}</q-item-label>
-                          <q-item-label caption>
-                            <q-icon name="event" size="xs" class="q-mr-xs" />
-                            {{ formatDate(event.start_date) }}
-                            <span v-if="event.edition" class="q-ml-sm">
-                              <q-badge color="grey-6" :label="`Edition ${event.edition}`" />
-                            </span>
-                          </q-item-label>
-                        </q-item-section>
-                        <q-item-section side>
-                          <q-icon name="chevron_right" color="grey-5" />
-                        </q-item-section>
-                      </q-item>
-                      <q-item v-if="pastEvents.length > 10" class="text-center">
-                        <q-item-section>
-                          <q-btn
-                            flat
-                            color="primary"
-                            :label="`View all ${pastEvents.length} past events`"
-                            @click="showAllPastEvents = !showAllPastEvents"
+                    <div v-else>
+                      <div v-for="yearGroup in eventsByYear" :key="yearGroup.year" class="q-mb-lg">
+                        <div class="text-h6 text-primary q-mb-md">
+                          {{ yearGroup.year }}
+                          <q-badge
+                            color="grey-6"
+                            :label="`${yearGroup.events.length} events`"
+                            class="q-ml-sm"
                           />
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
+                        </div>
+                        <q-list separator>
+                          <q-item
+                            v-for="event in yearGroup.events"
+                            :key="event.id"
+                            clickable
+                            @click="goToEvent(event.id)"
+                            class="event-item"
+                          >
+                            <q-item-section>
+                              <q-item-label class="text-weight-medium">{{
+                                event.title
+                              }}</q-item-label>
+                              <q-item-label caption>
+                                <q-icon name="event" size="xs" class="q-mr-xs" />
+                                {{ formatDate(event.start_date) }}
+                                <span v-if="event.edition" class="q-ml-sm">
+                                  <q-badge color="grey-6" :label="`Edition ${event.edition}`" />
+                                </span>
+                                <span v-if="isEventUpcoming(event.start_date)" class="q-ml-sm">
+                                  <q-badge color="positive" label="Upcoming" />
+                                </span>
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side>
+                              <q-icon name="chevron_right" color="grey-5" />
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </div>
+                    </div>
                   </q-card-section>
                 </q-card>
               </div>
@@ -432,7 +381,6 @@ const error = ref<string | null>(null);
 const tab = ref<'overview' | 'activities' | 'events' | 'contact'>('overview');
 const djEvents = ref<BaseEvent[]>([]);
 const eventsLoading = ref(false);
-const showAllPastEvents = ref(false);
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax2.jpg';
 
@@ -694,11 +642,28 @@ const upcomingEvents = computed(() => {
     .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 });
 
-const pastEvents = computed(() => {
-  const now = new Date();
-  return djEvents.value
-    .filter((event) => new Date(event.start_date) < now)
-    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+const eventsByYear = computed(() => {
+  const eventGroups = new Map<number, typeof djEvents.value>();
+
+  djEvents.value.forEach((event) => {
+    if (!event.start_date) return;
+
+    const year = new Date(event.start_date).getFullYear();
+    if (!eventGroups.has(year)) {
+      eventGroups.set(year, []);
+    }
+    eventGroups.get(year)?.push(event);
+  });
+
+  // Sort events within each year by date (newest first)
+  eventGroups.forEach((events) => {
+    events.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+  });
+
+  // Convert to array and sort years (newest first)
+  return Array.from(eventGroups.entries())
+    .map(([year, events]) => ({ year, events }))
+    .sort((a, b) => b.year - a.year);
 });
 
 const eventsStats = computed(() => {
@@ -731,6 +696,11 @@ const eventsStats = computed(() => {
 });
 
 // Methods
+const isEventUpcoming = (startDate: string): boolean => {
+  if (!startDate) return false;
+  return new Date(startDate) > new Date();
+};
+
 const loadDJEvents = () => {
   if (!dj.value?.id) return;
 

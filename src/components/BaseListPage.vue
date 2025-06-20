@@ -277,7 +277,7 @@ interface Emits {
 
 withDefaults(defineProps<Props>(), {
   fullWidth: false,
-  showStats: false,
+  showStats: true,
   totalCount: 0,
   statsLabel: 'Total Items',
   showFilters: true,
