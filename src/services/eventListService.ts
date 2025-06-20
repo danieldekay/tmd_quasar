@@ -62,6 +62,52 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
   // WordPress might store meta fields under a 'meta' or 'acf' property, or directly on the event
   const meta = (rawEvent.meta || rawEvent.acf || {}) as Record<string, unknown>;
 
+  // Extract taxonomies from _embedded["wp:term"] if available
+  let taxonomies: EventTaxonomies | undefined;
+  if (rawEvent._embedded && typeof rawEvent._embedded === 'object') {
+    const embedded = rawEvent._embedded as Record<string, unknown>;
+    const wpTerms = embedded['wp:term'];
+
+    if (Array.isArray(wpTerms) && wpTerms.length > 0) {
+      const extractedTaxonomies: EventTaxonomies = {};
+
+      // Process each taxonomy group
+      wpTerms.forEach((termGroup: unknown) => {
+        if (Array.isArray(termGroup)) {
+          termGroup.forEach((term: unknown) => {
+            if (term && typeof term === 'object') {
+              const termObj = term as Record<string, unknown>;
+              const taxonomyName = getString(termObj.taxonomy);
+              const termName = getString(termObj.name);
+              const termSlug = getString(termObj.slug);
+              const termId = Number(termObj.id) || 0;
+
+              if (taxonomyName && termName) {
+                // Handle the specific taxonomy we know about
+                if (taxonomyName === 'event-categories-2020') {
+                  if (!extractedTaxonomies['event-categories-2020']) {
+                    extractedTaxonomies['event-categories-2020'] = [];
+                  }
+                  extractedTaxonomies['event-categories-2020'].push({
+                    id: termId,
+                    name: termName,
+                    slug: termSlug,
+                    description: '', // WordPress API doesn't always include description
+                  });
+                }
+              }
+            }
+          });
+        }
+      });
+
+      // Only assign if we found some taxonomies
+      if (Object.keys(extractedTaxonomies).length > 0) {
+        taxonomies = extractedTaxonomies;
+      }
+    }
+  }
+
   const result: EventListItem = {
     id: Number(rawEvent.id) || 0,
     title: getString(rawEvent.title),
@@ -88,8 +134,8 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
     price: getString(meta.price || rawEvent.price),
     currency: getString(meta.currency || rawEvent.currency),
 
-    // Add taxonomies if they exist
-    taxonomies: rawEvent.taxonomies as EventTaxonomies,
+    // Add extracted taxonomies only if they exist
+    ...(taxonomies && { taxonomies }),
   };
 
   return result;

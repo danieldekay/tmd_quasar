@@ -1,5 +1,9 @@
 import { api } from '../boot/axios';
 import type { AxiosRequestConfig } from 'axios';
+import { useApiStatus } from '../composables/useApiStatus';
+
+// Get API status instance for error handling
+const apiStatus = useApiStatus();
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -76,50 +80,60 @@ export class BaseService<T = Record<string, unknown>> {
   }
 
   /**
-   * Make a GET request with common error handling and parameter normalization
+   * Make a GET request with enhanced error handling and offline detection
    */
   protected async makeRequest<R = T>(
     path: string,
     params: BaseParams = {},
     signal?: AbortSignal,
   ): Promise<{ data: R; headers: Record<string, string> }> {
-    try {
-      const requestConfig: AxiosRequestConfig = {
-        params: {
-          ...this.defaultOptions,
-          ...this.normalizePaginationParams(params),
-          ...params,
-        },
-      };
+    return apiStatus.withApiErrorHandling(
+      async () => {
+        const requestConfig: AxiosRequestConfig = {
+          params: {
+            ...this.defaultOptions,
+            ...this.normalizePaginationParams(params),
+            ...params,
+          },
+        };
 
-      if (signal) {
-        requestConfig.signal = signal;
-      }
+        if (signal) {
+          requestConfig.signal = signal;
+        }
 
-      const response = await api.get(path, requestConfig);
+        const response = await api.get(path, requestConfig);
 
-      return {
-        data: response.data as R,
-        headers: response.headers as Record<string, string>,
-      };
-    } catch (error) {
-      console.error(`API Error for ${path}:`, error);
-      throw error;
-    }
+        return {
+          data: response.data as R,
+          headers: response.headers as Record<string, string>,
+        };
+      },
+      { retries: 1 }, // Allow one retry for transient failures
+    );
   }
 
   /**
    * Get all items from the endpoint
    */
   async getAll(params: BaseParams = {}, signal?: AbortSignal): Promise<PaginatedResponse<T>> {
-    const { data, headers } = await this.makeRequest<T[]>(this.endpoint, params, signal);
-    const currentPage = params.page || 1;
-    const pagination = this.extractPaginationInfo(headers, currentPage);
+    try {
+      const { data, headers } = await this.makeRequest<T[]>(this.endpoint, params, signal);
+      const currentPage = params.page || 1;
+      const pagination = this.extractPaginationInfo(headers, currentPage);
 
-    return {
-      data,
-      ...pagination,
-    };
+      return {
+        data,
+        ...pagination,
+      };
+    } catch (error) {
+      // Enhanced error logging with context
+      console.error(`Failed to load data from ${this.endpoint}:`, {
+        error: apiStatus.getErrorMessage(error),
+        isOffline: apiStatus.isOfflineError(error),
+        params: params,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -134,8 +148,17 @@ export class BaseService<T = Record<string, unknown>> {
    * Get a single item by ID
    */
   async getById(id: number, params: BaseParams = {}, signal?: AbortSignal): Promise<T> {
-    const { data } = await this.makeRequest<T>(`${this.endpoint}/${id}`, params, signal);
-    return data;
+    try {
+      const { data } = await this.makeRequest<T>(`${this.endpoint}/${id}`, params, signal);
+      return data;
+    } catch (error) {
+      console.error(`Failed to load item ${id} from ${this.endpoint}:`, {
+        error: apiStatus.getErrorMessage(error),
+        isOffline: apiStatus.isOfflineError(error),
+        id: id,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -173,5 +196,19 @@ export class BaseService<T = Record<string, unknown>> {
 
     const response = await this.getAll(loadMoreParams, signal);
     return response.data;
+  }
+
+  /**
+   * Get user-friendly error message for API failures
+   */
+  getErrorMessage(error: unknown): string {
+    return apiStatus.getErrorMessage(error);
+  }
+
+  /**
+   * Check if error indicates offline status
+   */
+  isOfflineError(error: unknown): boolean {
+    return apiStatus.isOfflineError(error);
   }
 }

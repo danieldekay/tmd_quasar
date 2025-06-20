@@ -369,10 +369,12 @@
         </div>
 
         <!-- Error State -->
-        <div v-else-if="state.error" class="col-12 text-center">
-          <q-banner class="bg-negative text-white">
-            {{ state.error }}
-          </q-banner>
+        <div v-else-if="state.error" class="col-12">
+          <OfflineMessage
+            :error="state.error"
+            title="Failed to Load Events"
+            @retry="handleRefresh"
+          />
         </div>
 
         <!-- Events List -->
@@ -549,6 +551,7 @@ import type { EventListItem } from '../services/types';
 import type { EventTableColumn } from '../interfaces/EventView';
 import { useFormatters } from '../composables/useFormatters';
 import { useEventFilters } from '../composables/useEventFilters';
+import OfflineMessage from '../components/OfflineMessage.vue';
 
 const router = useRouter();
 const $q = useQuasar();

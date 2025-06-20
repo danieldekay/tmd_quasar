@@ -168,15 +168,7 @@
 
     <!-- Error State -->
     <div v-else-if="error" class="error-section q-px-lg">
-      <q-banner class="bg-negative text-white">
-        <template v-slot:avatar>
-          <q-icon name="error" />
-        </template>
-        {{ error }}
-        <template v-slot:action>
-          <q-btn flat label="Retry" @click="retryLoad" />
-        </template>
-      </q-banner>
+      <OfflineMessage :error="error" title="Failed to Load DJs" @retry="retryLoad" />
     </div>
 
     <!-- Results Section -->
@@ -379,9 +371,11 @@ import { useRouter } from 'vue-router';
 import { djService, type DJParams } from '../services/djService';
 import type { DJ } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
+import { useCountries } from '../composables/useCountries';
 
 const router = useRouter();
 const { formatDate } = useFormatters();
+const { getCountryName, getAllCountryOptions } = useCountries();
 
 // State
 const djs = ref<DJ[]>([]);
@@ -404,41 +398,9 @@ const activityFilters = ref([
   { key: 'travel', label: 'Travel', color: 'green', icon: 'travel_explore', active: false },
 ]);
 
-// Country mapping
-const countryNames: Record<string, string> = {
-  AR: 'Argentina',
-  AT: 'Austria',
-  BE: 'Belgium',
-  BR: 'Brazil',
-  CA: 'Canada',
-  CH: 'Switzerland',
-  DE: 'Germany',
-  DK: 'Denmark',
-  ES: 'Spain',
-  FI: 'Finland',
-  FR: 'France',
-  GB: 'United Kingdom',
-  GR: 'Greece',
-  IT: 'Italy',
-  JP: 'Japan',
-  KR: 'South Korea',
-  NL: 'Netherlands',
-  NO: 'Norway',
-  PL: 'Poland',
-  PT: 'Portugal',
-  RU: 'Russia',
-  SE: 'Sweden',
-  US: 'United States',
-  UY: 'Uruguay',
-};
-
-const getCountryName = (code: string): string => {
-  return countryNames[code] || code;
-};
-
 const countryOptions = computed(() => {
-  return Object.entries(countryNames).map(([code, name]) => ({
-    label: `${name}`,
+  return getAllCountryOptions().map(({ code, name }) => ({
+    label: name,
     value: code,
   }));
 });

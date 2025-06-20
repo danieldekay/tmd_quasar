@@ -26,7 +26,7 @@ export const useEventFilters = () => {
     startDateRange: { from: null, to: null },
     registrationDateRange: { from: null, to: null },
     sortBy: 'start_date',
-    descending: false,
+    descending: true,
     rowsPerPage: 20,
   };
 
