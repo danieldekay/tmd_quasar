@@ -37,8 +37,9 @@ This project implements a headless WordPress architecture where:
 - **Icons**: Material Design Icons
 - **Language**: TypeScript with strict mode
 - **Code Quality**: ESLint + Prettier with strict rules
-- **API Integration**: WordPress REST API v3 (TMD custom endpoints)
+- **API Integration**: WordPress REST API (TMD custom endpoints v2 & v3, WordPress Core API v2)
 - **Performance**: Request debouncing, caching, lazy loading
+- **Code Quality**: ESLint + Prettier + Stylelint with strict rules
 
 ## Prerequisites
 
@@ -66,8 +67,10 @@ npm install
 
 3. Configure API endpoint:
 
-   - Local development: `http://localhost:10014/wp-json/tmd/v3`
-   - Production: `https://www.tangomarathons.com/wp-json/tmd/v2`
+   - Local development: All content types (Events, DJs, Teachers, Event Series) primarily use `http://localhost:10014/wp-json/tmd/v3`.
+   - Production:
+     - Events: `https://www.tangomarathons.com/wp-json/tmd/v2`
+     - DJs, Teachers, Event Series: Accessed via `tmd/v3` (e.g., `https://www.tangomarathons.com/wp-json/tmd/v3/djs`) and potentially standard WordPress `wp/v2` endpoints for some data. Refer to `docs/api.md` for specifics.
 
 4. Start development server:
 
@@ -84,8 +87,9 @@ npm run dev
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm preview` - Preview production build
-- `pnpm lint` - Run ESLint with strict rules
-- `pnpm lint:fix` - Fix ESLint issues automatically
+- `pnpm lint` - Run ESLint & Stylelint with strict rules
+- `pnpm lint:fix` - Fix ESLint & Stylelint issues automatically
+- `pnpm typecheck` - Run TypeScript type checking
 
 ### Project Structure
 
@@ -112,16 +116,16 @@ endpoints.
 
 ### API Endpoints
 
-**TMD v3 API (Local Development)**:
+**API Usage Summary (Refer to `docs/api.md` for full details):**
 
-- `/tmd/v3/events` - Event listings with advanced filtering
-- `/tmd/v3/djs` - DJ profiles with embedded events
-- `/tmd/v3/teachers` - Teacher profiles
-- `/tmd/v3/event-series` - Event series management
-
-**TMD v2 API (Production)**:
-
-- `/tmd/v2/events` - Production event listings
+*   **Local Development**: Primarily uses `/tmd/v3/` namespace for all custom content types (Events, DJs, Teachers, Event Series).
+    *   Example: `GET http://localhost:10014/wp-json/tmd/v3/events`
+*   **Production**:
+    *   Events: Uses `/tmd/v2/` namespace.
+        *   Example: `GET https://www.tangomarathons.com/wp-json/tmd/v2/events`
+    *   DJs, Teachers, Event Series: Uses `/tmd/v3/` namespace and standard WordPress `/wp/v2/` API.
+        *   Example (DJ): `GET https://www.tangomarathons.com/wp-json/tmd/v3/djs`
+        *   Example (WordPress Core for DJs): `GET https://www.tangomarathons.com/wp-json/wp/v2/tmd_dj`
 
 ### Custom Post Types
 
