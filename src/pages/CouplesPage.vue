@@ -104,28 +104,69 @@
         @update:rows-per-page="updatePagination({ rowsPerPage: $event })"
         @update:sort-by="updatePagination({ sortBy: $event })"
         @update:descending="updatePagination({ descending: $event })"
-        @row-click="handleRowClick"
       >
         <template #body="{ props }">
           <q-td key="names" :props="props">
-            <div class="text-weight-medium">{{ getCoupleNames(props.row) }}</div>
-            <div class="text-caption text-grey-6 q-mt-xs">
-              <template v-if="props.row._embedded?.teachers">
-                <q-btn
-                  v-for="teacher in props.row._embedded.teachers"
-                  :key="teacher.id"
-                  :label="teacher.title"
-                  :to="`/teachers/${teacher.id}`"
-                  flat
-                  dense
-                  color="primary"
-                  size="sm"
-                  class="q-mr-xs"
-                >
-                  <q-tooltip>View {{ teacher.role }} profile</q-tooltip>
-                </q-btn>
-              </template>
+            <q-btn
+              :label="getCoupleNames(props.row)"
+              flat
+              no-caps
+              color="primary"
+              class="text-weight-medium q-pa-none"
+              style="text-align: left; justify-content: flex-start"
+              :to="`/couples/${props.row.id}`"
+            />
+          </q-td>
+          <q-td key="follower" :props="props">
+            <div v-if="getFollowerName(props.row)">
+              <q-btn
+                :label="getFollowerName(props.row)"
+                flat
+                dense
+                color="secondary"
+                size="sm"
+                :to="`/teachers/${getFollowerId(props.row)}`"
+                v-if="getFollowerId(props.row)"
+              >
+                <q-tooltip>View follower profile</q-tooltip>
+              </q-btn>
+              <span v-else>{{ getFollowerName(props.row) }}</span>
             </div>
+            <span v-else class="text-grey-5">-</span>
+          </q-td>
+          <q-td key="leader" :props="props">
+            <div v-if="getLeaderName(props.row)">
+              <q-btn
+                :label="getLeaderName(props.row)"
+                flat
+                dense
+                color="primary"
+                size="sm"
+                :to="`/teachers/${getLeaderId(props.row)}`"
+                v-if="getLeaderId(props.row)"
+              >
+                <q-tooltip>View leader profile</q-tooltip>
+              </q-btn>
+              <span v-else>{{ getLeaderName(props.row) }}</span>
+            </div>
+            <span v-else class="text-grey-5">-</span>
+          </q-td>
+          <q-td key="both_roles" :props="props">
+            <div v-if="getBothRolesName(props.row)">
+              <q-btn
+                :label="getBothRolesName(props.row)"
+                flat
+                dense
+                color="purple"
+                size="sm"
+                :to="`/teachers/${getBothRolesId(props.row)}`"
+                v-if="getBothRolesId(props.row)"
+              >
+                <q-tooltip>View teacher profile (both roles)</q-tooltip>
+              </q-btn>
+              <span v-else>{{ getBothRolesName(props.row) }}</span>
+            </div>
+            <span v-else class="text-grey-5">-</span>
           </q-td>
           <q-td key="location" :props="props">
             <div v-if="props.row.meta_box?.city || props.row.meta_box?.country">
@@ -151,47 +192,17 @@
             </div>
             <span v-else class="text-grey-5">-</span>
           </q-td>
-          <q-td key="website" :props="props">
-            <q-btn
-              v-if="props.row.meta_box?.website"
-              flat
-              round
-              color="secondary"
-              icon="launch"
-              size="sm"
-              :href="props.row.meta_box.website"
-              target="_blank"
-            >
-              <q-tooltip>Visit Website</q-tooltip>
-            </q-btn>
-            <span v-else class="text-grey-5">-</span>
+          <q-td key="events_count" :props="props">
+            <q-badge
+              v-if="getEventsCount(props.row) > 0"
+              :label="getEventsCount(props.row)"
+              color="primary"
+              rounded
+            />
+            <span v-else class="text-grey-5">0</span>
           </q-td>
           <q-td key="date" :props="props">
             <div class="text-caption">{{ formatDate(props.row.date) }}</div>
-          </q-td>
-          <q-td key="actions" :props="props">
-            <div class="row q-gutter-xs">
-              <q-btn
-                flat
-                round
-                color="primary"
-                icon="visibility"
-                size="sm"
-                :to="`/couples/${props.row.id}`"
-              >
-                <q-tooltip>View Details</q-tooltip>
-              </q-btn>
-              <q-btn
-                flat
-                round
-                color="secondary"
-                icon="edit"
-                size="sm"
-                @click.stop="editCouple(props.row)"
-              >
-                <q-tooltip>Edit Couple</q-tooltip>
-              </q-btn>
-            </div>
           </q-td>
         </template>
       </BaseTable>
@@ -201,7 +212,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import BaseListPage from '../components/BaseListPage.vue';
 import BaseTable from '../components/BaseTable.vue';
 import { useGenericList } from '../composables/useGenericList';
@@ -209,8 +219,6 @@ import { coupleService } from '../services';
 import type { Couple } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
-
-const router = useRouter();
 const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
 
@@ -226,10 +234,34 @@ interface CoupleFilters {
 const columns = [
   {
     name: 'names',
-    label: 'Names',
+    label: 'Partnership Name',
     field: (row: Couple) => getCoupleNames(row),
     align: 'left' as const,
     sortable: true,
+  },
+  {
+    name: 'follower',
+    label: 'Follower',
+    field: (row: Couple) => getFollowerName(row),
+    align: 'left' as const,
+    sortable: true,
+    style: 'width: 180px',
+  },
+  {
+    name: 'leader',
+    label: 'Leader',
+    field: (row: Couple) => getLeaderName(row),
+    align: 'left' as const,
+    sortable: true,
+    style: 'width: 180px',
+  },
+  {
+    name: 'both_roles',
+    label: 'Both/Double Role',
+    field: (row: Couple) => getBothRolesName(row),
+    align: 'left' as const,
+    sortable: true,
+    style: 'width: 180px',
   },
   {
     name: 'location',
@@ -237,6 +269,7 @@ const columns = [
     field: (row: Couple) => getLocationText(row),
     align: 'left' as const,
     sortable: true,
+    style: 'width: 150px',
   },
   {
     name: 'partnership_style',
@@ -255,11 +288,11 @@ const columns = [
     style: 'width: 120px',
   },
   {
-    name: 'website',
-    label: 'Website',
-    field: 'website',
+    name: 'events_count',
+    label: 'Events',
+    field: (row: Couple) => getEventsCount(row),
     align: 'center' as const,
-    sortable: false,
+    sortable: true,
     style: 'width: 80px',
   },
   {
@@ -268,14 +301,6 @@ const columns = [
     field: 'date',
     align: 'left' as const,
     sortable: true,
-    style: 'width: 120px',
-  },
-  {
-    name: 'actions',
-    label: 'Actions',
-    field: 'actions',
-    align: 'center' as const,
-    sortable: false,
     style: 'width: 120px',
   },
 ];
@@ -290,12 +315,11 @@ const fetchCouples = async (params: {
 }) => {
   const { page, perPage, sortBy, descending, filters } = params;
 
-  // Build API parameters
+  // For local processing, we pull all data at once
   const apiParams: Record<string, unknown> = {
-    page,
-    per_page: perPage,
-    orderby: sortBy === 'names' ? 'title' : sortBy,
-    order: descending ? 'desc' : 'asc',
+    per_page: 999, // Get all couples for local processing
+    orderby: 'title', // Default ordering by title from API
+    order: 'asc',
   };
 
   // Add filters
@@ -318,7 +342,75 @@ const fetchCouples = async (params: {
       );
     }
 
-    // Since we're getting all couples and filtering locally,
+    // Apply local sorting
+    if (sortBy && filteredCouples.length > 0) {
+      filteredCouples.sort((a, b) => {
+        let aVal: unknown;
+        let bVal: unknown;
+
+        switch (sortBy) {
+          case 'names':
+            aVal = getCoupleNames(a);
+            bVal = getCoupleNames(b);
+            break;
+          case 'follower':
+            aVal = getFollowerName(a);
+            bVal = getFollowerName(b);
+            break;
+          case 'leader':
+            aVal = getLeaderName(a);
+            bVal = getLeaderName(b);
+            break;
+          case 'both_roles':
+            aVal = getBothRolesName(a);
+            bVal = getBothRolesName(b);
+            break;
+          case 'location':
+            aVal = getLocationText(a);
+            bVal = getLocationText(b);
+            break;
+          case 'partnership_style':
+            aVal = a.meta_box?.partnership_style || '';
+            bVal = b.meta_box?.partnership_style || '';
+            break;
+          case 'partnership_started':
+            aVal = a.meta_box?.partnership_started || '';
+            bVal = b.meta_box?.partnership_started || '';
+            break;
+          case 'events_count':
+            aVal = getEventsCount(a);
+            bVal = getEventsCount(b);
+            break;
+          case 'date':
+            aVal = new Date(a.date || 0).getTime();
+            bVal = new Date(b.date || 0).getTime();
+            break;
+          default:
+            aVal = a.title || '';
+            bVal = b.title || '';
+        }
+
+        // Handle string comparison
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          const result = aVal.localeCompare(bVal);
+          return descending ? -result : result;
+        }
+
+        // Handle numeric comparison
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          const result = aVal - bVal;
+          return descending ? -result : result;
+        }
+
+        // Fallback comparison
+        const aStr = typeof aVal === 'string' || typeof aVal === 'number' ? String(aVal) : '';
+        const bStr = typeof bVal === 'string' || typeof bVal === 'number' ? String(bVal) : '';
+        const result = aStr.localeCompare(bStr);
+        return descending ? -result : result;
+      });
+    }
+
+    // Since we're getting all couples and processing locally,
     // we need to implement pagination manually
     const totalCount = filteredCouples.length;
     const totalPages = Math.ceil(totalCount / perPage);
@@ -403,6 +495,14 @@ const partnershipStyleOptions = computed(() => {
 });
 
 // Helper functions
+const getEventsCount = (couple: Couple): number => {
+  // Check if couple has embedded events
+  if (couple._embedded?.events) {
+    return couple._embedded.events.length;
+  }
+  return 0;
+};
+
 const getCoupleNames = (couple: Couple): string => {
   // First priority: use embedded teacher data if available
   if (couple._embedded?.teachers) {
@@ -427,6 +527,76 @@ const decodeHtmlEntities = (str: string): string => {
   return textarea.value;
 };
 
+const getFollowerName = (couple: Couple): string => {
+  // Check embedded teachers first
+  if (couple._embedded?.teachers) {
+    const follower = couple._embedded.teachers.find((t) => t.role === 'follower');
+    if (follower) return follower.title;
+  }
+
+  // Fallback to follower_name
+  return couple.follower_name || '';
+};
+
+const getLeaderName = (couple: Couple): string => {
+  // Check embedded teachers first
+  if (couple._embedded?.teachers) {
+    const leader = couple._embedded.teachers.find((t) => t.role === 'leader');
+    if (leader) return leader.title;
+  }
+
+  // Fallback to leader_name
+  return couple.leader_name || '';
+};
+
+const getBothRolesName = (couple: Couple): string => {
+  // Check embedded teachers for those marked as both roles
+  if (couple._embedded?.teachers) {
+    const bothRoles = couple._embedded.teachers.find(
+      (t) => t.role === 'both' || t.role === 'double-role',
+    );
+    if (bothRoles) return bothRoles.title;
+  }
+
+  // For now, return empty as this is a special case
+  return '';
+};
+
+const getFollowerId = (couple: Couple): number | null => {
+  // Check embedded teachers first
+  if (couple._embedded?.teachers) {
+    const follower = couple._embedded.teachers.find((t) => t.role === 'follower');
+    if (follower) return follower.id;
+  }
+
+  // Fallback to follower_id
+  return couple.follower_id || null;
+};
+
+const getLeaderId = (couple: Couple): number | null => {
+  // Check embedded teachers first
+  if (couple._embedded?.teachers) {
+    const leader = couple._embedded.teachers.find((t) => t.role === 'leader');
+    if (leader) return leader.id;
+  }
+
+  // Fallback to leader_id
+  return couple.leader_id || null;
+};
+
+const getBothRolesId = (couple: Couple): number | null => {
+  // Check embedded teachers for those marked as both roles
+  if (couple._embedded?.teachers) {
+    const bothRoles = couple._embedded.teachers.find(
+      (t) => t.role === 'both' || t.role === 'double-role',
+    );
+    if (bothRoles) return bothRoles.id;
+  }
+
+  // For now, return null as this is a special case
+  return null;
+};
+
 const getLocationText = (couple: Couple): string => {
   const city = couple.meta_box?.city || '';
   const country = couple.meta_box?.country || '';
@@ -434,14 +604,7 @@ const getLocationText = (couple: Couple): string => {
   return [city, countryName].filter(Boolean).join(', ');
 };
 
-// Event handlers
-const handleRowClick = (couple: Couple) => {
-  void router.push(`/couples/${couple.id}`);
-};
-
-const editCouple = (couple: Couple) => {
-  void router.push(`/couples/${couple.id}/edit`);
-};
+// Event handlers - removed since we're using clickable names instead
 
 // Initialize the component
 onMounted(() => {

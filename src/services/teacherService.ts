@@ -10,8 +10,9 @@ export interface TeacherParams extends BaseParams {
 
 class TeacherService extends BaseService<Teacher> {
   constructor() {
-    super('/tmd_teacher', {
-      _embed: false, // Disable embeds for better performance by default
+    super('/teachers', {
+      _embed: true, // Enable embeds to get related data
+      meta_fields: 'all', // Get all metadata fields
     });
   }
 
@@ -28,8 +29,19 @@ class TeacherService extends BaseService<Teacher> {
 
     const response = await this.getAll(defaultParams, signal);
 
-    // Return just the data array like the DJ service does
-    return response.data;
+    // When _embed=true, the API returns an object with numeric keys instead of an array
+    // Convert it to a proper array
+    let data = response.data;
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // Extract values from object with numeric keys, excluding _links
+      const dataObj = data as Record<string, unknown>;
+      data = Object.keys(dataObj)
+        .filter((key) => !isNaN(Number(key)) && key !== '_links')
+        .map((key) => dataObj[key])
+        .filter(Boolean) as Teacher[];
+    }
+
+    return Array.isArray(data) ? data : [];
   }
 
   /**

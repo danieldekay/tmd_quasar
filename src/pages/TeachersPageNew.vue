@@ -171,6 +171,24 @@
             />
             <span v-else class="text-grey-5">-</span>
           </q-td>
+          <q-td key="events_count" :props="props">
+            <q-badge
+              v-if="getEventsCount(props.row) > 0"
+              :label="getEventsCount(props.row)"
+              color="primary"
+              rounded
+            />
+            <span v-else class="text-grey-5">0</span>
+          </q-td>
+          <q-td key="couples_count" :props="props">
+            <q-badge
+              v-if="getCouplesCount(props.row) > 0"
+              :label="getCouplesCount(props.row)"
+              color="secondary"
+              rounded
+            />
+            <span v-else class="text-grey-5">0</span>
+          </q-td>
           <q-td key="website" :props="props">
             <q-btn
               v-if="props.row.meta_box?.website"
@@ -284,6 +302,22 @@ const columns = [
     style: 'width: 80px',
   },
   {
+    name: 'events_count',
+    label: 'Events',
+    field: (row: Teacher) => getEventsCount(row),
+    align: 'center' as const,
+    sortable: true,
+    style: 'width: 80px',
+  },
+  {
+    name: 'couples_count',
+    label: 'Couples',
+    field: (row: Teacher) => getCouplesCount(row),
+    align: 'center' as const,
+    sortable: true,
+    style: 'width: 80px',
+  },
+  {
     name: 'website',
     label: 'Website',
     field: 'website',
@@ -319,12 +353,11 @@ const fetchTeachers = async (params: {
 }) => {
   const { page, perPage, sortBy, descending, filters } = params;
 
-  // Build API parameters
+  // For local processing, we pull all data at once
   const apiParams: Record<string, unknown> = {
-    page,
-    per_page: perPage,
-    orderby: sortBy === 'name' ? 'title' : sortBy,
-    order: descending ? 'desc' : 'asc',
+    per_page: 999, // Get all teachers for local processing
+    orderby: 'title', // Default ordering by title from API
+    order: 'asc',
   };
 
   // Add filters
@@ -353,7 +386,67 @@ const fetchTeachers = async (params: {
       );
     }
 
-    // Since we're getting all teachers and filtering locally,
+    // Apply local sorting
+    if (sortBy && filteredTeachers.length > 0) {
+      filteredTeachers.sort((a, b) => {
+        let aVal: unknown;
+        let bVal: unknown;
+
+        switch (sortBy) {
+          case 'name':
+            aVal = getTeacherName(a);
+            bVal = getTeacherName(b);
+            break;
+          case 'location':
+            aVal = getLocationText(a);
+            bVal = getLocationText(b);
+            break;
+          case 'role':
+            aVal = a.meta_box?.role || '';
+            bVal = b.meta_box?.role || '';
+            break;
+          case 'gender':
+            aVal = a.meta_box?.gender || '';
+            bVal = b.meta_box?.gender || '';
+            break;
+          case 'events_count':
+            aVal = getEventsCount(a);
+            bVal = getEventsCount(b);
+            break;
+          case 'couples_count':
+            aVal = getCouplesCount(a);
+            bVal = getCouplesCount(b);
+            break;
+          case 'date':
+            aVal = new Date(a.date || 0).getTime();
+            bVal = new Date(b.date || 0).getTime();
+            break;
+          default:
+            aVal = a.title || '';
+            bVal = b.title || '';
+        }
+
+        // Handle string comparison
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          const result = aVal.localeCompare(bVal);
+          return descending ? -result : result;
+        }
+
+        // Handle numeric comparison
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          const result = aVal - bVal;
+          return descending ? -result : result;
+        }
+
+        // Fallback comparison
+        const aStr = typeof aVal === 'string' || typeof aVal === 'number' ? String(aVal) : '';
+        const bStr = typeof bVal === 'string' || typeof bVal === 'number' ? String(bVal) : '';
+        const result = aStr.localeCompare(bStr);
+        return descending ? -result : result;
+      });
+    }
+
+    // Since we're getting all teachers and processing locally,
     // we need to implement pagination manually
     const totalCount = filteredTeachers.length;
     const totalPages = Math.ceil(totalCount / perPage);
@@ -434,6 +527,26 @@ const genderOptions = [
 ];
 
 // Helper functions
+const getEventsCount = (teacher: Teacher): number => {
+  // Check if teacher has embedded events
+  if (teacher._embedded?.events) {
+    return teacher._embedded.events.length;
+  }
+  // For now, return 0 as teachers don't seem to have direct event links
+  // This could be enhanced later with a separate API call
+  return 0;
+};
+
+const getCouplesCount = (teacher: Teacher): number => {
+  // Check if teacher has embedded couples
+  if (teacher._embedded?.couples) {
+    return teacher._embedded.couples.length;
+  }
+  // For now, return 0 as teachers don't seem to have direct couple links
+  // This could be enhanced later with a separate API call
+  return 0;
+};
+
 const getTeacherName = (teacher: Teacher): string => {
   const firstName = teacher.meta_box?.first_name || '';
   const lastName = teacher.meta_box?.last_name || '';

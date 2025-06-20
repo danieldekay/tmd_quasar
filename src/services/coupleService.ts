@@ -12,6 +12,7 @@ class CoupleService extends BaseService<Couple> {
   constructor() {
     super('/couples', {
       _embed: true, // Enable embeds to get teacher data
+      meta_fields: 'all', // Get all metadata fields
     });
   }
 
@@ -28,8 +29,19 @@ class CoupleService extends BaseService<Couple> {
 
     const response = await this.getAll(defaultParams, signal);
 
-    // Return just the data array like the DJ service does
-    return response.data;
+    // When _embed=true, the API returns an object with numeric keys instead of an array
+    // Convert it to a proper array
+    let data = response.data;
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // Extract values from object with numeric keys, excluding _links
+      const dataObj = data as Record<string, unknown>;
+      data = Object.keys(dataObj)
+        .filter((key) => !isNaN(Number(key)) && key !== '_links')
+        .map((key) => dataObj[key])
+        .filter(Boolean) as Couple[];
+    }
+
+    return Array.isArray(data) ? data : [];
   }
 
   /**
