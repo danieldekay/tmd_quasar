@@ -151,6 +151,25 @@ export interface Teacher extends BaseEntity {
   content?: {
     rendered: string;
   };
+  // TMD v3 API meta_box structure (actual API response)
+  meta_box?: {
+    first_name?: string;
+    last_name?: string;
+    nickname?: string;
+    city?: string;
+    country?: string;
+    role?: string;
+    gender?: string;
+    website?: string;
+    email?: string;
+    facebook_profile?: string;
+    instagram?: string;
+    bio_short?: string;
+    teaching_since?: string;
+    dancing_since?: string;
+    specializations?: string[];
+    teachers_to_events_to?: unknown[];
+  };
   // TMD v3 API might have these fields
   acf?: {
     bio?: string;
@@ -179,12 +198,68 @@ export interface Couple extends BaseEntity {
   leader_name?: string;
   follower_id?: number;
   follower_name?: string;
+  // TMD v3 API meta fields (when using meta_fields=all)
+  all?: string; // Contains all meta fields
+  // TMD v3 API meta_box structure (actual API response)
+  meta_box?: {
+    __relate_leader?: string;
+    __relate_follower?: string;
+    city?: string;
+    country?: string;
+    website?: string;
+    facebook_page?: string;
+    started_dancing?: string;
+    partnership_started?: string;
+    partnership_style?: string;
+    bio_couple?: string;
+    teaching_philosophy?: string;
+    specializations_couple?: string[];
+    workshops_offered?: string;
+    achievements?: string;
+    couples_to_events_to?: string[];
+  };
   // Embedded related data
   _embedded?: {
     events?: BaseEvent[];
+    teachers?: Array<{
+      id: number;
+      title: string;
+      slug: string;
+      link: string;
+      href: string;
+      city?: string;
+      country?: string;
+      role: 'leader' | 'follower';
+    }>;
     leader?: Teacher[];
     follower?: Teacher[];
     author?: unknown[];
+  };
+  // Links to related entities (from API response)
+  _links?: {
+    self?: Array<{ href: string }>;
+    collection?: Array<{ href: string }>;
+    author?: Array<{ href: string; embeddable: boolean }>;
+    leader?: {
+      href: string;
+      title: string;
+      type: string;
+      role: string;
+      embeddable: boolean;
+    };
+    follower?: {
+      href: string;
+      title: string;
+      type: string;
+      role: string;
+      embeddable: boolean;
+    };
+    events?: Array<{
+      href: string;
+      title: string;
+      type: string;
+      embeddable: boolean;
+    }>;
   };
 }
 

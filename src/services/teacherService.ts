@@ -10,7 +10,7 @@ export interface TeacherParams extends BaseParams {
 
 class TeacherService extends BaseService<Teacher> {
   constructor() {
-    super('/teachers', {
+    super('/tmd_teacher', {
       _embed: false, // Disable embeds for better performance by default
     });
   }

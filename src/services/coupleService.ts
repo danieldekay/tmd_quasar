@@ -11,7 +11,7 @@ export interface CoupleParams extends BaseParams {
 class CoupleService extends BaseService<Couple> {
   constructor() {
     super('/couples', {
-      _embed: false, // Disable embeds for better performance by default
+      _embed: true, // Enable embeds to get teacher data
     });
   }
 

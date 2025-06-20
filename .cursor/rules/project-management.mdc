@@ -19,6 +19,10 @@ alwaysApply: true
 - The TMD is actively developed in parallel, and a local dev environment is hosted on http://localhost:10014
 - Use curl to test it before you make any assumptions
 
+## API
+
+- read api.md for details
+
 ## General Rules
 
 - DESIGN.md contains the overall project design, and may be updated based on user feedback.
