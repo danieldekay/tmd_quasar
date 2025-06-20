@@ -99,10 +99,19 @@ npm run dev
 │   ├── services/       # API services and types
 │   ├── interfaces/     # TypeScript interfaces
 │   └── boot/          # Quasar boot files (axios, etc.)
-├── docs/              # API and project documentation
+├── docs/              # Project documentation
 ├── public/            # Static assets
 └── quasar.config.ts   # Quasar configuration
 ```
+
+### Documentation
+
+For more detailed information about the application, please refer to the following documents:
+
+-   **[Project Architecture (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md)**: Describes the overall architecture, including frontend, backend, and API interactions.
+-   **[API Documentation (`docs/api.md`)](docs/api.md)**: Detailed information about the API endpoints, data models, and example requests/responses.
+-   **[User Guide (`docs/USER_GUIDE.md`)](docs/USER_GUIDE.md)**: A guide for end-users on how to use the application's features.
+-   **[Design Document (`DESIGN.md`)](DESIGN.md)**: In-depth details about design choices, components, and features.
 
 ## WordPress Integration
 

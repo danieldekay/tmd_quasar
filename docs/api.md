@@ -37,6 +37,62 @@
 - `dj` - Filter events by DJ ID
 - `_embed` - Include embedded related data
 
+**Example Request:**
+```http
+GET /tmd/v3/events?per_page=1&country=DE&_embed HTTP/1.1
+Host: localhost:10014
+Accept: application/json
+```
+
+**Example Successful Response (Single Event - Snippet):**
+```json
+{
+  "id": 12345,
+  "title": {"rendered": "Awesome Tango Marathon"},
+  "status": "publish",
+  "link": "https://example.com/events/awesome-tango-marathon/",
+  "start_date": "2024-10-25T18:00:00",
+  "end_date": "2024-10-27T22:00:00",
+  "city": "Berlin",
+  "country_code": "DE",
+  "event_categories_names": ["Marathon"],
+  "event_meta_data_event_main_organizer_name": "Organizer Name",
+  "event_meta_data_event_main_organizer_email": "organizer@example.com",
+  "event_meta_data_event_main_organizer_website": "https://organizer.example.com",
+  "_embedded": {
+    "wp:featuredmedia": [
+      {
+        "source_url": "https://example.com/wp-content/uploads/event-image.jpg"
+      }
+    ],
+    "tmd:dj": [
+      {
+        "id": 567,
+        "title": {"rendered": "DJ TangoStar"},
+        "link": "https://example.com/djs/tango-star/"
+      }
+    ]
+  }
+}
+```
+
+**Key Event Fields Description:**
+| Field                                      | Description                                     |
+| ------------------------------------------ | ----------------------------------------------- |
+| `id`                                       | Unique identifier for the event.                |
+| `title.rendered`                           | The name/title of the event.                    |
+| `status`                                   | Publication status (e.g., 'publish').           |
+| `link`                                     | Direct URL to the event page.                   |
+| `start_date`                               | ISO 8601 date-time for event start.             |
+| `end_date`                                 | ISO 8601 date-time for event end.               |
+| `city`                                     | City where the event takes place.               |
+| `country_code`                             | Two-letter ISO country code.                    |
+| `event_categories_names`                   | Array of category names (e.g., "Marathon").     |
+| `event_meta_data_event_main_organizer_name`| Name of the main organizer.                     |
+| `event_meta_data_event_main_organizer_email`| Email of the main organizer.                    |
+| `event_meta_data_event_main_organizer_website`| Website of the main organizer.                  |
+| `_embedded`                                | Contains linked resources like featured image or DJs. |
+
 ### DJs
 
 - `GET /tmd/v3/djs` - List all DJs
@@ -51,6 +107,61 @@
 - `country` - Filter by country code
 - `meta_fields` - Comma-separated list of meta fields to include
 - `_embed` - Include embedded related events
+
+**Example Request:**
+```http
+GET /tmd/v3/djs/54082?_embed HTTP/1.1
+Host: localhost:10014
+Accept: application/json
+```
+
+**Example Successful Response (Single DJ - Snippet):**
+```json
+{
+  "id": 54082,
+  "title": {"rendered": "DJ CoolSound"},
+  "link": "https://example.com/djs/coolsound/",
+  "tmd_dj_country": "AR",
+  "tmd_dj_city": "Buenos Aires",
+  "tmd_dj_e_mail": "coolsound@example.com",
+  "tmd_dj_webpage": "https://coolsound.example.com",
+  "_embedded": {
+    "related": [
+      [
+        {
+          "id": 53998,
+          "title": "Buenos Aires Tango Festival",
+          "start_date": "2025-09-25T00:00:00+00:00",
+          "edition": "3",
+          "link": "https://example.com/events/buenos-aires-tango-festival",
+          "_links": {
+            "related": [
+              {
+                "href": "/wp-json/tmd/v3/djs/54082",
+                "title": "DJ CoolSound",
+                "type": "dj"
+              }
+            ]
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+**Key DJ Fields Description:**
+| Field              | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `id`               | Unique identifier for the DJ.                         |
+| `title.rendered`   | The name of the DJ.                                   |
+| `link`             | Direct URL to the DJ's profile page.                  |
+| `tmd_dj_country`   | Two-letter ISO country code of the DJ's residence.    |
+| `tmd_dj_city`      | City of the DJ's residence.                           |
+| `tmd_dj_e_mail`    | DJ's email address.                                   |
+| `tmd_dj_webpage`   | DJ's personal website.                                |
+| `_embedded.related`| Contains linked events where the DJ has participated.   |
+
 
 **DJ Meta Fields:**
 
@@ -84,44 +195,11 @@ The API provides bidirectional relationships between DJs and events:
 
 1. **Direct Query**: `GET /tmd/v3/events?dj={dj_id}`
 2. **Embedded in DJ**: `GET /tmd/v3/djs/{id}?_embed`
+   (See example response under the `/tmd/v3/djs` endpoint section)
 
-#### Response Structure with Embedded Events:
+#### Response Structure with Embedded Events (Illustrative - already shown above):
 
-```json
-{
-  "id": 54082,
-  "title": "DJ Name",
-  "_embedded": {
-    "related": [
-      [
-        {
-          "id": 53998,
-          "title": "Event Name",
-          "start_date": "2025-09-25T00:00:00+00:00",
-          "edition": "3",
-          "_links": {
-            "related": [
-              {
-                "href": "/wp-json/tmd/v3/djs/54082",
-                "title": "DJ Name",
-                "type": "dj"
-              }
-            ]
-          }
-        }
-      ]
-    ]
-  },
-  "_links": {
-    "related": [
-      {
-        "href": "/wp-json/tmd/v3/events?dj=54082",
-        "embeddable": true
-      }
-    ]
-  }
-}
-```
+The structure for a DJ response with embedded events is detailed in the "Example Successful Response (Single DJ - Snippet)" under the `/tmd/v3/djs` endpoint. It typically involves the `_embedded.related` field containing an array of event objects.
 
 ### Teachers
 
