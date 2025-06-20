@@ -2,21 +2,21 @@
   <BaseListPage
     title="Teaching Partnerships"
     subtitle="Discover talented tango teaching partnerships from around the world"
-    :total-count="state.totalCount"
+    :total-count="couples.length"
     stats-label="Total Partnerships"
-    :loading="state.loading"
-    :error="state.error"
-    :show-empty-state="state.items.length === 0 && !state.loading && !state.error"
+    :loading="loading"
+    :error="error"
+    :show-empty-state="couples.length === 0 && !loading && !error"
     empty-state-icon="favorite"
     empty-state-title="No Teaching Partnerships Found"
     empty-state-message="There are no teaching partnerships to display at the moment."
-    :search-query="filters.searchQuery"
+    :search-query="searchQuery"
     :has-active-filters="hasActiveFilters"
     :active-filter-count="activeFilterCount"
-    :display-count="state.items.length"
-    :current-page="state.currentPage"
-    :total-pages="state.totalPages"
-    :show-pagination="state.totalPages > 1"
+    :display-count="filteredCouples.length"
+    :current-page="pagination.currentPage.value"
+    :total-pages="pagination.totalPages.value"
+    :show-pagination="pagination.totalPages.value > 1"
     @update:search-query="updateFilter('searchQuery', $event)"
     @clear-filters="clearFilters"
     @retry="retry"
@@ -34,7 +34,7 @@
     <template #filters>
       <div class="col-12 col-md-4">
         <q-select
-          :model-value="filters.country"
+          v-model="selectedCountry"
           :options="countryOptions"
           outlined
           dense
@@ -42,7 +42,6 @@
           clearable
           emit-value
           map-options
-          @update:model-value="updateFilter('country', $event || '')"
         >
           <template #prepend>
             <q-icon name="flag" />
@@ -51,7 +50,7 @@
       </div>
       <div class="col-12 col-md-4">
         <q-select
-          :model-value="filters.partnershipStyle"
+          v-model="selectedPartnershipStyle"
           :options="partnershipStyleOptions"
           outlined
           dense
@@ -59,7 +58,6 @@
           clearable
           emit-value
           map-options
-          @update:model-value="updateFilter('partnershipStyle', $event || '')"
         >
           <template #prepend>
             <q-icon name="style" />
@@ -70,40 +68,36 @@
 
     <template #active-filters>
       <q-chip
-        v-if="filters.country"
+        v-if="selectedCountry"
         removable
         color="primary"
         text-color="white"
-        :label="`Country: ${getCountryName(filters.country)}`"
-        @remove="updateFilter('country', '')"
+        :label="`Country: ${getCountryName(selectedCountry)}`"
+        @remove="selectedCountry = ''"
       />
       <q-chip
-        v-if="filters.partnershipStyle"
+        v-if="selectedPartnershipStyle"
         removable
         color="secondary"
         text-color="white"
-        :label="`Style: ${filters.partnershipStyle}`"
-        @remove="updateFilter('partnershipStyle', '')"
+        :label="`Style: ${selectedPartnershipStyle}`"
+        @remove="selectedPartnershipStyle = ''"
       />
     </template>
 
     <template #content>
       <BaseTable
-        :rows="state.items"
+        :rows="paginatedCouples"
         :columns="columns"
-        :loading="state.loading"
-        :error="state.error"
-        :current-page="state.currentPage"
-        :rows-per-page="pagination.rowsPerPage"
-        :total-items="state.totalCount"
-        :sort-by="pagination.sortBy"
-        :descending="pagination.descending"
-        :show-top-pagination="false"
+        :loading="loading"
+        :error="error"
+        :current-page="pagination.currentPage.value"
+        :rows-per-page="pagination.rowsPerPage.value"
+        :total-items="filteredCouples.length"
+        :show-top-pagination="true"
         row-key="id"
-        @update:current-page="updatePagination({ page: $event })"
-        @update:rows-per-page="updatePagination({ rowsPerPage: $event })"
-        @update:sort-by="updatePagination({ sortBy: $event })"
-        @update:descending="updatePagination({ descending: $event })"
+        @update:current-page="pagination.goToPage($event)"
+        @update:rows-per-page="pagination.setRowsPerPage($event)"
       >
         <template #body="{ props }">
           <q-td key="names" :props="props">
@@ -169,7 +163,7 @@
             <span v-else class="text-grey-5">-</span>
           </q-td>
           <q-td key="location" :props="props">
-            <div v-if="props.row.meta_box?.city || props.row.meta_box?.country">
+            <div v-if="props.row.city || props.row.country">
               <q-icon name="place" size="xs" class="q-mr-xs" />
               {{ getLocationText(props.row) }}
             </div>
@@ -211,10 +205,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import BaseListPage from '../components/BaseListPage.vue';
 import BaseTable from '../components/BaseTable.vue';
-import { useGenericList } from '../composables/useGenericList';
+import { useTablePagination } from '../composables/useTablePagination';
 import { coupleService } from '../services';
 import type { Couple } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
@@ -222,13 +216,19 @@ import { useCountries } from '../composables/useCountries';
 const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
 
-// Define filters interface
-interface CoupleFilters {
-  searchQuery: string;
-  country: string;
-  partnershipStyle: string;
-  [key: string]: string; // Index signature for compatibility with ListFilters
-}
+// Pagination
+const pagination = useTablePagination({
+  initialRowsPerPage: 20,
+  rowsPerPageOptions: [10, 20, 50, 100],
+});
+
+// State
+const couples = ref<Couple[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+const searchQuery = ref('');
+const selectedCountry = ref('');
+const selectedPartnershipStyle = ref('');
 
 // Table columns
 const columns = [
@@ -305,172 +305,74 @@ const columns = [
   },
 ];
 
-// Fetch function for the generic list
-const fetchCouples = async (params: {
-  page: number;
-  perPage: number;
-  sortBy: string;
-  descending: boolean;
-  filters: CoupleFilters;
-}) => {
-  const { page, perPage, sortBy, descending, filters } = params;
-
-  // For local processing, we pull all data at once
-  const apiParams: Record<string, unknown> = {
-    per_page: 999, // Get all couples for local processing
-    orderby: 'title', // Default ordering by title from API
-    order: 'asc',
-  };
-
-  // Add filters
-  if (filters.country) {
-    apiParams.country = filters.country;
-  }
-  if (filters.searchQuery) {
-    apiParams.search = filters.searchQuery;
+// Computed properties for filtering and pagination
+const filteredCouples = computed(() => {
+  // Ensure we always return an array
+  if (!couples.value || !Array.isArray(couples.value)) {
+    return [];
   }
 
-  try {
-    const couples = await coupleService.getCouples(apiParams);
+  let filtered = couples.value;
 
-    // Filter by partnership style locally since API might not support this filter
-    let filteredCouples = couples || [];
-
-    if (filters.partnershipStyle) {
-      filteredCouples = filteredCouples.filter(
-        (couple) => couple.meta_box?.partnership_style === filters.partnershipStyle,
-      );
-    }
-
-    // Apply local sorting
-    if (sortBy && filteredCouples.length > 0) {
-      filteredCouples.sort((a, b) => {
-        let aVal: unknown;
-        let bVal: unknown;
-
-        switch (sortBy) {
-          case 'names':
-            aVal = getCoupleNames(a);
-            bVal = getCoupleNames(b);
-            break;
-          case 'follower':
-            aVal = getFollowerName(a);
-            bVal = getFollowerName(b);
-            break;
-          case 'leader':
-            aVal = getLeaderName(a);
-            bVal = getLeaderName(b);
-            break;
-          case 'both_roles':
-            aVal = getBothRolesName(a);
-            bVal = getBothRolesName(b);
-            break;
-          case 'location':
-            aVal = getLocationText(a);
-            bVal = getLocationText(b);
-            break;
-          case 'partnership_style':
-            aVal = a.meta_box?.partnership_style || '';
-            bVal = b.meta_box?.partnership_style || '';
-            break;
-          case 'partnership_started':
-            aVal = a.meta_box?.partnership_started || '';
-            bVal = b.meta_box?.partnership_started || '';
-            break;
-          case 'events_count':
-            aVal = getEventsCount(a);
-            bVal = getEventsCount(b);
-            break;
-          case 'date':
-            aVal = new Date(a.date || 0).getTime();
-            bVal = new Date(b.date || 0).getTime();
-            break;
-          default:
-            aVal = a.title || '';
-            bVal = b.title || '';
-        }
-
-        // Handle string comparison
-        if (typeof aVal === 'string' && typeof bVal === 'string') {
-          const result = aVal.localeCompare(bVal);
-          return descending ? -result : result;
-        }
-
-        // Handle numeric comparison
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          const result = aVal - bVal;
-          return descending ? -result : result;
-        }
-
-        // Fallback comparison
-        const aStr = typeof aVal === 'string' || typeof aVal === 'number' ? String(aVal) : '';
-        const bStr = typeof bVal === 'string' || typeof bVal === 'number' ? String(bVal) : '';
-        const result = aStr.localeCompare(bStr);
-        return descending ? -result : result;
-      });
-    }
-
-    // Since we're getting all couples and processing locally,
-    // we need to implement pagination manually
-    const totalCount = filteredCouples.length;
-    const totalPages = Math.ceil(totalCount / perPage);
-    const startIndex = (page - 1) * perPage;
-    const endIndex = startIndex + perPage;
-    const paginatedCouples = filteredCouples.slice(startIndex, endIndex);
-
-    return {
-      items: paginatedCouples,
-      totalCount,
-      totalPages,
-      currentPage: page,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    };
-  } catch (error) {
-    console.error('Error fetching couples:', error);
-    throw error;
+  // Apply search filter
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim();
+    filtered = filtered.filter((couple) => {
+      const name = getCoupleNames(couple).toLowerCase();
+      const follower = getFollowerName(couple).toLowerCase();
+      const leader = getLeaderName(couple).toLowerCase();
+      return name.includes(query) || follower.includes(query) || leader.includes(query);
+    });
   }
-};
 
-// Use the generic list composable
-const {
-  state,
-  filters,
-  pagination,
-  hasActiveFilters,
-  activeFilterCount,
-  updateFilter,
-  updatePagination,
-  clearFilters,
-  retry,
-  initialize,
-} = useGenericList<Couple, CoupleFilters>({
-  fetchFn: fetchCouples,
-  defaultFilters: {
-    searchQuery: '',
-    country: '',
-    partnershipStyle: '',
-  },
-  defaultPagination: {
-    page: 1,
-    rowsPerPage: 20,
-    sortBy: 'names',
-    descending: false,
-  },
-  persistenceKey: 'couples-filters',
-  enableSearch: true,
-  searchMinLength: 2,
-  searchDebounce: 300,
+  // Apply country filter
+  if (selectedCountry.value) {
+    filtered = filtered.filter((couple) => couple.country === selectedCountry.value);
+  }
+
+  // Apply partnership style filter
+  if (selectedPartnershipStyle.value) {
+    filtered = filtered.filter(
+      (couple) => couple.meta_box?.partnership_style === selectedPartnershipStyle.value,
+    );
+  }
+
+  return filtered;
+});
+
+const paginatedCouples = computed(() => {
+  // Ensure we always return an array
+  if (!filteredCouples.value || !Array.isArray(filteredCouples.value)) {
+    return [];
+  }
+
+  const start = (pagination.currentPage.value - 1) * pagination.rowsPerPage.value;
+  const end = start + pagination.rowsPerPage.value;
+  return filteredCouples.value.slice(start, end);
+});
+
+const hasActiveFilters = computed(() => {
+  return !!(searchQuery.value.trim() || selectedCountry.value || selectedPartnershipStyle.value);
+});
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (searchQuery.value.trim()) count++;
+  if (selectedCountry.value) count++;
+  if (selectedPartnershipStyle.value) count++;
+  return count;
 });
 
 // Filter options
 const countryOptions = computed(() => {
   const countries = new Set<string>();
-  state.value.items.forEach((couple) => {
-    if (couple.meta_box?.country) {
-      countries.add(couple.meta_box.country);
-    }
-  });
+  if (couples.value && Array.isArray(couples.value)) {
+    couples.value.forEach((couple) => {
+      if (couple.country) {
+        countries.add(couple.country);
+      }
+    });
+  }
   return Array.from(countries)
     .map((code) => ({
       label: getCountryName(code),
@@ -481,11 +383,13 @@ const countryOptions = computed(() => {
 
 const partnershipStyleOptions = computed(() => {
   const styles = new Set<string>();
-  state.value.items.forEach((couple) => {
-    if (couple.meta_box?.partnership_style) {
-      styles.add(couple.meta_box.partnership_style);
-    }
-  });
+  if (couples.value && Array.isArray(couples.value)) {
+    couples.value.forEach((couple) => {
+      if (couple.meta_box?.partnership_style) {
+        styles.add(couple.meta_box.partnership_style);
+      }
+    });
+  }
   return Array.from(styles)
     .map((style) => ({
       label: style,
@@ -598,17 +502,61 @@ const getBothRolesId = (couple: Couple): number | null => {
 };
 
 const getLocationText = (couple: Couple): string => {
-  const city = couple.meta_box?.city || '';
-  const country = couple.meta_box?.country || '';
+  const city = couple.city || '';
+  const country = couple.country || '';
   const countryName = country ? getCountryName(country) : '';
   return [city, countryName].filter(Boolean).join(', ');
 };
 
 // Event handlers - removed since we're using clickable names instead
 
-// Initialize the component
+// Update pagination total items
+watch(filteredCouples, () => {
+  pagination.totalItems.value = filteredCouples.value.length;
+});
+
+// Methods
+const updateFilter = (key: string, value: string) => {
+  if (key === 'searchQuery') {
+    searchQuery.value = value;
+  }
+  // No need to handle other filters as they're directly bound
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedCountry.value = '';
+  selectedPartnershipStyle.value = '';
+};
+
+const retry = async () => {
+  await fetchCouples();
+};
+
+// Fetch couples data
+const fetchCouples = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+
+    const data = await coupleService.getCouples({
+      per_page: 999, // Get all couples for local processing
+      _embed: true,
+      meta_fields: 'all',
+    });
+
+    couples.value = data || [];
+  } catch (err) {
+    console.error('Error fetching couples:', err);
+    error.value = 'Failed to load teaching partnerships. Please try again.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Initialize the data on mount
 onMounted(() => {
-  initialize();
+  void fetchCouples();
 });
 </script>
 

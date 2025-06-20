@@ -372,6 +372,7 @@ import { djService, type DJParams } from '../services/djService';
 import type { DJ } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
+import OfflineMessage from '../components/OfflineMessage.vue';
 
 const router = useRouter();
 const { formatDate } = useFormatters();

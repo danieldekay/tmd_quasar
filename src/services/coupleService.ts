@@ -21,27 +21,22 @@ class CoupleService extends BaseService<Couple> {
    */
   async getCouples(params: CoupleParams = {}, signal?: AbortSignal) {
     // Set a high per_page limit to get all couples by default
-    // Use 200 to ensure we get all records even if the collection grows
+    // Use 999 to ensure we get all records even if the collection grows
     const defaultParams = {
-      per_page: 200,
+      per_page: 999,
       ...params,
     };
 
     const response = await this.getAll(defaultParams, signal);
 
-    // When _embed=true, the API returns an object with numeric keys instead of an array
-    // Convert it to a proper array
-    let data = response.data;
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      // Extract values from object with numeric keys, excluding _links
-      const dataObj = data as Record<string, unknown>;
-      data = Object.keys(dataObj)
-        .filter((key) => !isNaN(Number(key)) && key !== '_links')
-        .map((key) => dataObj[key])
-        .filter(Boolean) as Couple[];
+    // V3 API returns data in _embedded.couples format
+    if (response.data && typeof response.data === 'object' && '_embedded' in response.data) {
+      const embeddedData = response.data._embedded as { couples?: Couple[] };
+      return embeddedData.couples || [];
     }
 
-    return Array.isArray(data) ? data : [];
+    // Fallback to direct array if structure is different
+    return Array.isArray(response.data) ? response.data : [];
   }
 
   /**

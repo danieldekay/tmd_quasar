@@ -9,9 +9,9 @@
 
 ### TMD Custom API
 
-- `tmd/v1` - Legacy version
-- `tmd/v2` - Current production version
-- `tmd/v3` - Development version (available locally)
+- `tmd/v1` - Legacy version - soon to be deactivated
+- `tmd/v2` - Current production version - soon to become legacy
+- `tmd/v3` - Development version (available locally) - USE THIS ONLY
 
 ### WordPress Core API
 

@@ -68,9 +68,19 @@ class DJService extends BaseService<DJ> {
 
     const response = await this.getAll(apiParams, signal);
 
+    // V3 API returns data in _embedded.djs format
+    let djs: DJ[] = [];
+    if (response.data && typeof response.data === 'object' && '_embedded' in response.data) {
+      const embeddedData = response.data._embedded as { djs?: DJ[] };
+      djs = embeddedData.djs || [];
+    } else if (Array.isArray(response.data)) {
+      // Fallback to direct array if structure is different
+      djs = response.data;
+    }
+
     // Return in the expected legacy format
     return {
-      djs: response.data,
+      djs,
       totalPages: response.totalPages,
       total: response.totalCount,
     };
