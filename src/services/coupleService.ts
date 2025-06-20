@@ -3,23 +3,23 @@ import type { Couple } from './types';
 import type { BaseParams } from './baseService';
 
 export interface CoupleParams extends BaseParams {
+  teacher?: number;
   country?: string;
-  orderby?: string;
-  order?: 'asc' | 'desc';
 }
 
 class CoupleService extends BaseService<Couple> {
   constructor() {
     super('/couples', {
       _embed: true, // Enable embeds to get teacher data
-      meta_fields: 'all', // Get all metadata fields
+      meta_fields: 'country,city,teacher_type', // Use specific fields for better performance
     });
   }
 
   /**
    * Get couples with enhanced filtering and pagination
+   * Updated to work with HAL-compliant v3 API
    */
-  async getCouples(params: CoupleParams = {}, signal?: AbortSignal) {
+  async getCouples(params: CoupleParams = {}, signal?: AbortSignal): Promise<Couple[]> {
     // Set a high per_page limit to get all couples by default
     // Use 999 to ensure we get all records even if the collection grows
     const defaultParams = {
@@ -29,21 +29,22 @@ class CoupleService extends BaseService<Couple> {
 
     const response = await this.getAll(defaultParams, signal);
 
-    // V3 API returns data in _embedded.couples format
-    if (response.data && typeof response.data === 'object' && '_embedded' in response.data) {
-      const embeddedData = response.data._embedded as { couples?: Couple[] };
-      return embeddedData.couples || [];
-    }
-
-    // Fallback to direct array if structure is different
-    return Array.isArray(response.data) ? response.data : [];
+    // BaseService now handles HAL parsing automatically
+    return response.data;
   }
 
   /**
    * Get a single couple with full metadata
    */
   async getCouple(id: number, signal?: AbortSignal): Promise<Couple> {
-    return this.getById(id, { _embed: true }, signal);
+    return this.getById(id, { _embed: true, meta_fields: 'all' }, signal);
+  }
+
+  /**
+   * Get couples filtered by teacher ID
+   */
+  async getCouplesByTeacher(teacherId: number, signal?: AbortSignal): Promise<Couple[]> {
+    return this.getCouples({ teacher: teacherId }, signal);
   }
 }
 

@@ -1,33 +1,6 @@
-import { BaseService } from './baseService';
+import { BaseService, type HALResponse } from './baseService';
 import type { EventListItem, EventParams, EventTaxonomies } from './types';
 import type { BaseParams } from './baseService';
-
-/**
- * Parse WordPress REST API response that might be an array or object with numeric keys
- */
-const parseEventsResponse = (data: unknown): unknown[] => {
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  if (data && typeof data === 'object') {
-    // WordPress with _embed returns an object with numeric keys
-    const entries = Object.entries(data as Record<string, unknown>);
-    return entries
-      .filter(([key, value]) => {
-        // Filter out non-numeric keys (like _links)
-        return (
-          /^\d+$/.test(key) &&
-          typeof value === 'object' &&
-          value !== null &&
-          'id' in (value as Record<string, unknown>)
-        );
-      })
-      .map(([, value]) => value);
-  }
-
-  throw new Error('Invalid API response format');
-};
 
 // Only request meta fields that are actually used in the list view
 const LIST_META_FIELDS = [
@@ -57,21 +30,44 @@ const getString = (value: unknown): string => {
 
 /**
  * Transform a raw WordPress event into the minimal data structure needed for list views.
+ * Updated to handle v3 API response structure
  */
 const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => {
-  // WordPress might store meta fields under a 'meta' or 'acf' property, or directly on the event
+  // v3 API includes meta fields directly in the response
   const meta = (rawEvent.meta || rawEvent.acf || {}) as Record<string, unknown>;
 
-  // Extract taxonomies from _embedded["wp:term"] if available
+  // Extract taxonomies from _embedded or direct taxonomy fields
   let taxonomies: EventTaxonomies | undefined;
-  if (rawEvent._embedded && typeof rawEvent._embedded === 'object') {
+
+  // Check for direct taxonomy data (v3 API may include this)
+  if (rawEvent['event-categories-2020']) {
+    const categories = rawEvent['event-categories-2020'];
+    if (Array.isArray(categories)) {
+      taxonomies = {
+        'event-categories-2020': categories.map((cat: unknown) => {
+          if (cat && typeof cat === 'object') {
+            const catObj = cat as Record<string, unknown>;
+            return {
+              id: Number(catObj.id) || 0,
+              name: getString(catObj.name),
+              slug: getString(catObj.slug),
+              description: getString(catObj.description || ''),
+            };
+          }
+          return { id: 0, name: '', slug: '', description: '' };
+        }),
+      };
+    }
+  }
+
+  // Fallback to _embedded structure if available
+  if (!taxonomies && rawEvent._embedded && typeof rawEvent._embedded === 'object') {
     const embedded = rawEvent._embedded as Record<string, unknown>;
     const wpTerms = embedded['wp:term'];
 
     if (Array.isArray(wpTerms) && wpTerms.length > 0) {
       const extractedTaxonomies: EventTaxonomies = {};
 
-      // Process each taxonomy group
       wpTerms.forEach((termGroup: unknown) => {
         if (Array.isArray(termGroup)) {
           termGroup.forEach((term: unknown) => {
@@ -82,26 +78,22 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
               const termSlug = getString(termObj.slug);
               const termId = Number(termObj.id) || 0;
 
-              if (taxonomyName && termName) {
-                // Handle the specific taxonomy we know about
-                if (taxonomyName === 'event-categories-2020') {
-                  if (!extractedTaxonomies['event-categories-2020']) {
-                    extractedTaxonomies['event-categories-2020'] = [];
-                  }
-                  extractedTaxonomies['event-categories-2020'].push({
-                    id: termId,
-                    name: termName,
-                    slug: termSlug,
-                    description: '', // WordPress API doesn't always include description
-                  });
+              if (taxonomyName === 'event-categories-2020' && termName) {
+                if (!extractedTaxonomies['event-categories-2020']) {
+                  extractedTaxonomies['event-categories-2020'] = [];
                 }
+                extractedTaxonomies['event-categories-2020'].push({
+                  id: termId,
+                  name: termName,
+                  slug: termSlug,
+                  description: '',
+                });
               }
             }
           });
         }
       });
 
-      // Only assign if we found some taxonomies
       if (Object.keys(extractedTaxonomies).length > 0) {
         taxonomies = extractedTaxonomies;
       }
@@ -162,25 +154,18 @@ class EventListService extends BaseService<EventListItem> {
   }
 
   /**
-   * Override makeRequest to handle WordPress quirks and transformations
+   * Override extractDataFromResponse to apply event transformation
    */
-  protected override async makeRequest<R = EventListItem>(
-    path: string,
-    params: BaseParams = {},
-    signal?: AbortSignal,
-  ): Promise<{ data: R; headers: Record<string, string> }> {
-    const response = await super.makeRequest<unknown>(path, params, signal);
+  protected override extractDataFromResponse(
+    response: HALResponse<EventListItem> | EventListItem[],
+  ): EventListItem[] {
+    // Get raw data from HAL response as unknown objects
+    const rawData = super.extractDataFromResponse(response);
 
-    // Handle WordPress REST API with _embed returning object instead of array
-    const events = parseEventsResponse(response.data);
-    const transformedEvents = events.map((event: unknown) =>
-      transformRawEvent(event as Record<string, unknown>),
+    // Transform each event from raw API response to EventListItem
+    return rawData.map((event: EventListItem) =>
+      transformRawEvent(event as unknown as Record<string, unknown>),
     );
-
-    return {
-      data: transformedEvents as R,
-      headers: response.headers,
-    };
   }
 
   /**
@@ -206,7 +191,7 @@ class EventListService extends BaseService<EventListItem> {
   }
 
   /**
-   * Fetch events for backward compatibility (returns just the events array)
+   * Legacy method for compatibility
    */
   async getEventsLegacy(params: ExtendedEventParams = {}): Promise<EventListItem[]> {
     const response = await this.getEvents(params);
@@ -214,26 +199,22 @@ class EventListService extends BaseService<EventListItem> {
   }
 
   /**
-   * Fetch additional pages for infinite scrolling / pagination.
+   * Load more events for infinite scrolling
    */
   async loadMoreEvents(
     page: number,
     params: Record<string, unknown> = {},
   ): Promise<EventListItem[]> {
-    return this.loadMore(page, params);
+    const events = await this.loadMore(page, params);
+    return events;
   }
 
   /**
-   * Search events by query
+   * Search events
    */
   async searchEvents(query: string, params: ExtendedEventParams = {}): Promise<EventListItem[]> {
-    const searchParams = {
-      per_page: params.perPage || 10,
-      page: params.page || 1,
-      ...params,
-    };
-
-    return this.searchLegacy(query, searchParams);
+    const response = await this.search(query, params);
+    return response.data;
   }
 }
 

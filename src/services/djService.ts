@@ -43,6 +43,7 @@ export interface DJParams extends BaseParams {
   event?: number;
   orderby?: string;
   order?: 'asc' | 'desc';
+  meta_filters?: string;
 }
 
 class DJService extends BaseService<DJ> {
@@ -55,32 +56,22 @@ class DJService extends BaseService<DJ> {
 
   /**
    * Get DJs with enhanced filtering and pagination
+   * Updated to work with HAL-compliant v3 API
    */
   async getDJs(params: DJParams = {}, signal?: AbortSignal) {
     const apiParams = { ...params };
 
-    // Handle country filtering using meta_key/meta_value
+    // Handle country filtering using meta_filters (v3 API format)
     if (params.country) {
-      apiParams.meta_key = 'tmd_dj_country';
-      apiParams.meta_value = params.country;
+      apiParams.meta_filters = JSON.stringify({ tmd_dj_country: params.country });
       delete apiParams.country; // Remove country from params to avoid conflicts
     }
 
     const response = await this.getAll(apiParams, signal);
 
-    // V3 API returns data in _embedded.djs format
-    let djs: DJ[] = [];
-    if (response.data && typeof response.data === 'object' && '_embedded' in response.data) {
-      const embeddedData = response.data._embedded as { djs?: DJ[] };
-      djs = embeddedData.djs || [];
-    } else if (Array.isArray(response.data)) {
-      // Fallback to direct array if structure is different
-      djs = response.data;
-    }
-
-    // Return in the expected legacy format
+    // BaseService now handles HAL parsing automatically
     return {
-      djs,
+      djs: response.data,
       totalPages: response.totalPages,
       total: response.totalCount,
     };
@@ -98,6 +89,25 @@ class DJService extends BaseService<DJ> {
       },
       signal,
     );
+  }
+
+  /**
+   * Search DJs by name or other fields
+   */
+  async searchDJs(query: string, params: DJParams = {}, signal?: AbortSignal) {
+    const searchParams = {
+      search: query,
+      meta_fields: ALL_DJ_META_FIELDS, // Include all fields for search results
+      ...params,
+    };
+
+    const response = await this.search(query, searchParams, signal);
+
+    return {
+      djs: response.data,
+      totalPages: response.totalPages,
+      total: response.totalCount,
+    };
   }
 }
 
