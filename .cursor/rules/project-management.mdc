@@ -9,6 +9,7 @@ alwaysApply: true
 - Follow best practices for NUXT and frontend projects.
 - It is a Quasar App
 - We use pnpm package manager
+- We use vitest for unit and component testing - use that always and aim for high coverage
 
 # What is TMD?
 - tangomarathons.com

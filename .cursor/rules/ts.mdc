@@ -12,3 +12,4 @@ alwaysApply: false
 # Rules
 
 - Always check for and handle undefined values when dealing with optional properties (property?: type). Use null coalescing operators (||, ??) or explicit checks to provide default values before assignment to non-nullable types.
+- We have a very strict typsecript setting, and should be very careful in type annotation
