@@ -123,11 +123,20 @@ export const useFormatters = () => {
     return getCategoryColor(category);
   };
 
+  /**
+   * Helper function to check if a V3 API feature is available
+   * V3 API returns features as "0" or "1" strings, use this to check if value === '1'
+   */
+  const isFeatureAvailable = (value: unknown): boolean => {
+    return String(value) === '1';
+  };
+
   return {
     formatDate,
     formatLocation,
     getEventCategory,
     getCategoryColor,
     getEventCategoryColor,
+    isFeatureAvailable,
   };
 };

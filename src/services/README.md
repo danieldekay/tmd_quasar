@@ -119,6 +119,119 @@ const dj = await djService.getDJ(123, { _embed: true });
 console.log(dj._embedded?.events); // Related events
 ```
 
+## Enhanced V3 API Features (Latest Updates)
+
+### Event Services V3 Enhancements
+
+The event services have been significantly enhanced to leverage the V3 HAL-compliant API:
+
+#### EventListService Enhancements
+
+```typescript
+import { eventListService } from './eventListService';
+
+// Advanced filtering with meta_filters
+const marathonsInGermany = await eventListService.getEvents({
+  category: 'marathon',
+  country: 'DE',
+  have_food: true,
+  orderby: 'start_date',
+  order: 'asc',
+});
+
+// Date range filtering
+const upcomingEvents = await eventListService.getUpcomingEvents({
+  per_page: 20,
+  include_djs: true,
+});
+
+// Feature-based filtering
+const eventsWithFeatures = await eventListService.getEventsByFeatures({
+  have_milongas: '1',
+  have_food: '1',
+  invitation_only: '0',
+});
+
+// Enhanced search with meta filters
+const searchResults = await eventListService.searchEvents('tango festival', {
+  country: 'DE',
+  start_date_from: '2024-01-01',
+});
+```
+
+#### EventDetailsService Enhancements
+
+```typescript
+import { eventDetailsService } from './eventDetailsService';
+
+// Get event with full embedded data
+const event = await eventDetailsService.getEvent(12345, {
+  include_djs: true,
+  include_teachers: true,
+  include_event_series: true,
+});
+
+// Check event features (V3 API compatible)
+const features = eventDetailsService.getEventFeatures(event);
+console.log(features.has_milongas); // boolean
+console.log(features.is_invitation_only); // boolean
+
+// Get registration information
+const regInfo = eventDetailsService.getRegistrationInfo(event);
+console.log(regInfo.isOpen); // boolean - can people register?
+
+// Check if event is happening soon
+const isSoon = eventDetailsService.isEventSoon(event, 30); // within 30 days
+
+// Get embedded relationships
+const djs = eventDetailsService.getEventDJs(event);
+const teachers = eventDetailsService.getEventTeachers(event);
+```
+
+#### V3 API Feature Detection
+
+The V3 API returns event features as "0" or "1" strings. Use the helper functions:
+
+```typescript
+import { isFeatureAvailable } from '../composables/useFormatters';
+
+// Correct way to check V3 API features
+const hasFood = isFeatureAvailable(event.have_food); // checks if value === '1'
+
+// The enhanced services automatically handle this conversion
+const features = eventDetailsService.getEventFeatures(event);
+// features.has_food is already a boolean
+```
+
+#### Available Meta Filters
+
+The V3 API supports advanced filtering through `meta_filters`:
+
+```typescript
+const params = {
+  meta_filters: {
+    country: 'DE',
+    city: 'Berlin',
+    have_milongas: '1',
+    have_food: '1',
+    have_sleep: '0',
+    invitation_only: '0',
+    price_min: '100',
+    price_max: '300',
+    currency: 'EUR',
+    start_date_from: '2024-01-01',
+    start_date_to: '2024-12-31',
+  },
+};
+```
+
+#### Performance Optimizations
+
+- **Selective Embedding**: Only embed relationships when needed
+- **Optimized Meta Fields**: Request only required fields for list views
+- **Efficient Filtering**: Use server-side meta_filters instead of client-side filtering
+- **HAL Pagination**: Proper pagination with total counts and navigation links
+
 ## Still Needed ⚠️
 
 ### 1. Event Details Service
