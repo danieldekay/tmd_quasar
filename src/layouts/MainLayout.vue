@@ -174,13 +174,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
+import { useSessionMonitor } from '../composables/useSessionMonitor';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const sessionMonitor = useSessionMonitor();
 
 interface LinkProps {
   title: string;
@@ -265,6 +267,19 @@ const handleLogout = async () => {
 onMounted(async () => {
   await authStore.loadStoredAuth();
 });
+
+// Watch authentication state to start/stop session monitoring
+watch(
+  () => authStore.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated) {
+      sessionMonitor.startMonitoring();
+    } else {
+      sessionMonitor.stopMonitoring();
+    }
+  },
+  { immediate: true },
+);
 
 function getUserDisplayName(): string {
   if (!authStore.user?.name) return 'User';

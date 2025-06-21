@@ -2,22 +2,11 @@
   <q-page padding>
     <div class="row q-col-gutter-lg">
       <div class="col-12">
-        <div class="row items-center justify-between q-mb-lg">
-          <div class="col-auto">
-            <h1 class="text-h4 q-mb-none">Teachers</h1>
-            <p class="text-subtitle2 text-grey-7 q-mb-none">
-              Discover talented tango teachers from around the world
-            </p>
-          </div>
-          <div class="col-auto">
-            <q-btn
-              color="primary"
-              icon="add"
-              label="Add Teacher"
-              unelevated
-              @click="$router.push('/teachers/new')"
-            />
-          </div>
+        <div class="q-mb-lg">
+          <h1 class="text-h4 q-mb-none">Teachers</h1>
+          <p class="text-subtitle2 text-grey-7 q-mb-none">
+            Discover talented tango teachers from around the world
+          </p>
         </div>
       </div>
 

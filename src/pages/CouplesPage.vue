@@ -21,16 +21,6 @@
     @clear-filters="clearFilters"
     @retry="retry"
   >
-    <template #header-actions>
-      <q-btn
-        color="primary"
-        icon="add"
-        label="Add Partnership"
-        unelevated
-        @click="$router.push('/couples/new')"
-      />
-    </template>
-
     <template #filters>
       <div class="col-12 col-md-4">
         <q-select

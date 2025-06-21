@@ -49,6 +49,19 @@
               </template>
             </div>
           </div>
+
+          <!-- Floating Interaction Buttons -->
+          <InteractionButtons
+            v-if="event"
+            :target-id="event.id"
+            target-type="tmd_event"
+            layout="floating"
+            :liked="interactions.interactionState.value.liked"
+            :bookmarked="interactions.interactionState.value.bookmarked"
+            :reminder="interactions.interactionState.value.reminder"
+            :like-count="interactions.interactionState.value.likeCount"
+            @interaction-changed="handleInteractionChange"
+          />
         </q-img>
       </div>
 
@@ -586,7 +599,9 @@ import { useQuasar } from 'quasar';
 import { eventDetailsService as eventService } from '../services';
 import type { EventDetails, DJ, Teacher } from '../services/types';
 import DJCard from '../components/DJCard.vue';
+import InteractionButtons from '../components/InteractionButtons.vue';
 import { useFormatters } from '../composables/useFormatters';
+import { useInteractions } from '../composables/useInteractions';
 
 defineOptions({ name: 'EventDetails' });
 
@@ -611,6 +626,9 @@ const teachersError = ref<string | null>(null);
 
 // Map-related state
 const mapImageError = ref(false);
+
+// Interactions
+const interactions = useInteractions(Number(route.params.id), 'tmd_event');
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
@@ -1226,6 +1244,17 @@ const openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
+const handleInteractionChange = (type: string, data: Record<string, unknown>) => {
+  console.log(`Interaction changed: ${type}`, data);
+  // The interaction state will be automatically updated by the composable
+  // You could add notifications here:
+  // $q.notify({
+  //   type: 'positive',
+  //   message: `${type} updated successfully`,
+  //   position: 'top'
+  // });
+};
+
 const loadEvent = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
@@ -1241,6 +1270,8 @@ const loadEvent = async (done?: () => void) => {
     // Load DJs and Teachers after event is loaded
     loadDJs();
     loadTeachers();
+    // Load interactions for this event
+    interactions.loadInteractions();
   } catch (err) {
     console.error('Error loading event:', err);
     error.value = 'Failed to load event';

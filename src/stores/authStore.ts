@@ -99,7 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const refreshToken = async (): Promise<boolean> => {
     try {
-      // Get stored refresh token (you'll need to implement this)
+      // Get stored refresh token
       const storedRefreshToken = getRefreshToken();
 
       if (!storedRefreshToken) {
@@ -120,12 +120,87 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = response.user;
       }
 
+      // Show success notification
+      try {
+        const { useAuthNotifications } = await import('../composables/useAuthNotifications');
+        const authNotifications = useAuthNotifications();
+        authNotifications.showTokenRefreshed();
+      } catch (notificationError) {
+        console.warn('Failed to show token refresh notification:', notificationError);
+      }
+
       return true;
     } catch (error) {
       console.warn('Token refresh failed:', error);
       logout();
       return false;
     }
+  };
+
+  const attemptAutoRelogin = async (): Promise<boolean> => {
+    console.log('Attempting automatic re-login...');
+
+    // First try to refresh token if we have a refresh token
+    const storedRefreshToken = getRefreshToken();
+    if (storedRefreshToken) {
+      const refreshSuccess = await refreshToken();
+      if (refreshSuccess) {
+        console.log('Successfully refreshed token');
+        return true;
+      }
+    }
+
+    // If refresh failed or no refresh token, try to validate stored token
+    const storedToken = getJWTToken();
+    if (storedToken) {
+      try {
+        const isValid = await authService.validateToken(storedToken);
+        if (isValid) {
+          // Token is still valid, might have been a temporary network issue
+          token.value = storedToken;
+
+          // Try to get user data if we don't have it
+          if (!user.value) {
+            try {
+              const userService = (await import('../services/userService')).userService;
+              const userProfile = await userService.getCurrentUserProfile(storedToken);
+              user.value = {
+                id: userProfile.id,
+                name: userProfile.name,
+                display_name: userProfile.display_name,
+                username: userProfile.username,
+                email: userProfile.email,
+                roles: userProfile.roles,
+                ...(userProfile.avatar_urls && { avatar_urls: userProfile.avatar_urls }),
+                ...(userProfile.url && { url: userProfile.url }),
+                ...(userProfile.description && { description: userProfile.description }),
+                ...(userProfile.link && { link: userProfile.link }),
+                ...(userProfile.slug && { slug: userProfile.slug }),
+              };
+            } catch (profileError) {
+              console.warn('Failed to load user profile during auto-relogin:', profileError);
+              // Try GraphQL fallback
+              try {
+                const basicUser = await authService.getCurrentUser(storedToken);
+                user.value = basicUser;
+              } catch (graphqlError) {
+                console.warn('GraphQL user query also failed during auto-relogin:', graphqlError);
+              }
+            }
+          }
+
+          console.log('Token validation successful - user re-authenticated');
+          return true;
+        }
+      } catch (validationError) {
+        console.warn('Token validation failed during auto-relogin:', validationError);
+      }
+    }
+
+    // All auto-relogin attempts failed
+    console.log('Auto-relogin failed - user needs to log in manually');
+    logout();
+    return false;
   };
 
   const loadStoredAuth = async (): Promise<boolean> => {
@@ -235,6 +310,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     refreshToken,
     loadStoredAuth,
+    attemptAutoRelogin,
     clearError,
   };
 });

@@ -21,16 +21,6 @@
     @clear-filters="clearFilters"
     @retry="() => loadTeachers(true)"
   >
-    <template #header-actions>
-      <q-btn
-        color="primary"
-        icon="add"
-        label="Add Teacher"
-        unelevated
-        @click="$router.push('/teachers/new')"
-      />
-    </template>
-
     <template #filters>
       <div class="col-12 col-md-4">
         <q-select
