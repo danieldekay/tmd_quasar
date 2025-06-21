@@ -211,6 +211,15 @@ country, brand_type, brand_first_year, brand_last_year
 ```
 
 ## Universal Query Parameters
+=======
+- `GET /wp/v2/tmd_dj` - DJ posts (can be used for production access to DJ data)
+- `GET /wp/v2/tmd_dj/{id}` - Specific DJ post (can be used for production access to specific DJ data)
+- `GET /wp/v2/dj-category` - DJ categories (can be used for production access to DJ categories)
+
+**Note on Production Endpoints for Other Content Types:**
+
+- While `tmd/v2` is the primary production API for Events, other content types like DJs, Teachers, and Event Series may utilize `tmd/v3` endpoints in production (e.g., `GET /tmd/v3/djs`), or rely on the standard WordPress `wp/v2` API as shown above for DJs.
+- This mixed-version approach for production (Events on `v2`, others on `v3` or `wp/v2`) should be confirmed by checking the frontend application's API service configurations for production builds. The `README.md` and `DESIGN.md` have been updated to reflect this understanding.
 
 All endpoints support these parameters:
 
