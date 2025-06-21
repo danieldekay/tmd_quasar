@@ -7,6 +7,46 @@ import type { BaseParams } from './baseService';
 import type { EventCategory, EventFeature, EventSortOption, SortOrder } from './eventConstants';
 
 /**
+ * Base V3 Entity interface for all V3 API entities
+ */
+export interface BaseV3Entity {
+  id: number;
+  title: string;
+  slug: string;
+  date: string;
+  date_gmt: string;
+  modified: string;
+  modified_gmt: string;
+  status: string;
+  link: string;
+  city?: string;
+  country?: string;
+  _links?: Record<string, unknown>;
+}
+
+/**
+ * Base V3 Parameters interface extending BaseParams
+ */
+export interface BaseV3Params extends BaseParams {
+  meta_fields?: string;
+  _embed?: boolean;
+}
+
+/**
+ * V3 API Event interface
+ */
+export interface EventV3 extends BaseV3Entity {
+  start_date: string;
+  end_date: string;
+  registration_start_date: string;
+  edition: string;
+  event_name?: string;
+  event_category?: string;
+  featured_image?: string;
+  // Add other event-specific fields as needed
+}
+
+/**
  * V3 API Meta filters interface with proper typing
  */
 export interface V3MetaFilters {
@@ -268,4 +308,216 @@ export interface V3PerformanceMetrics {
   cacheHitRate?: number;
   errorRate: number;
   lastRequestTime: Date;
+}
+
+// Teacher V3 API Types
+export interface TeacherV3 extends BaseV3Entity {
+  // Core fields
+  first_name?: string;
+  last_name?: string;
+  role?: 'leader' | 'follower' | 'both' | 'double-role';
+  gender?: 'man' | 'woman' | 'other';
+
+  // Contact & social
+  website?: string;
+  email?: string;
+  facebook_profile?: string;
+  instagram?: string;
+
+  // Bio & experience
+  bio_short?: string;
+  teaching_since?: string;
+  dancing_since?: string;
+  specializations?: string[];
+
+  // Embedded relationships
+  _embedded?: {
+    events?: EventV3[];
+    couples?: Array<{
+      id: number;
+      title: string;
+      slug: string;
+      link: string;
+    }>;
+    author?: unknown[];
+  };
+}
+
+export interface TeacherParams extends BaseV3Params {
+  role?: 'leader' | 'follower' | 'both' | 'double-role';
+  gender?: 'man' | 'woman' | 'other';
+  country?: string;
+  city?: string;
+  teaching_since?: string;
+  dancing_since?: string;
+  specializations?: string[];
+}
+
+// DJ V3 API Types
+export interface DJV3 extends BaseV3Entity {
+  // Core DJ fields
+  abstract?: string;
+  gender?: string;
+  tmd_dj_about_the_dj?: string;
+  tmd_dj_name?: string;
+  tmd_dj_city?: string;
+  tmd_dj_country?: string;
+  tmd_dj_e_mail?: string;
+  tmd_dj_webpage?: string;
+
+  // Activity fields
+  tmd_dj_activity_encuentros?: string;
+  tmd_dj_activity_encuentros_since?: string;
+  tmd_dj_activity_festivals?: string;
+  tmd_dj_activity_festivals_since?: string;
+  tmd_dj_activity_marathons?: string;
+  tmd_dj_activity_marathons_since?: string;
+  tmd_dj_activity_milongas?: string;
+  tmd_dj_activity_milongas_since?: string;
+  tmd_dj_activity_milongas_travel?: string;
+  tmd_dj_activity_milongas_travel_since?: string;
+
+  // Social media
+  tmd_dj_link_to_facebook?: string;
+  tmd_dj_link_to_facebook_page?: string;
+
+  // Embedded relationships
+  _embedded?: {
+    events?: EventV3[];
+    author?: unknown[];
+  };
+}
+
+export interface DJParams extends BaseV3Params {
+  country?: string;
+  city?: string;
+  activity_type?: 'encuentros' | 'festivals' | 'marathons' | 'milongas' | 'milongas_travel';
+  has_events?: boolean;
+}
+
+// Couple V3 API Types
+export interface CoupleV3 extends BaseV3Entity {
+  // Core couple fields
+  __relate_leader?: string;
+  __relate_follower?: string;
+  partnership_started?: string;
+  partnership_style?: string;
+
+  // Bio & teaching
+  bio_couple?: string;
+  teaching_philosophy?: string;
+  specializations_couple?: string[];
+  workshops_offered?: string;
+  achievements?: string;
+
+  // Contact & social
+  website?: string;
+  facebook_page?: string;
+
+  // Experience
+  started_dancing?: string;
+  couples_to_events_to?: string[];
+
+  // Embedded relationships
+  _embedded?: {
+    events?: EventV3[];
+    teachers?: Array<{
+      id: number;
+      title: string;
+      slug: string;
+      link: string;
+      href: string;
+      city?: string;
+      country?: string;
+      role: 'leader' | 'follower' | 'both' | 'double-role';
+    }>;
+    leader?: TeacherV3[];
+    follower?: TeacherV3[];
+    author?: unknown[];
+  };
+
+  // Links to related entities
+  _links?: {
+    self?: Array<{ href: string }>;
+    collection?: Array<{ href: string }>;
+    author?: Array<{ href: string; embeddable: boolean }>;
+    leader?: {
+      href: string;
+      title: string;
+      type: string;
+      role: string;
+      embeddable: boolean;
+    };
+    follower?: {
+      href: string;
+      title: string;
+      type: string;
+      role: string;
+      embeddable: boolean;
+    };
+    events?: Array<{
+      href: string;
+      title: string;
+      type: string;
+      embeddable: boolean;
+    }>;
+  };
+}
+
+export interface CoupleParams extends BaseV3Params {
+  leader_id?: number;
+  follower_id?: number;
+  country?: string;
+  city?: string;
+  partnership_style?: string;
+  specializations?: string[];
+}
+
+// Event Series V3 API Types
+export interface EventSeriesV3 extends BaseV3Entity {
+  // Core event series fields
+  start_date?: string;
+  registration_start_date?: string;
+  description?: string;
+  logo?: string;
+
+  // Embedded relationships
+  _embedded?: {
+    events?: EventV3[];
+    author?: Array<{
+      id: number;
+      name: string;
+      url?: string;
+      description?: string;
+      avatar_urls: {
+        '24': string;
+        '48': string;
+        '96': string;
+      };
+    }>;
+    'wp:featuredmedia'?: Array<{
+      id: number;
+      source_url: string;
+      alt_text?: string;
+      title?: {
+        rendered: string;
+      };
+    }>;
+    'wp:term'?: Array<
+      Array<{
+        id: number;
+        name: string;
+        slug: string;
+        taxonomy: string;
+      }>
+    >;
+  };
+}
+
+export interface EventSeriesParams extends BaseV3Params {
+  country?: string;
+  city?: string;
+  has_upcoming_events?: boolean;
+  start_date_from?: string;
+  start_date_to?: string;
 }

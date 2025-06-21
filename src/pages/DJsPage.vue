@@ -373,6 +373,7 @@ import type { DJ } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
 import OfflineMessage from '../components/OfflineMessage.vue';
+import { DJ_SORT_OPTIONS, type DJSortOption } from 'src/services/eventConstants';
 
 const router = useRouter();
 const { formatDate } = useFormatters();
@@ -560,10 +561,15 @@ const onRequest = async (requestProps: {
   pagination.value.sortBy = sortBy || 'date';
   pagination.value.descending = descending;
 
+  const validSortOptions = Object.values(DJ_SORT_OPTIONS);
+  const orderby: DJSortOption = validSortOptions.includes(sortBy as DJSortOption)
+    ? (sortBy as DJSortOption)
+    : DJ_SORT_OPTIONS.DATE;
+
   const params: DJParams = {
     page,
     per_page: rowsPerPage,
-    orderby: sortBy || 'date',
+    orderby,
     order: descending ? 'desc' : 'asc',
   };
 

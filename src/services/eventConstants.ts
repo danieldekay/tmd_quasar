@@ -189,8 +189,182 @@ export const FEATURE_DISPLAY = {
   },
 } as const;
 
+// Teacher Constants
+export const TEACHER_ROLES = {
+  LEADER: 'leader',
+  FOLLOWER: 'follower',
+  BOTH: 'both',
+  DOUBLE_ROLE: 'double-role',
+} as const;
+
+export const TEACHER_GENDERS = {
+  MAN: 'man',
+  WOMAN: 'woman',
+  OTHER: 'other',
+} as const;
+
+export const TEACHER_SORT_OPTIONS = {
+  NAME: 'title',
+  CITY: 'city',
+  COUNTRY: 'country',
+  ROLE: 'role',
+  TEACHING_SINCE: 'teaching_since',
+  DANCING_SINCE: 'dancing_since',
+  DATE: 'date',
+} as const;
+
+export const ESSENTIAL_TEACHER_META_FIELDS = [
+  'first_name',
+  'last_name',
+  'role',
+  'gender',
+  'city',
+  'country',
+  'website',
+  'email',
+].join(',');
+
+export const ALL_TEACHER_META_FIELDS = [
+  'first_name',
+  'last_name',
+  'role',
+  'gender',
+  'website',
+  'email',
+  'facebook_profile',
+  'instagram',
+  'bio_short',
+  'teaching_since',
+  'dancing_since',
+  'specializations',
+].join(',');
+
+// DJ Constants
+export const DJ_ACTIVITY_TYPES = {
+  ENCUENTROS: 'encuentros',
+  FESTIVALS: 'festivals',
+  MARATHONS: 'marathons',
+  MILONGAS: 'milongas',
+  MILONGAS_TRAVEL: 'milongas_travel',
+} as const;
+
+export const DJ_SORT_OPTIONS = {
+  NAME: 'title',
+  CITY: 'tmd_dj_city',
+  COUNTRY: 'tmd_dj_country',
+  ACTIVITY_ENCUENTROS: 'tmd_dj_activity_encuentros',
+  ACTIVITY_FESTIVALS: 'tmd_dj_activity_festivals',
+  ACTIVITY_MARATHONS: 'tmd_dj_activity_marathons',
+  ACTIVITY_MILONGAS: 'tmd_dj_activity_milongas',
+  DATE: 'date',
+} as const;
+
+export const ESSENTIAL_DJ_META_FIELDS = [
+  'tmd_dj_name',
+  'tmd_dj_country',
+  'tmd_dj_city',
+  'tmd_dj_activity_marathons',
+  'tmd_dj_activity_festivals',
+  'tmd_dj_activity_encuentros',
+  'tmd_dj_activity_milongas',
+  'tmd_dj_activity_milongas_travel',
+  'tmd_dj_webpage',
+].join(',');
+
+export const ALL_DJ_META_FIELDS = [
+  'abstract',
+  'gender',
+  'tmd_dj_about_the_dj',
+  'tmd_dj_name',
+  'tmd_dj_city',
+  'tmd_dj_country',
+  'tmd_dj_e_mail',
+  'tmd_dj_webpage',
+  'tmd_dj_activity_encuentros',
+  'tmd_dj_activity_encuentros_since',
+  'tmd_dj_activity_festivals',
+  'tmd_dj_activity_festivals_since',
+  'tmd_dj_activity_marathons',
+  'tmd_dj_activity_marathons_since',
+  'tmd_dj_activity_milongas',
+  'tmd_dj_activity_milongas_since',
+  'tmd_dj_activity_milongas_travel',
+  'tmd_dj_activity_milongas_travel_since',
+  'tmd_dj_link_to_facebook',
+  'tmd_dj_link_to_facebook_page',
+].join(',');
+
+// Couple Constants
+export const COUPLE_SORT_OPTIONS = {
+  NAME: 'title',
+  CITY: 'city',
+  COUNTRY: 'country',
+  PARTNERSHIP_STARTED: 'partnership_started',
+  PARTNERSHIP_STYLE: 'partnership_style',
+  DATE: 'date',
+} as const;
+
+export const ESSENTIAL_COUPLE_META_FIELDS = [
+  '__relate_leader',
+  '__relate_follower',
+  'city',
+  'country',
+  'partnership_started',
+  'partnership_style',
+  'website',
+].join(',');
+
+export const ALL_COUPLE_META_FIELDS = [
+  '__relate_leader',
+  '__relate_follower',
+  'partnership_started',
+  'partnership_style',
+  'bio_couple',
+  'teaching_philosophy',
+  'specializations_couple',
+  'workshops_offered',
+  'achievements',
+  'website',
+  'facebook_page',
+  'started_dancing',
+  'couples_to_events_to',
+].join(',');
+
+// Event Series Constants
+export const EVENT_SERIES_SORT_OPTIONS = {
+  NAME: 'title',
+  CITY: 'city',
+  COUNTRY: 'country',
+  START_DATE: 'start_date',
+  REGISTRATION_START_DATE: 'registration_start_date',
+  DATE: 'date',
+} as const;
+
+export const ESSENTIAL_EVENT_SERIES_META_FIELDS = [
+  'start_date',
+  'registration_start_date',
+  'city',
+  'country',
+  'description',
+].join(',');
+
+export const ALL_EVENT_SERIES_META_FIELDS = [
+  'start_date',
+  'registration_start_date',
+  'description',
+  'logo',
+].join(',');
+
 // Type exports for better TypeScript support
 export type EventCategory = (typeof EVENT_CATEGORIES)[keyof typeof EVENT_CATEGORIES];
 export type EventFeature = (typeof EVENT_FEATURES)[keyof typeof EVENT_FEATURES];
 export type EventSortOption = (typeof EVENT_SORT_OPTIONS)[keyof typeof EVENT_SORT_OPTIONS];
 export type SortOrder = (typeof SORT_ORDER)[keyof typeof SORT_ORDER];
+export type TeacherRole = (typeof TEACHER_ROLES)[keyof typeof TEACHER_ROLES];
+export type TeacherGender = (typeof TEACHER_GENDERS)[keyof typeof TEACHER_GENDERS];
+export type TeacherSortOption = (typeof TEACHER_SORT_OPTIONS)[keyof typeof TEACHER_SORT_OPTIONS];
+export type DJActivityType = (typeof DJ_ACTIVITY_TYPES)[keyof typeof DJ_ACTIVITY_TYPES];
+export type DJSortOption = (typeof DJ_SORT_OPTIONS)[keyof typeof DJ_SORT_OPTIONS];
+export type CoupleSortOption = (typeof COUPLE_SORT_OPTIONS)[keyof typeof COUPLE_SORT_OPTIONS];
+export type EventSeriesSortOption =
+  (typeof EVENT_SERIES_SORT_OPTIONS)[keyof typeof EVENT_SERIES_SORT_OPTIONS];
