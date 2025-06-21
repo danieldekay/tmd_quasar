@@ -7,7 +7,76 @@
         <q-toolbar-title> Tango Marathon Directory </q-toolbar-title>
 
         <q-btn flat round dense icon="search" />
-        <q-btn flat round dense icon="notifications" />
+
+        <!-- User Authentication Section -->
+        <div v-if="authStore.isAuthenticated" class="row items-center q-gutter-sm">
+          <q-btn flat round dense icon="notifications" />
+
+          <!-- User Menu -->
+          <q-btn flat round dense>
+            <q-avatar size="32px">
+              <img
+                v-if="authStore.user?.avatar_urls?.['96']"
+                :src="authStore.user.avatar_urls['96']"
+              />
+              <q-icon v-else name="person" />
+            </q-avatar>
+          </q-btn>
+
+          <q-menu>
+            <q-list style="min-width: 200px">
+              <q-item>
+                <q-item-section>
+                  <q-item-label>{{ authStore.user?.name }}</q-item-label>
+                  <q-item-label caption>{{ authStore.user?.email }}</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-separator />
+
+              <q-item clickable v-close-popup @click="$router.push('/profile')">
+                <q-item-section avatar>
+                  <q-icon name="person" />
+                </q-item-section>
+                <q-item-section>Profile</q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="$router.push('/favorites')">
+                <q-item-section avatar>
+                  <q-icon name="favorite" />
+                </q-item-section>
+                <q-item-section>My Favorites</q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="$router.push('/dashboard')">
+                <q-item-section avatar>
+                  <q-icon name="dashboard" />
+                </q-item-section>
+                <q-item-section>Dashboard</q-item-section>
+              </q-item>
+
+              <q-separator />
+
+              <q-item clickable v-close-popup @click="handleLogout">
+                <q-item-section avatar>
+                  <q-icon name="logout" />
+                </q-item-section>
+                <q-item-section>Sign Out</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </div>
+
+        <!-- Login Button for unauthenticated users -->
+        <q-btn
+          v-else
+          flat
+          round
+          dense
+          icon="login"
+          @click="$router.push('/login')"
+          aria-label="Sign In"
+        />
       </q-toolbar>
     </q-header>
 
@@ -48,6 +117,34 @@
           </q-item-section>
           <q-item-section> Encuentros </q-item-section>
         </q-item>
+
+        <!-- User-specific navigation -->
+        <template v-if="authStore.isAuthenticated">
+          <q-separator class="q-my-md" />
+
+          <q-item-label header> My Account </q-item-label>
+
+          <q-item clickable v-ripple to="/favorites">
+            <q-item-section avatar>
+              <q-icon name="favorite" />
+            </q-item-section>
+            <q-item-section> My Favorites </q-item-section>
+          </q-item>
+
+          <q-item clickable v-ripple to="/dashboard">
+            <q-item-section avatar>
+              <q-icon name="dashboard" />
+            </q-item-section>
+            <q-item-section> Dashboard </q-item-section>
+          </q-item>
+
+          <q-item clickable v-ripple to="/profile">
+            <q-item-section avatar>
+              <q-icon name="person" />
+            </q-item-section>
+            <q-item-section> Profile </q-item-section>
+          </q-item>
+        </template>
       </q-list>
     </q-drawer>
 
@@ -58,7 +155,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { useAuthStore } from '../stores/authStore';
+
+const router = useRouter();
+const $q = useQuasar();
+const authStore = useAuthStore();
 
 interface LinkProps {
   title: string;
@@ -114,4 +218,28 @@ const leftDrawerOpen = ref(false);
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout();
+    $q.notify({
+      type: 'positive',
+      message: 'Signed out successfully',
+      position: 'top',
+    });
+    await router.push('/');
+  } catch (error) {
+    console.error('Logout error:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to sign out',
+      position: 'top',
+    });
+  }
+};
+
+// Load stored authentication on app start
+onMounted(async () => {
+  await authStore.loadStoredAuth();
+});
 </script>

@@ -1,0 +1,337 @@
+<template>
+  <q-page class="flex flex-center bg-grey-1">
+    <div class="login-container">
+      <q-card class="login-card q-pa-lg">
+        <q-card-section class="text-center">
+          <div class="text-h4 q-mb-sm">Welcome Back</div>
+          <div class="text-body2 text-grey-6">Sign in to your Tango Marathons account</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit="handleLogin" class="q-gutter-md">
+            <q-input
+              v-model="form.username"
+              label="Username or Email"
+              type="text"
+              outlined
+              :rules="[(val) => !!val || 'Username is required']"
+              :disable="isLoading"
+            >
+              <template #prepend>
+                <q-icon name="person" />
+              </template>
+            </q-input>
+
+            <q-input
+              v-model="form.password"
+              label="Password"
+              :type="showPassword ? 'text' : 'password'"
+              outlined
+              :rules="[(val) => !!val || 'Password is required']"
+              :disable="isLoading"
+            >
+              <template #prepend>
+                <q-icon name="lock" />
+              </template>
+              <template #append>
+                <q-icon
+                  :name="showPassword ? 'visibility' : 'visibility_off'"
+                  class="cursor-pointer"
+                  @click="showPassword = !showPassword"
+                />
+              </template>
+            </q-input>
+
+            <div class="row items-center justify-between">
+              <q-checkbox v-model="form.remember" label="Remember me" :disable="isLoading" />
+              <q-btn
+                flat
+                color="primary"
+                label="Forgot password?"
+                :disable="isLoading"
+                @click="showForgotPassword = true"
+              />
+            </div>
+
+            <q-btn
+              type="submit"
+              color="primary"
+              size="lg"
+              class="full-width"
+              :loading="isLoading"
+              :disable="!form.username || !form.password"
+            >
+              {{ isLoading ? 'Signing in...' : 'Sign In' }}
+            </q-btn>
+          </q-form>
+        </q-card-section>
+
+        <q-card-section class="text-center">
+          <div class="text-body2 text-grey-6">
+            Don't have an account?
+            <q-btn
+              flat
+              color="primary"
+              label="Sign up"
+              :disable="isLoading"
+              @click="showRegister = true"
+            />
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Forgot Password Dialog -->
+    <q-dialog v-model="showForgotPassword">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Reset Password</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-input
+            v-model="forgotPasswordEmail"
+            label="Email address"
+            type="email"
+            outlined
+            :rules="[(val) => !!val || 'Email is required']"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="primary" @click="showForgotPassword = false" />
+          <q-btn
+            flat
+            label="Send Reset Link"
+            color="primary"
+            :loading="isResettingPassword"
+            @click="handleForgotPassword"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Register Dialog -->
+    <q-dialog v-model="showRegister">
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">Create Account</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit="handleRegister" class="q-gutter-md">
+            <q-input
+              v-model="registerForm.username"
+              label="Username"
+              type="text"
+              outlined
+              :rules="[(val) => !!val || 'Username is required']"
+            />
+            <q-input
+              v-model="registerForm.email"
+              label="Email"
+              type="email"
+              outlined
+              :rules="[(val) => !!val || 'Email is required']"
+            />
+            <q-input
+              v-model="registerForm.name"
+              label="Display Name"
+              type="text"
+              outlined
+              :rules="[(val) => !!val || 'Display name is required']"
+            />
+            <q-input
+              v-model="registerForm.password"
+              label="Password"
+              :type="showRegisterPassword ? 'text' : 'password'"
+              outlined
+              :rules="[(val) => !!val || 'Password is required']"
+            >
+              <template #append>
+                <q-icon
+                  :name="showRegisterPassword ? 'visibility' : 'visibility_off'"
+                  class="cursor-pointer"
+                  @click="showRegisterPassword = !showRegisterPassword"
+                />
+              </template>
+            </q-input>
+            <q-btn type="submit" color="primary" class="full-width" :loading="isRegistering">
+              Create Account
+            </q-btn>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+  </q-page>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { useAuthStore } from '../stores/authStore';
+
+const router = useRouter();
+const route = useRoute();
+const $q = useQuasar();
+const authStore = useAuthStore();
+
+// Form state
+const form = reactive({
+  username: '',
+  password: '',
+  remember: false,
+});
+
+const showPassword = ref(false);
+const isLoading = ref(false);
+
+// Dialog states
+const showForgotPassword = ref(false);
+const showRegister = ref(false);
+const forgotPasswordEmail = ref('');
+const isResettingPassword = ref(false);
+
+// Register form
+const registerForm = reactive({
+  username: '',
+  email: '',
+  name: '',
+  password: '',
+});
+const showRegisterPassword = ref(false);
+const isRegistering = ref(false);
+
+// Handle login
+const handleLogin = async (): Promise<void> => {
+  if (!form.username || !form.password) return;
+
+  isLoading.value = true;
+  authStore.clearError();
+
+  try {
+    const success = await authStore.login({
+      username: form.username,
+      password: form.password,
+      remember: form.remember,
+    });
+
+    if (success) {
+      $q.notify({
+        type: 'positive',
+        message: 'Welcome back!',
+        position: 'top',
+      });
+
+      // Redirect to intended page or home
+      const redirect = route.query.redirect as string;
+      await router.push(redirect || '/');
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: authStore.error || 'Login failed',
+        position: 'top',
+      });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'An unexpected error occurred',
+      position: 'top',
+    });
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Handle forgot password
+const handleForgotPassword = async (): Promise<void> => {
+  if (!forgotPasswordEmail.value) return;
+
+  isResettingPassword.value = true;
+
+  try {
+    await authStore.requestPasswordReset(forgotPasswordEmail.value);
+    $q.notify({
+      type: 'positive',
+      message: 'Password reset link sent to your email',
+      position: 'top',
+    });
+    showForgotPassword.value = false;
+    forgotPasswordEmail.value = '';
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: error instanceof Error ? error.message : 'Failed to send reset link',
+      position: 'top',
+    });
+  } finally {
+    isResettingPassword.value = false;
+  }
+};
+
+// Handle register
+const handleRegister = async (): Promise<void> => {
+  if (
+    !registerForm.username ||
+    !registerForm.email ||
+    !registerForm.name ||
+    !registerForm.password
+  ) {
+    return;
+  }
+
+  isRegistering.value = true;
+
+  try {
+    await authStore.register({
+      username: registerForm.username,
+      email: registerForm.email,
+      name: registerForm.name,
+      password: registerForm.password,
+    });
+
+    $q.notify({
+      type: 'positive',
+      message: 'Account created successfully!',
+      position: 'top',
+    });
+
+    showRegister.value = false;
+
+    // Redirect to intended page or home
+    const redirect = route.query.redirect as string;
+    await router.push(redirect || '/');
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: error instanceof Error ? error.message : 'Registration failed',
+      position: 'top',
+    });
+  } finally {
+    isRegistering.value = false;
+  }
+};
+
+// Check if user is already authenticated
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    const redirect = route.query.redirect as string;
+    void router.push(redirect || '/');
+  }
+});
+</script>
+
+<style lang="scss" scoped>
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+}
+</style>

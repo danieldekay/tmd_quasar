@@ -21,6 +21,16 @@ const routes: RouteRecordRaw[] = [
     ],
   },
 
+  // Authentication routes (outside main layout)
+  {
+    path: '/login',
+    component: () => import('pages/LoginPage.vue'),
+  },
+  {
+    path: '/unauthorized',
+    component: () => import('pages/UnauthorizedPage.vue'),
+  },
+
   // Always leave this as last one,
   // but you can also remove it
   {
