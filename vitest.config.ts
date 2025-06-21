@@ -1,10 +1,10 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import { fileURLToPath } from 'node:url';
 
-export default defineConfig({
+const viteConfig = defineConfig({
   plugins: [
     vue({
       template: { transformAssetUrls },
@@ -13,24 +13,6 @@ export default defineConfig({
       sassVariables: 'src/css/quasar.variables.scss',
     }),
   ],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test-setup.ts',
-        '**/*.d.ts',
-        '**/*.config.ts',
-        'src/boot/**',
-        'dist/**',
-      ],
-    },
-  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -45,3 +27,28 @@ export default defineConfig({
     __SERVER__: false,
   },
 });
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['./src/test-setup.ts'],
+      include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+      root: fileURLToPath(new URL('./', import.meta.url)),
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+        exclude: [
+          'node_modules/',
+          'src/test-setup.ts',
+          '**/*.d.ts',
+          '**/*.config.ts',
+          'src/boot/**',
+          'dist/**',
+        ],
+      },
+    },
+  }),
+);

@@ -1,0 +1,84 @@
+---
+description: This rule explains the guidelines for writing Vitest tests for Next.js applications.
+globs: *
+alwaysApply: false
+---
+
+# Testing Guidelines
+
+## Testing Framework
+- `vitest` is used for testing
+- Tests are colocated next to the tested file
+  - Example: `dir/format.ts` and `dir/format.test.ts`
+
+## Common Mocks
+
+### Server-Only Mock
+```ts
+vi.mock("server-only", () => ({}));
+```
+
+### Prisma Mock
+```ts
+import { beforeEach } from "vitest";
+import prisma from "@/utils/__mocks__/prisma";
+
+vi.mock("@/utils/prisma");
+
+describe("example", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("test", async () => {
+    prisma.group.findMany.mockResolvedValue([]);
+  });
+});
+```
+
+## Best Practices
+- Each test should be independent
+- Use descriptive test names
+- Mock external dependencies
+- Clean up mocks between tests
+- Avoid testing implementation details
+
+## Advanced Testing Guidelines
+
+### Avoid Complex Singleton Service Mocking
+- **Prefer testing public API behavior** over internal implementation details
+- **Avoid mocking singleton services** that are created before mocks are applied
+- **Test the "what" not the "how"** - focus on expected outputs rather than internal function calls
+- **Use simple mock-based tests** for service methods rather than trying to mock internal dependencies
+
+### When to Simplify Tests
+- If a test requires complex mocking of multiple internal dependencies
+- If singleton services cause module caching issues with mocks
+- If testing internal transformation logic becomes more complex than testing the public API
+- When the same functionality can be verified through public method behavior
+
+### Example: Good vs Bad Approach
+```ts
+// ❌ Bad: Testing internal implementation details
+it('calls internal helper functions', async () => {
+  const mockHelper = vi.fn();
+  // Complex setup to mock internal dependencies...
+  expect(mockHelper).toHaveBeenCalled();
+});
+
+// ✅ Good: Testing public API behavior
+it('returns correctly transformed data', async () => {
+  const result = await service.getData();
+  expect(result).toMatchObject({
+    id: 123,
+    title: 'Expected Title',
+    // ... other expected properties
+  });
+});
+```
+
+### Service Testing Strategy
+- **Mock the entire service module** rather than trying to mock individual internal methods
+- **Test method calls and parameters** rather than internal implementation
+- **Verify return values and data structures** rather than internal function calls
+- **Use integration tests** for complex transformation logic when unit tests become too complex
