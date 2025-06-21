@@ -10,6 +10,9 @@
 
         <!-- User Authentication Section -->
         <div v-if="authStore.isAuthenticated" class="row items-center q-gutter-sm">
+          <!-- Welcome Message -->
+          <div class="text-caption q-mr-sm">Welcome, {{ getUserDisplayName() }}!</div>
+
           <q-btn flat round dense icon="notifications" />
 
           <!-- User Menu -->
@@ -68,7 +71,7 @@
         </div>
 
         <!-- Login Button for unauthenticated users -->
-        <q-btn v-else flat color="primary" label="Login" @click="$router.push('/auth/login')" />
+        <q-btn v-else flat color="white" label="Login" @click="$router.push('/auth/login')" />
       </q-toolbar>
     </q-header>
 
@@ -233,4 +236,12 @@ const handleLogout = async () => {
 onMounted(async () => {
   await authStore.loadStoredAuth();
 });
+
+function getUserDisplayName(): string {
+  if (!authStore.user?.name) return 'User';
+
+  // Try to get first name from full name
+  const nameParts = authStore.user.name.trim().split(' ');
+  return nameParts[0] || authStore.user.name;
+}
 </script>
