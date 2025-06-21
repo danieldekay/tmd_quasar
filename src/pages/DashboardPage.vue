@@ -31,13 +31,23 @@
               </q-item-section>
             </q-item>
 
+            <q-item clickable v-close-popup @click="createNewTeacherCouple">
+              <q-item-section avatar>
+                <q-icon name="people" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Teacher Couple</q-item-label>
+                <q-item-label caption>Add a new teacher couple profile</q-item-label>
+              </q-item-section>
+            </q-item>
+
             <q-item clickable v-close-popup @click="createNewDJ">
               <q-item-section avatar>
                 <q-icon name="music_note" />
               </q-item-section>
               <q-item-section>
-                <q-item-label>DJ/Couple</q-item-label>
-                <q-item-label caption>Add a new DJ or couple profile</q-item-label>
+                <q-item-label>DJ</q-item-label>
+                <q-item-label caption>Add a new DJ profile</q-item-label>
               </q-item-section>
             </q-item>
 
@@ -262,6 +272,13 @@ const createNewTeacher = () => {
   // Redirect to WordPress admin new teacher screen
   const newTeacherUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_teacher';
   window.open(newTeacherUrl, '_blank');
+};
+
+const createNewTeacherCouple = () => {
+  // Redirect to WordPress admin new teacher couple screen
+  const newTeacherCoupleUrl =
+    'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_teacher_couple';
+  window.open(newTeacherCoupleUrl, '_blank');
 };
 
 const createNewDJ = () => {
