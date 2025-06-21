@@ -9,11 +9,11 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   };
 }
 
-// Enhanced error type for better error handling
+// Enhanced error interface
 interface APIError extends Error {
-  name: 'NetworkError' | 'APIUnavailable' | 'ServerError' | 'NotFoundError' | 'APIError';
-  isOffline?: boolean;
+  name: string;
   status?: number;
+  isOffline?: boolean;
   originalError?: AxiosError;
 }
 
@@ -25,11 +25,18 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
-// Request interceptor to add request metadata
+// Request interceptor to add request metadata and auth token
 api.interceptors.request.use(
   (config: ExtendedAxiosRequestConfig) => {
     // Add timestamp for request tracking
     config.metadata = { startTime: Date.now() };
+
+    // Add authentication token if available
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     return config;
   },
   (error: Error) => Promise.reject(error),
@@ -63,6 +70,24 @@ api.interceptors.response.use(
       enhancedError.name = 'APIUnavailable';
       enhancedError.isOffline = true;
       enhancedError.originalError = error;
+    } else if (error.response.status === 401) {
+      // Unauthorized - clear auth and redirect to login
+      enhancedError.message = 'Authentication required';
+      enhancedError.name = 'UnauthorizedError';
+      enhancedError.status = error.response.status;
+      enhancedError.originalError = error;
+
+      // Clear stored authentication
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_user');
+
+      // Redirect to login page
+      if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+      }
     } else if (error.response.status >= 500) {
       // Server errors
       enhancedError.message = 'API server error - please try again later';
@@ -87,6 +112,7 @@ api.interceptors.response.use(
 );
 
 export default boot(({ app }) => {
+  // Make axios available in the app
   app.config.globalProperties.$axios = axios;
   app.config.globalProperties.$api = api;
 });

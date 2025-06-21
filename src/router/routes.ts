@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
+import { requireManageOptions } from './guards';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -17,7 +18,22 @@ const routes: RouteRecordRaw[] = [
       { path: 'event-series', component: () => import('pages/EventSeriesPage.vue') },
       { path: 'event-series/:id', component: () => import('pages/EventSeriesDetails.vue') },
       { path: 'about', component: () => import('pages/AboutPage.vue') },
-      { path: 'debug', component: () => import('pages/DebugPage.vue') },
+      { path: 'profile', component: () => import('pages/ProfilePage.vue') },
+      {
+        path: 'debug',
+        component: () => import('pages/DebugPage.vue'),
+        beforeEnter: requireManageOptions,
+      },
+    ],
+  },
+
+  // Authentication routes with AuthLayout
+  {
+    path: '/auth',
+    component: () => import('layouts/AuthLayout.vue'),
+    children: [
+      { path: 'login', component: () => import('pages/LoginPage.vue') },
+      { path: 'unauthorized', component: () => import('pages/UnauthorizedPage.vue') },
     ],
   },
 

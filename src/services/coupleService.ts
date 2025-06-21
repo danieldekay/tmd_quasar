@@ -42,19 +42,11 @@ class CoupleService extends BaseService<Couple> {
       // Build V3 API parameters with advanced filtering
       const apiParams = this.buildCoupleApiParams(params);
 
-      console.log('CoupleService.getCouples - API params:', apiParams);
-
       // Get response using BaseService
       const response = await this.getAll(apiParams, signal);
 
-      console.log('CoupleService.getCouples - BaseService response:', response);
-      console.log('CoupleService.getCouples - Response data length:', response.data?.length);
-
       // Transform and enhance the data
       const couples = this.transformCouples(response.data);
-
-      console.log('CoupleService.getCouples - Transformed couples:', couples);
-      console.log('CoupleService.getCouples - Final couples length:', couples.length);
 
       return couples;
     } catch (error) {
