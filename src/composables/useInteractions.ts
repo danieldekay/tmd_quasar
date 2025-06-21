@@ -1,25 +1,8 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/authStore';
-
-export type InteractionType = 'like' | 'bookmark' | 'reminder' | 'follow';
-export type ContentType =
-  | 'tmd_event'
-  | 'tmd_teacher'
-  | 'tmd_dj'
-  | 'tmd_teacher_couple'
-  | 'tmd_event_series';
-
-export interface UserInteraction {
-  id: number;
-  interaction_type: InteractionType;
-  target_post_id: number;
-  target_post_type: ContentType;
-  interaction_date: string;
-  expires_date?: string;
-  reminder_note?: string;
-  private_note?: string;
-  notification_sent?: boolean;
-}
+import { interactionService } from '../services/interactionService';
+import type { InteractionType, ContentType, UserInteraction } from '../services/types';
+import { Notify } from 'quasar';
 
 export interface InteractionState {
   liked: boolean;
@@ -70,122 +53,236 @@ export function useInteractions(targetId: number, targetType: ContentType) {
   const isAuthenticated = computed(() => authStore.isAuthenticated);
 
   // Methods
-  const loadInteractions = () => {
-    if (!isAuthenticated.value) return;
+  const loadInteractions = async () => {
+    if (!isAuthenticated.value || !targetId || targetId <= 0) return;
 
     isLoading.value = true;
     error.value = null;
 
     try {
-      // TODO: Replace with actual API call when endpoints are ready
-      // For now, return empty array
-      interactions.value = [];
-
       console.log(`Loading interactions for ${targetType} ${targetId}`);
+      const apiInteractions = await interactionService.getContentInteractions(targetId, targetType);
 
-      // Mock data for testing
-      if (process.env.NODE_ENV === 'development') {
-        // Simulate some interactions for testing
-        interactions.value = [];
-      }
+      // Convert API response to our UserInteraction format
+      interactions.value = apiInteractions.map((apiInteraction) => ({
+        id: apiInteraction.id,
+        interaction_type: apiInteraction.interaction_type,
+        target_post_id:
+          typeof apiInteraction.target_post_id === 'string'
+            ? parseInt(apiInteraction.target_post_id, 10)
+            : apiInteraction.target_post_id,
+        target_post_type: apiInteraction.target_post_type,
+        interaction_date: apiInteraction.interaction_date,
+        expires_date: apiInteraction.expires_date,
+        reminder_note: apiInteraction.reminder_note,
+        private_note: apiInteraction.private_note,
+        notification_sent: apiInteraction.notification_sent,
+      }));
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load interactions';
       console.error('Error loading interactions:', err);
+
+      // Show user notification
+      Notify.create({
+        type: 'negative',
+        message: 'Failed to load interactions',
+        timeout: 3000,
+      });
     } finally {
       isLoading.value = false;
     }
   };
 
-  const createInteraction = (type: InteractionType, data?: Record<string, unknown>) => {
+  const createInteraction = async (type: InteractionType, data?: Record<string, unknown>) => {
     if (!isAuthenticated.value) {
       throw new Error('Authentication required');
     }
 
-    try {
-      // TODO: Replace with actual API call
-      console.log(`Creating ${type} interaction for ${targetType} ${targetId}`, data);
+    if (!targetId || targetId <= 0) {
+      throw new Error('Invalid target ID');
+    }
 
-      // Mock creating interaction
-      const newInteraction: UserInteraction = {
-        id: Date.now(), // Mock ID
+    try {
+      console.log(
+        `Creating ${type} interaction for ${targetType} ${targetId}`,
+        data || 'no additional data',
+      );
+
+      const response = await interactionService.createInteraction({
         interaction_type: type,
         target_post_id: targetId,
         target_post_type: targetType,
-        interaction_date: new Date().toISOString(),
-        ...data,
+        expires_date: data?.expires_date as string | undefined,
+        reminder_note: data?.reminder_note as string | undefined,
+        private_note: data?.private_note as string | undefined,
+      });
+
+      // Convert API response to our UserInteraction format
+      const newInteraction: UserInteraction = {
+        id: response.id,
+        interaction_type: response.interaction_type,
+        target_post_id:
+          typeof response.target_post_id === 'string'
+            ? parseInt(response.target_post_id, 10)
+            : response.target_post_id,
+        target_post_type: response.target_post_type,
+        interaction_date: response.interaction_date,
+        expires_date: response.expires_date,
+        reminder_note: response.reminder_note,
+        private_note: response.private_note,
+        notification_sent: response.notification_sent,
       };
 
       interactions.value.push(newInteraction);
+
+      // Show success notification
+      Notify.create({
+        type: 'positive',
+        message: `${type.charAt(0).toUpperCase() + type.slice(1)} added`,
+        timeout: 2000,
+      });
+
       return newInteraction;
     } catch (err) {
       console.error(`Error creating ${type} interaction:`, err);
+
+      // Handle specific interaction exists error
+      if (err instanceof Error && err.name === 'InteractionExistsError') {
+        console.log(`${type} interaction already exists, reloading interactions to sync state`);
+        // Reload interactions to sync the state
+        await loadInteractions();
+
+        Notify.create({
+          type: 'info',
+          message: `You have already ${type}d this content`,
+          timeout: 2000,
+        });
+      } else {
+        // Show error notification for other errors
+        Notify.create({
+          type: 'negative',
+          message: `Failed to add ${type}`,
+          timeout: 3000,
+        });
+      }
+
       throw err;
     }
   };
 
-  const deleteInteraction = (type: InteractionType) => {
+  const deleteInteraction = async (type: InteractionType) => {
     if (!isAuthenticated.value) {
       throw new Error('Authentication required');
     }
 
+    if (!targetId || targetId <= 0) {
+      throw new Error('Invalid target ID');
+    }
+
     try {
-      // TODO: Replace with actual API call
       console.log(`Deleting ${type} interaction for ${targetType} ${targetId}`);
 
-      // Mock deleting interaction
-      interactions.value = interactions.value.filter(
+      // Find the interaction to delete
+      const interactionToDelete = interactions.value.find(
         (i) =>
-          !(
-            i.interaction_type === type &&
-            i.target_post_id === targetId &&
-            i.target_post_type === targetType
-          ),
+          i.interaction_type === type &&
+          i.target_post_id === targetId &&
+          i.target_post_type === targetType,
       );
+
+      if (interactionToDelete) {
+        await interactionService.deleteInteraction(interactionToDelete.id);
+
+        // Remove from local state
+        interactions.value = interactions.value.filter((i) => i.id !== interactionToDelete.id);
+
+        // Show success notification
+        Notify.create({
+          type: 'positive',
+          message: `${type.charAt(0).toUpperCase() + type.slice(1)} removed`,
+          timeout: 2000,
+        });
+      }
     } catch (err) {
       console.error(`Error deleting ${type} interaction:`, err);
+
+      // Show error notification
+      Notify.create({
+        type: 'negative',
+        message: `Failed to remove ${type}`,
+        timeout: 3000,
+      });
+
       throw err;
     }
   };
 
-  const toggleLike = () => {
-    if (interactionState.value.liked) {
-      deleteInteraction('like');
-    } else {
-      createInteraction('like');
+  const toggleLike = async () => {
+    try {
+      if (interactionState.value.liked) {
+        await deleteInteraction('like');
+      } else {
+        await createInteraction('like');
+      }
+    } catch (err) {
+      // Error is already handled and notified in createInteraction/deleteInteraction
+      console.error('Toggle like failed:', err);
     }
   };
 
-  const toggleBookmark = () => {
-    if (interactionState.value.bookmarked) {
-      deleteInteraction('bookmark');
-    } else {
-      createInteraction('bookmark');
+  const toggleBookmark = async () => {
+    try {
+      if (interactionState.value.bookmarked) {
+        await deleteInteraction('bookmark');
+      } else {
+        await createInteraction('bookmark');
+      }
+    } catch (err) {
+      // Error is already handled and notified in createInteraction/deleteInteraction
+      console.error('Toggle bookmark failed:', err);
     }
   };
 
-  const toggleFollow = () => {
-    if (interactionState.value.following) {
-      deleteInteraction('follow');
-    } else {
-      createInteraction('follow');
+  const toggleFollow = async () => {
+    try {
+      if (interactionState.value.following) {
+        await deleteInteraction('follow');
+      } else {
+        await createInteraction('follow');
+      }
+    } catch (err) {
+      // Error is already handled and notified in createInteraction/deleteInteraction
+      console.error('Toggle follow failed:', err);
     }
   };
 
-  const setReminder = (date: string, note: string = '') => {
-    // Remove existing reminder first
-    if (interactionState.value.reminder) {
-      deleteInteraction('reminder');
-    }
+  const setReminder = async (date: string, note: string = '') => {
+    try {
+      // Remove existing reminder first
+      if (interactionState.value.reminder) {
+        await deleteInteraction('reminder');
+      }
 
-    // Create new reminder
-    createInteraction('reminder', {
-      expires_date: date,
-      reminder_note: note,
-    });
+      // Create new reminder
+      await createInteraction('reminder', {
+        expires_date: date,
+        reminder_note: note,
+      });
+    } catch (err) {
+      // Error is already handled and notified in createInteraction/deleteInteraction
+      console.error('Set reminder failed:', err);
+      throw err; // Re-throw for setReminder to handle in UI
+    }
   };
 
-  const removeReminder = () => {
-    deleteInteraction('reminder');
+  const removeReminder = async () => {
+    try {
+      await deleteInteraction('reminder');
+    } catch (err) {
+      // Error is already handled and notified in deleteInteraction
+      console.error('Remove reminder failed:', err);
+      throw err; // Re-throw for removeReminder to handle in UI
+    }
   };
 
   return {

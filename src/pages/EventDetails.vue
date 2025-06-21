@@ -52,15 +52,10 @@
 
           <!-- Floating Interaction Buttons -->
           <InteractionButtons
-            v-if="event"
+            v-if="event?.id"
             :target-id="event.id"
             target-type="tmd_event"
             layout="floating"
-            :liked="interactions.interactionState.value.liked"
-            :bookmarked="interactions.interactionState.value.bookmarked"
-            :reminder="interactions.interactionState.value.reminder"
-            :like-count="interactions.interactionState.value.likeCount"
-            @interaction-changed="handleInteractionChange"
           />
         </q-img>
       </div>
@@ -1244,17 +1239,6 @@ const openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-const handleInteractionChange = (type: string, data: Record<string, unknown>) => {
-  console.log(`Interaction changed: ${type}`, data);
-  // The interaction state will be automatically updated by the composable
-  // You could add notifications here:
-  // $q.notify({
-  //   type: 'positive',
-  //   message: `${type} updated successfully`,
-  //   position: 'top'
-  // });
-};
-
 const loadEvent = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
@@ -1271,7 +1255,7 @@ const loadEvent = async (done?: () => void) => {
     loadDJs();
     loadTeachers();
     // Load interactions for this event
-    interactions.loadInteractions();
+    void interactions.loadInteractions();
   } catch (err) {
     console.error('Error loading event:', err);
     error.value = 'Failed to load event';

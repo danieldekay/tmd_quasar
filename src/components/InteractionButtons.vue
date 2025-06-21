@@ -1,21 +1,20 @@
 <template>
-  <div class="interaction-buttons" :class="layoutClass">
+  <div v-if="hasValidTarget" class="interaction-buttons" :class="layoutClass">
     <!-- Like Button -->
     <q-btn
       v-if="showLike"
       :flat="layout === 'floating'"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="isLiked ? 'red' : 'grey-6'"
+      :color="isLiked ? 'red-6' : 'grey-6'"
+      :text-color="isLiked ? 'white' : undefined"
+      :unelevated="isLiked"
       :icon="isLiked ? 'favorite' : 'favorite_border'"
       :class="buttonClass"
-      @click="toggleLike"
-      :loading="loadingStates.like"
+      @click="handleToggleLike"
+      :loading="isLoading"
     >
       <q-tooltip>{{ isLiked ? 'Unlike' : 'Like this content' }}</q-tooltip>
-      <span v-if="layout === 'expanded' && (likeCount || 0) > 0" class="q-ml-xs">{{
-        likeCount || 0
-      }}</span>
     </q-btn>
 
     <!-- Bookmark Button -->
@@ -24,11 +23,13 @@
       :flat="layout === 'floating'"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="isBookmarked ? 'amber' : 'grey-6'"
+      :color="isBookmarked ? 'amber-6' : 'grey-6'"
+      :text-color="isBookmarked ? 'white' : undefined"
+      :unelevated="isBookmarked"
       :icon="isBookmarked ? 'bookmark' : 'bookmark_border'"
       :class="buttonClass"
-      @click="toggleBookmark"
-      :loading="loadingStates.bookmark"
+      @click="handleToggleBookmark"
+      :loading="isLoading"
     >
       <q-tooltip>{{ isBookmarked ? 'Remove bookmark' : 'Bookmark for later' }}</q-tooltip>
     </q-btn>
@@ -39,13 +40,35 @@
       :flat="layout === 'floating'"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="hasReminder ? 'orange' : 'grey-6'"
-      :icon="hasReminder ? 'alarm_on' : 'alarm_add'"
-      :class="buttonClass"
+      :color="hasReminder ? 'green-6' : 'grey-6'"
+      :text-color="hasReminder ? 'white' : undefined"
+      :unelevated="hasReminder"
+      :icon="hasReminder ? 'notifications_active' : 'notifications_none'"
+      :class="[buttonClass, { 'reminder-pulse': hasReminder }]"
       @click="openReminderDialog"
-      :loading="loadingStates.reminder"
+      :loading="isLoading"
     >
-      <q-tooltip>{{ hasReminder ? 'Edit reminder' : 'Set reminder' }}</q-tooltip>
+      <q-tooltip>
+        <div v-if="hasReminder">
+          <div class="text-weight-bold">Reminder set</div>
+          <div v-if="interactionState.reminder?.date">
+            {{ new Date(interactionState.reminder.date).toLocaleString() }}
+          </div>
+          <div v-if="interactionState.reminder?.note" class="text-caption">
+            {{ interactionState.reminder.note }}
+          </div>
+          <div class="text-caption q-mt-xs">Click to edit</div>
+        </div>
+        <div v-else>Set reminder for this event</div>
+      </q-tooltip>
+      <!-- Badge for active reminder showing date -->
+      <q-badge
+        v-if="hasReminder && interactionState.reminder?.date"
+        color="green-8"
+        floating
+        rounded
+        :label="new Date(interactionState.reminder.date).toLocaleDateString()"
+      />
     </q-btn>
 
     <!-- Follow Button (Profiles only) -->
@@ -54,11 +77,13 @@
       :flat="layout === 'floating'"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="isFollowing ? 'blue' : 'grey-6'"
-      :icon="isFollowing ? 'notifications_active' : 'notifications_none'"
+      :color="isFollowing ? 'blue-6' : 'grey-6'"
+      :text-color="isFollowing ? 'white' : undefined"
+      :unelevated="isFollowing"
+      :icon="isFollowing ? 'person_remove' : 'person_add'"
       :class="buttonClass"
-      @click="toggleFollow"
-      :loading="loadingStates.follow"
+      @click="handleToggleFollow"
+      :loading="isLoading"
     >
       <q-tooltip>{{ isFollowing ? 'Unfollow' : 'Follow for updates' }}</q-tooltip>
       <span v-if="layout === 'expanded'" class="q-ml-xs">
@@ -96,13 +121,14 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
-          <q-btn v-if="hasReminder" flat label="Remove" color="negative" @click="removeReminder" />
           <q-btn
-            label="Save"
-            color="primary"
-            @click="saveReminder"
-            :loading="loadingStates.reminder"
+            v-if="hasReminder"
+            flat
+            label="Remove"
+            color="negative"
+            @click="handleRemoveReminder"
           />
+          <q-btn label="Save" color="primary" @click="saveReminder" :loading="isLoading" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -110,27 +136,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
+import { useInteractions } from '../composables/useInteractions';
+import type { ContentType } from '../services/types';
 
 // Props
 interface Props {
-  targetId: number;
-  targetType: 'tmd_event' | 'tmd_teacher' | 'tmd_dj' | 'tmd_teacher_couple' | 'tmd_event_series';
+  targetId: number | undefined;
+  targetType: ContentType;
   layout?: 'floating' | 'compact' | 'expanded';
   showLike?: boolean;
   showBookmark?: boolean;
   showReminder?: boolean;
   showFollow?: boolean;
-  likeCount?: number;
-  // Current interaction states (passed from parent)
-  liked?: boolean;
-  bookmarked?: boolean;
-  following?: boolean;
-  reminder?: {
-    date: string;
-    note: string;
-  } | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -139,27 +158,27 @@ const props = withDefaults(defineProps<Props>(), {
   showBookmark: true,
   showReminder: true,
   showFollow: true,
-  likeCount: 0,
-  liked: false,
-  bookmarked: false,
-  following: false,
 });
-
-// Emits
-const emit = defineEmits<{
-  'interaction-changed': [type: string, data: Record<string, unknown>];
-}>();
 
 // Composables
 const authStore = useAuthStore();
 
+// Only initialize interactions if we have a valid targetId
+const validTargetId = computed(() => props.targetId ?? 0);
+const hasValidTarget = computed(() => typeof props.targetId === 'number' && props.targetId > 0);
+
+const {
+  interactionState,
+  isLoading,
+  loadInteractions,
+  toggleLike,
+  toggleBookmark,
+  toggleFollow,
+  setReminder,
+  removeReminder: removeReminderFromComposable,
+} = useInteractions(validTargetId.value, props.targetType);
+
 // State
-const loadingStates = ref({
-  like: false,
-  bookmark: false,
-  reminder: false,
-  follow: false,
-});
 
 const showReminderDialog = ref(false);
 const reminderDate = ref('');
@@ -168,10 +187,10 @@ const reminderNote = ref('');
 // Computed
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
-const isLiked = computed(() => props.liked);
-const isBookmarked = computed(() => props.bookmarked);
-const isFollowing = computed(() => props.following);
-const hasReminder = computed(() => !!props.reminder);
+const isLiked = computed(() => interactionState.value.liked);
+const isBookmarked = computed(() => interactionState.value.bookmarked);
+const isFollowing = computed(() => interactionState.value.following);
+const hasReminder = computed(() => !!interactionState.value.reminder);
 
 const isProfileType = computed(() =>
   ['tmd_teacher', 'tmd_dj', 'tmd_teacher_couple', 'tmd_event_series'].includes(props.targetType),
@@ -187,9 +206,9 @@ const buttonClass = computed(() => ({
   'q-mr-xs': props.layout !== 'floating',
 }));
 
-// Watch for reminder prop changes
+// Watch for reminder changes from the interaction state
 watch(
-  () => props.reminder,
+  () => interactionState.value.reminder,
   (newReminder) => {
     if (newReminder) {
       reminderDate.value = newReminder.date;
@@ -198,6 +217,11 @@ watch(
   },
   { immediate: true },
 );
+
+// Load interactions on mount
+onMounted(() => {
+  void loadInteractions();
+});
 
 // Methods
 const checkAuthentication = () => {
@@ -209,56 +233,30 @@ const checkAuthentication = () => {
   return true;
 };
 
-const toggleLike = () => {
-  if (!checkAuthentication()) return;
-
-  loadingStates.value.like = true;
+const handleToggleLike = async () => {
+  if (!checkAuthentication() || !hasValidTarget.value) return;
   try {
-    // TODO: Implement interaction API call
-    const newState = !isLiked.value;
-    emit('interaction-changed', 'like', { liked: newState });
-
-    console.log(`${newState ? 'Liked' : 'Unliked'} ${props.targetType} ${props.targetId}`);
+    await toggleLike();
   } catch (error) {
     console.error('Failed to toggle like:', error);
-  } finally {
-    loadingStates.value.like = false;
   }
 };
 
-const toggleBookmark = () => {
-  if (!checkAuthentication()) return;
-
-  loadingStates.value.bookmark = true;
+const handleToggleBookmark = async () => {
+  if (!checkAuthentication() || !hasValidTarget.value) return;
   try {
-    // TODO: Implement interaction API call
-    const newState = !isBookmarked.value;
-    emit('interaction-changed', 'bookmark', { bookmarked: newState });
-
-    console.log(
-      `${newState ? 'Bookmarked' : 'Removed bookmark'} ${props.targetType} ${props.targetId}`,
-    );
+    await toggleBookmark();
   } catch (error) {
     console.error('Failed to toggle bookmark:', error);
-  } finally {
-    loadingStates.value.bookmark = false;
   }
 };
 
-const toggleFollow = () => {
-  if (!checkAuthentication()) return;
-
-  loadingStates.value.follow = true;
+const handleToggleFollow = async () => {
+  if (!checkAuthentication() || !hasValidTarget.value) return;
   try {
-    // TODO: Implement interaction API call
-    const newState = !isFollowing.value;
-    emit('interaction-changed', 'follow', { following: newState });
-
-    console.log(`${newState ? 'Following' : 'Unfollowed'} ${props.targetType} ${props.targetId}`);
+    await toggleFollow();
   } catch (error) {
     console.error('Failed to toggle follow:', error);
-  } finally {
-    loadingStates.value.follow = false;
   }
 };
 
@@ -275,40 +273,23 @@ const openReminderDialog = () => {
   }
 };
 
-const saveReminder = () => {
+const saveReminder = async () => {
   if (!reminderDate.value) return;
 
-  loadingStates.value.reminder = true;
   try {
-    // TODO: Implement interaction API call
-    const reminderData = {
-      date: reminderDate.value,
-      note: reminderNote.value,
-    };
-
-    emit('interaction-changed', 'reminder', { reminder: reminderData });
+    await setReminder(reminderDate.value, reminderNote.value);
     showReminderDialog.value = false;
-
-    console.log(`Set reminder for ${props.targetType} ${props.targetId}:`, reminderData);
   } catch (error) {
     console.error('Failed to save reminder:', error);
-  } finally {
-    loadingStates.value.reminder = false;
   }
 };
 
-const removeReminder = () => {
-  loadingStates.value.reminder = true;
+const handleRemoveReminder = async () => {
   try {
-    // TODO: Implement interaction API call
-    emit('interaction-changed', 'reminder', { reminder: null });
+    await removeReminderFromComposable();
     showReminderDialog.value = false;
-
-    console.log(`Removed reminder for ${props.targetType} ${props.targetId}`);
   } catch (error) {
     console.error('Failed to remove reminder:', error);
-  } finally {
-    loadingStates.value.reminder = false;
   }
 };
 </script>
@@ -340,5 +321,22 @@ const removeReminder = () => {
   &--expanded {
     gap: 8px;
   }
+}
+
+// Pulse animation for active reminders
+@keyframes reminder-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
+
+.reminder-pulse {
+  animation: reminder-pulse 2s infinite;
 }
 </style>

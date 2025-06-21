@@ -138,11 +138,20 @@ api.interceptors.response.use(
         window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
       }
     } else if (error.response.status >= 500) {
-      // Server errors
-      enhancedError.message = 'API server error - please try again later';
-      enhancedError.name = 'ServerError';
-      enhancedError.status = error.response.status;
-      enhancedError.originalError = error;
+      // Check for specific business logic errors that return 500 status
+      const responseData = error.response.data as { code?: string; message?: string } | undefined;
+      if (responseData?.code === 'interaction_exists') {
+        enhancedError.message = 'You have already performed this interaction';
+        enhancedError.name = 'InteractionExistsError';
+        enhancedError.status = error.response.status;
+        enhancedError.originalError = error;
+      } else {
+        // General server errors
+        enhancedError.message = 'API server error - please try again later';
+        enhancedError.name = 'ServerError';
+        enhancedError.status = error.response.status;
+        enhancedError.originalError = error;
+      }
     } else if (error.response.status === 404) {
       // Not found errors
       enhancedError.message = 'Requested resource not found';
