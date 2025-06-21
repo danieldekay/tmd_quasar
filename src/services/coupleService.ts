@@ -42,14 +42,23 @@ class CoupleService extends BaseService<Couple> {
       // Build V3 API parameters with advanced filtering
       const apiParams = this.buildCoupleApiParams(params);
 
+      console.log('CoupleService.getCouples - API params:', apiParams);
+
       // Get response using BaseService
       const response = await this.getAll(apiParams, signal);
+
+      console.log('CoupleService.getCouples - BaseService response:', response);
+      console.log('CoupleService.getCouples - Response data length:', response.data?.length);
 
       // Transform and enhance the data
       const couples = this.transformCouples(response.data);
 
+      console.log('CoupleService.getCouples - Transformed couples:', couples);
+      console.log('CoupleService.getCouples - Final couples length:', couples.length);
+
       return couples;
     } catch (error) {
+      console.error('CoupleService.getCouples - Error:', error);
       throw new Error(
         `Failed to fetch couples: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
@@ -263,30 +272,25 @@ class CoupleService extends BaseService<Couple> {
       meta_box: couple.meta_box
         ? {
             ...couple.meta_box,
-            city: couple.city,
-            country: couple.country,
+            ...(couple.city && { city: couple.city }),
+            ...(couple.country && { country: couple.country }),
           }
         : {
-            city: couple.city,
-            country: couple.country,
-          },
-      // Ensure embedded relationships are properly structured
-      _embedded: couple._embedded
-        ? {
-            events: couple._embedded.events || [],
-            teachers: couple._embedded.teachers || [],
-            leader: couple._embedded.leader || [],
-            follower: couple._embedded.follower || [],
-            author: couple._embedded.author || [],
-          }
-        : {
-            events: [],
-            teachers: [],
-            leader: [],
-            follower: [],
-            author: [],
+            ...(couple.city && { city: couple.city }),
+            ...(couple.country && { country: couple.country }),
           },
     };
+
+    // Handle embedded relationships separately to avoid undefined issues
+    if (couple._embedded) {
+      transformed._embedded = {
+        events: couple._embedded.events || [],
+        teachers: couple._embedded.teachers || [],
+        leader: couple._embedded.leader || [],
+        follower: couple._embedded.follower || [],
+        author: couple._embedded.author || [],
+      };
+    }
 
     return transformed;
   }

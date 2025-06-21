@@ -539,13 +539,21 @@ const fetchCouples = async () => {
     loading.value = true;
     error.value = null;
 
+    console.log('CouplesPage.fetchCouples - Starting fetch...');
+
     const data = await coupleService.getCouples({
       per_page: 999, // Get all couples for local processing
       _embed: true,
       meta_fields: 'all',
     });
 
+    console.log('CouplesPage.fetchCouples - Received data:', data);
+    console.log('CouplesPage.fetchCouples - Data length:', data?.length);
+
     couples.value = data || [];
+
+    console.log('CouplesPage.fetchCouples - Set couples.value:', couples.value);
+    console.log('CouplesPage.fetchCouples - couples.value length:', couples.value.length);
   } catch (err) {
     console.error('Error fetching couples:', err);
     error.value = 'Failed to load teaching partnerships. Please try again.';

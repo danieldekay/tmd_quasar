@@ -400,18 +400,45 @@ class EventListService extends BaseService<EventListItem> {
    * Get upcoming events
    */
   async getUpcomingEvents(params: EnhancedEventParams = {}): Promise<PaginatedEventsResponse> {
-    const today = new Date().toISOString().split('T')[0];
+    const today: string = new Date().toISOString().split('T')[0]!;
+    let start_date_from: string;
+    if (typeof params.start_date_from === 'string' && params.start_date_from) {
+      start_date_from = params.start_date_from;
+    } else {
+      start_date_from = today;
+    }
     const upcomingParams: EnhancedEventParams = {
-      start_date_from: today || undefined,
       orderby: 'start_date',
       order: 'asc',
+      start_date_from,
+      // Manually copy other properties from params if they exist
+      ...(params.category && { category: params.category }),
+      ...(params.meta_filters && { meta_filters: params.meta_filters }),
+      ...(params.start_date_to && { start_date_to: params.start_date_to }),
+      ...(params.registration_start_date_from && {
+        registration_start_date_from: params.registration_start_date_from,
+      }),
+      ...(params.registration_start_date_to && {
+        registration_start_date_to: params.registration_start_date_to,
+      }),
+      ...(params.have_milongas !== undefined && { have_milongas: params.have_milongas }),
+      ...(params.have_food !== undefined && { have_food: params.have_food }),
+      ...(params.have_sleep !== undefined && { have_sleep: params.have_sleep }),
+      ...(params.have_registration !== undefined && {
+        have_registration: params.have_registration,
+      }),
+      ...(params.invitation_only !== undefined && { invitation_only: params.invitation_only }),
+      ...(params.country && { country: params.country }),
+      ...(params.city && { city: params.city }),
+      ...(params.include_djs !== undefined && { include_djs: params.include_djs }),
+      ...(params.include_teachers !== undefined && { include_teachers: params.include_teachers }),
+      ...(params.include_event_series !== undefined && {
+        include_event_series: params.include_event_series,
+      }),
+      ...(params.search && { search: params.search }),
+      ...(params.page && { page: params.page }),
+      ...(params.perPage && { perPage: params.perPage }),
     };
-    // Merge with params, giving priority to our required params
-    Object.assign(upcomingParams, params, {
-      start_date_from: today || undefined,
-      orderby: 'start_date',
-      order: 'asc',
-    });
     return this.getEvents(upcomingParams);
   }
 

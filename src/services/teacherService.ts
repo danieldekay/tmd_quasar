@@ -261,18 +261,19 @@ class TeacherService extends BaseService<Teacher> {
       meta_box: {
         ...teacher.meta_box,
         nickname: teacher.title,
-        city: teacher.city,
-        country: teacher.country,
+        ...(teacher.city && { city: teacher.city }),
+        ...(teacher.country && { country: teacher.country }),
       },
-      // Ensure embedded relationships are properly structured
-      _embedded: teacher._embedded
-        ? {
-            events: teacher._embedded.events || [],
-            couples: teacher._embedded.couples || [],
-            author: teacher._embedded.author || [],
-          }
-        : undefined,
     };
+
+    // Handle embedded relationships separately to avoid undefined issues
+    if (teacher._embedded) {
+      transformed._embedded = {
+        events: teacher._embedded.events || [],
+        couples: teacher._embedded.couples || [],
+        author: teacher._embedded.author || [],
+      };
+    }
 
     return transformed;
   }

@@ -138,8 +138,12 @@ export class BaseService<T = Record<string, unknown>> {
       if (halResponse._embedded) {
         // Try to find data in _embedded using the endpoint name
         const embeddedData = halResponse._embedded[this.endpointName];
-        if (embeddedData && Array.isArray(embeddedData)) {
+        if (Array.isArray(embeddedData)) {
           return embeddedData;
+        }
+        // PATCH: If it's an object with numeric keys, convert to array
+        if (embeddedData && typeof embeddedData === 'object' && !Array.isArray(embeddedData)) {
+          return Object.values(embeddedData);
         }
 
         // Try other common keys if endpoint name doesn't match
@@ -155,6 +159,14 @@ export class BaseService<T = Record<string, unknown>> {
         for (const key of commonKeys) {
           if (halResponse._embedded[key] && Array.isArray(halResponse._embedded[key])) {
             return halResponse._embedded[key];
+          }
+          // PATCH: If it's an object with numeric keys, convert to array
+          if (
+            halResponse._embedded[key] &&
+            typeof halResponse._embedded[key] === 'object' &&
+            !Array.isArray(halResponse._embedded[key])
+          ) {
+            return Object.values(halResponse._embedded[key]);
           }
         }
       }
