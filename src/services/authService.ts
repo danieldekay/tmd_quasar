@@ -38,10 +38,10 @@ class AuthService {
         email: user.email || '',
         roles: user.roles?.nodes?.map((role: { name: string }) => role.name) || [],
         avatar_urls: user.avatar?.url ? { '96': user.avatar.url } : {},
-        url: '',
-        description: '',
+        url: user.url || '',
+        description: user.description || '',
         link: '',
-        slug: '',
+        slug: user.slug || '',
       };
 
       return {
@@ -121,11 +121,44 @@ class AuthService {
    */
   async validateToken(token: string): Promise<boolean> {
     try {
+      // First, do a basic JWT structure check
+      if (!token || typeof token !== 'string') {
+        return false;
+      }
+
+      // Check if token has the basic JWT structure (3 parts separated by dots)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return false;
+      }
+
+      // Try to decode the payload to check expiration
+      try {
+        const payload = JSON.parse(atob(parts[1] || ''));
+        const now = Math.floor(Date.now() / 1000);
+
+        // Check if token is expired
+        if (payload.exp && payload.exp < now) {
+          console.warn('Token is expired');
+          return false;
+        }
+      } catch (decodeError) {
+        console.warn('Failed to decode JWT payload:', decodeError);
+        // Continue with API validation even if decode fails
+      }
+
+      // Check if we're online before attempting API call
+      if (!navigator.onLine) {
+        console.warn('Offline - skipping token validation');
+        return true; // Assume token is valid when offline
+      }
+
       // Try to get current user with the token
       // If it succeeds, the token is valid
       await this.getCurrentUser(token);
       return true;
-    } catch {
+    } catch (error) {
+      console.warn('Token validation failed:', error);
       return false;
     }
   }
@@ -147,7 +180,7 @@ class AuthService {
       const userData = response.data?.viewer;
 
       if (!userData) {
-        throw new Error('No user data received');
+        throw new Error('No user data received - token may be invalid or expired');
       }
 
       return {

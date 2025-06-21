@@ -44,6 +44,12 @@ export const LOGIN_MUTATION = gql`
             name
           }
         }
+        avatar {
+          url
+        }
+        url
+        description
+        slug
       }
     }
   }

@@ -87,6 +87,35 @@ export const requireAdmin = async (
 };
 
 /**
+ * Require manage_options capability to access route
+ */
+export const requireManageOptions = async (
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext,
+): Promise<void> => {
+  const authStore = useAuthStore();
+
+  // Load stored authentication if not already loaded
+  if (!authStore.isAuthenticated) {
+    await authStore.loadStoredAuth();
+  }
+
+  if (authStore.isAuthenticated && authStore.canManageOptions) {
+    next();
+  } else if (!authStore.isAuthenticated) {
+    next({
+      path: '/auth/login',
+      query: { redirect: to.fullPath },
+    });
+  } else {
+    next({
+      path: '/auth/unauthorized',
+    });
+  }
+};
+
+/**
  * Redirect authenticated users away from auth pages
  */
 export const redirectIfAuthenticated = (

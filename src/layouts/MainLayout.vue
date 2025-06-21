@@ -15,23 +15,34 @@
 
           <q-btn flat round dense icon="notifications" />
 
-          <!-- User Menu -->
+          <!-- User Avatar with Menu -->
           <q-btn flat round dense>
-            <q-avatar size="32px">
+            <q-avatar size="36px" class="q-ml-sm">
               <img
-                v-if="authStore.user?.avatar_urls?.['96']"
-                :src="authStore.user.avatar_urls['96']"
+                v-if="getUserAvatar()"
+                :src="getUserAvatar()"
+                :alt="authStore.user?.name || 'User'"
               />
-              <q-icon v-else name="person" />
+              <q-icon v-else name="person" size="24px" />
             </q-avatar>
           </q-btn>
 
           <q-menu>
             <q-list style="min-width: 200px">
               <q-item>
+                <q-item-section avatar>
+                  <q-avatar size="40px">
+                    <img
+                      v-if="getUserAvatar()"
+                      :src="getUserAvatar()"
+                      :alt="authStore.user?.name || 'User'"
+                    />
+                    <q-icon v-else name="person" size="24px" />
+                  </q-avatar>
+                </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ authStore.user?.name }}</q-item-label>
-                  <q-item-label caption>{{ authStore.user?.email }}</q-item-label>
+                  <q-item-label>{{ authStore.user?.name || 'User' }}</q-item-label>
+                  <q-item-label caption>{{ authStore.user?.email || 'No email' }}</q-item-label>
                 </q-item-section>
               </q-item>
 
@@ -200,11 +211,16 @@ const linksList: LinkProps[] = [
     icon: 'info',
     link: '/about',
   },
-  {
-    title: 'Debug',
-    icon: 'bug_report',
-    link: '/debug',
-  },
+  // Debug link only for admin users
+  ...(authStore.canManageOptions
+    ? [
+        {
+          title: 'Debug',
+          icon: 'bug_report',
+          link: '/debug',
+        },
+      ]
+    : []),
 ];
 
 const leftDrawerOpen = ref(false);
@@ -243,5 +259,29 @@ function getUserDisplayName(): string {
   // Try to get first name from full name
   const nameParts = authStore.user.name.trim().split(' ');
   return nameParts[0] || authStore.user.name;
+}
+
+function getUserAvatar(): string {
+  // First try WordPress avatar
+  if (authStore.user?.avatar_urls?.['96']) {
+    return authStore.user.avatar_urls['96'];
+  }
+
+  // Fallback to Gravatar if user has email
+  if (authStore.user?.email) {
+    const email = authStore.user.email.trim().toLowerCase();
+    // Use a simple hash for Gravatar fallback
+    const hash = email
+      .split('')
+      .reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0)
+      .toString(16)
+      .padStart(8, '0');
+    return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=96`;
+  }
+
+  return '';
 }
 </script>

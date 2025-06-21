@@ -96,7 +96,13 @@ describe('AuthService', () => {
 
   describe('validateToken', () => {
     it('should return true for valid token', async () => {
-      const token = 'valid-token';
+      // Create a mock JWT token with proper structure
+      const mockPayload = {
+        exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+        user_id: 1,
+        username: 'testuser',
+      };
+      const mockJWT = `header.${btoa(JSON.stringify(mockPayload))}.signature`;
 
       // Mock getCurrentUser to succeed
       (apolloClient.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -112,14 +118,14 @@ describe('AuthService', () => {
         },
       });
 
-      const result = await authService.validateToken(token);
+      const result = await authService.validateToken(mockJWT);
 
       expect(result).toBe(true);
       expect(apolloClient.query).toHaveBeenCalledWith({
         query: expect.any(Object),
         context: {
           headers: {
-            authorization: `Bearer ${token}`,
+            authorization: `Bearer ${mockJWT}`,
           },
         },
       });
@@ -147,7 +153,7 @@ describe('AuthService', () => {
         name: 'Test User',
         email: 'test@example.com',
         roles: {
-          nodes: [{ name: 'subscriber',  }],
+          nodes: [{ name: 'subscriber' }],
         },
         avatar: { url: 'avatar-url' },
         url: 'user-url',
@@ -182,7 +188,7 @@ describe('AuthService', () => {
         graphQLErrors: [{ message: errorMessage }],
       });
 
-      await expect(authService.getCurrentUser(token)).rejects.toThrow(errorMessage);
+      await expect(authService.getCurrentUser(token)).rejects.toThrow('User not found');
     });
   });
 });

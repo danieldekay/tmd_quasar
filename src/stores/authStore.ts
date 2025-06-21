@@ -37,6 +37,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => Boolean(token.value && user.value));
   const hasRole = computed(() => (role: string) => user.value?.roles.includes(role) ?? false);
   const isAdmin = computed(() => hasRole.value('administrator'));
+  const canManageOptions = computed(
+    () => hasRole.value('administrator') || hasRole.value('manage_options'),
+  );
 
   // Actions
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
@@ -124,14 +127,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      // Validate stored token
-      const isValid = await authService.validateToken(storedToken);
-      if (!isValid) {
-        throw new Error('Stored token is invalid');
-      }
+      // Parse stored user data first
+      const parsedUser = JSON.parse(storedUser) as User;
 
+      // Set the user data immediately for better UX
+      user.value = parsedUser;
       token.value = storedToken;
-      user.value = JSON.parse(storedUser) as User;
+
+      // Try to validate the token in the background
+      // Don't immediately log out if validation fails - let the user continue
+      try {
+        const isValid = await authService.validateToken(storedToken);
+        if (!isValid) {
+          console.warn('Stored token validation failed, but keeping user logged in for better UX');
+          // Don't log out immediately - let the user continue with potentially expired token
+          // The token will be refreshed on next API call or user action
+        }
+      } catch (validationError) {
+        console.warn('Token validation error:', validationError);
+        // Don't log out on validation errors - let the user continue
+      }
 
       // Try to refresh token in background
       void refreshToken();
@@ -139,7 +154,10 @@ export const useAuthStore = defineStore('auth', () => {
       return true;
     } catch (err) {
       console.warn('Failed to load stored auth:', err);
-      await logout();
+      // Only clear auth if there's a critical error (like JSON parsing)
+      if (err instanceof Error && err.message.includes('JSON')) {
+        await logout();
+      }
       return false;
     }
   };
@@ -159,6 +177,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     hasRole,
     isAdmin,
+    canManageOptions,
 
     // Actions
     login,
