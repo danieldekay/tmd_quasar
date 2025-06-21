@@ -75,3 +75,6 @@ coverage/
 
 # local .env files
 .env.local*
+
+# Test credentials (never commit these!)
+credentials.local.json

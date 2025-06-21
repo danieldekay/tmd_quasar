@@ -137,31 +137,6 @@
           </q-item-section>
         </q-item>
 
-        <q-separator class="q-my-md" />
-
-        <q-item-label header> Event Types </q-item-label>
-
-        <q-item clickable v-ripple to="/events?type=marathon">
-          <q-item-section avatar>
-            <q-icon name="event" />
-          </q-item-section>
-          <q-item-section> Marathons </q-item-section>
-        </q-item>
-
-        <q-item clickable v-ripple to="/events?type=festival">
-          <q-item-section avatar>
-            <q-icon name="celebration" />
-          </q-item-section>
-          <q-item-section> Festivals </q-item-section>
-        </q-item>
-
-        <q-item clickable v-ripple to="/events?type=encuentro">
-          <q-item-section avatar>
-            <q-icon name="groups" />
-          </q-item-section>
-          <q-item-section> Encuentros </q-item-section>
-        </q-item>
-
         <!-- User-specific navigation -->
         <template v-if="authStore.isAuthenticated">
           <q-separator class="q-my-md" />

@@ -1,10 +1,19 @@
 import { defineStore } from 'pinia';
 import { ref, computed, readonly } from 'vue';
 import { authService } from '../services/authService';
+import {
+  setJWTToken,
+  getJWTToken,
+  setRefreshToken,
+  getRefreshToken,
+  clearJWTTokens,
+} from '../utils/cookies';
 
 export interface User {
   id: number;
   name: string;
+  display_name?: string;
+  username?: string;
   email: string;
   roles: string[];
   avatar_urls?: Record<string, string>;
@@ -18,6 +27,7 @@ export interface AuthResponse {
   token: string;
   user: User;
   expires_in?: number;
+  refresh_token?: string;
 }
 
 export interface LoginCredentials {
@@ -52,17 +62,15 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.token;
       user.value = response.user;
 
-      // Store token based on remember preference
-      if (credentials.remember) {
-        localStorage.setItem('auth_token', response.token);
-        localStorage.setItem('auth_user', JSON.stringify(response.user));
-      } else {
-        sessionStorage.setItem('auth_token', response.token);
-        sessionStorage.setItem('auth_user', JSON.stringify(response.user));
+      // Store tokens in cookies
+      setJWTToken(response.token, credentials.remember);
+      if (response.refresh_token) {
+        setRefreshToken(response.refresh_token, credentials.remember);
       }
 
       return true;
     } catch (err) {
+      console.error('Login error:', err);
       error.value = err instanceof Error ? err.message : 'Login failed';
       return false;
     } finally {
@@ -83,26 +91,25 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null;
       error.value = null;
 
-      // Clear stored data
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      sessionStorage.removeItem('auth_token');
-      sessionStorage.removeItem('auth_user');
+      // Clear stored tokens
+      clearJWTTokens();
     }
   };
 
   const refreshToken = async (): Promise<boolean> => {
-    if (!token.value) return false;
+    const refreshTokenValue = getRefreshToken();
+    if (!refreshTokenValue) return false;
 
     try {
-      const response = await authService.refreshToken(token.value);
+      const response = await authService.refreshToken(refreshTokenValue);
       token.value = response.token;
       user.value = response.user;
 
-      // Update stored token
-      const storage = localStorage.getItem('auth_token') ? localStorage : sessionStorage;
-      storage.setItem('auth_token', response.token);
-      storage.setItem('auth_user', JSON.stringify(response.user));
+      // Update stored tokens
+      setJWTToken(response.token, true); // Assume remember me for refresh
+      if (response.refresh_token) {
+        setRefreshToken(response.refresh_token, true);
+      }
 
       return true;
     } catch (err) {
@@ -113,51 +120,79 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const loadStoredAuth = async (): Promise<boolean> => {
-    // Try localStorage first (remember me), then sessionStorage
-    let storedToken = localStorage.getItem('auth_token');
-    let storedUser = localStorage.getItem('auth_user');
+    const storedToken = getJWTToken();
+    const refreshTokenValue = getRefreshToken();
 
-    if (!storedToken || !storedUser) {
-      storedToken = sessionStorage.getItem('auth_token');
-      storedUser = sessionStorage.getItem('auth_user');
-    }
-
-    if (!storedToken || !storedUser) {
+    if (!storedToken) {
       return false;
     }
 
     try {
-      // Parse stored user data first
-      const parsedUser = JSON.parse(storedUser) as User;
-
-      // Set the user data immediately for better UX
-      user.value = parsedUser;
+      // Set the token immediately for better UX
       token.value = storedToken;
 
       // Try to validate the token in the background
-      // Don't immediately log out if validation fails - let the user continue
       try {
         const isValid = await authService.validateToken(storedToken);
         if (!isValid) {
-          console.warn('Stored token validation failed, but keeping user logged in for better UX');
-          // Don't log out immediately - let the user continue with potentially expired token
-          // The token will be refreshed on next API call or user action
+          console.warn('Stored token validation failed, attempting refresh');
+          // Try to refresh the token
+          if (refreshTokenValue) {
+            const refreshSuccess = await refreshToken();
+            if (!refreshSuccess) {
+              console.warn('Token refresh failed, but keeping user logged in for better UX');
+            }
+          }
         }
       } catch (validationError) {
         console.warn('Token validation error:', validationError);
-        // Don't log out on validation errors - let the user continue
+        // Try to refresh the token
+        if (refreshTokenValue) {
+          const refreshSuccess = await refreshToken();
+          if (!refreshSuccess) {
+            console.warn('Token refresh failed, but keeping user logged in for better UX');
+          }
+        }
       }
 
-      // Try to refresh token in background
-      void refreshToken();
+      // Try to get user data from the token or refresh
+      if (!user.value) {
+        try {
+          // Try to get user profile to populate user data
+          const userService = (await import('../services/userService')).userService;
+          const userProfile = await userService.getCurrentUserProfile(storedToken);
+
+          user.value = {
+            id: userProfile.id,
+            name: userProfile.name,
+            display_name: userProfile.display_name,
+            username: userProfile.username,
+            email: userProfile.email,
+            roles: userProfile.roles,
+            ...(userProfile.avatar_urls && { avatar_urls: userProfile.avatar_urls }),
+            ...(userProfile.url && { url: userProfile.url }),
+            ...(userProfile.description && { description: userProfile.description }),
+            ...(userProfile.link && { link: userProfile.link }),
+            ...(userProfile.slug && { slug: userProfile.slug }),
+          };
+        } catch (profileError) {
+          console.warn('Failed to load user profile:', profileError);
+          // Don't log out - let the user continue with potentially limited functionality
+          // Try to get basic user info from GraphQL instead
+          try {
+            const basicUser = await authService.getCurrentUser(storedToken);
+            user.value = basicUser;
+          } catch (graphqlError) {
+            console.warn('GraphQL user query also failed:', graphqlError);
+            // Still don't log out - let the user continue
+          }
+        }
+      }
 
       return true;
     } catch (err) {
       console.warn('Failed to load stored auth:', err);
-      // Only clear auth if there's a critical error (like JSON parsing)
-      if (err instanceof Error && err.message.includes('JSON')) {
-        await logout();
-      }
+      await logout();
       return false;
     }
   };

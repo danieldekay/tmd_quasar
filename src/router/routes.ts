@@ -18,6 +18,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'event-series', component: () => import('pages/EventSeriesPage.vue') },
       { path: 'event-series/:id', component: () => import('pages/EventSeriesDetails.vue') },
       { path: 'about', component: () => import('pages/AboutPage.vue') },
+      { path: 'profile', component: () => import('pages/ProfilePage.vue') },
       {
         path: 'debug',
         component: () => import('pages/DebugPage.vue'),

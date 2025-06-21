@@ -2,6 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client/core
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import type { App } from 'vue';
+import { getJWTToken } from '../utils/cookies';
 
 // Create the http link
 const httpLink = createHttpLink({
@@ -10,8 +11,8 @@ const httpLink = createHttpLink({
 
 // Create the auth link
 const authLink = setContext((_, { headers }) => {
-  // Get the authentication token from local storage if it exists
-  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  // Get the authentication token from cookies
+  const token = getJWTToken();
 
   // Return the headers to the context so httpLink can read them
   return {
@@ -30,15 +31,21 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       if (err.extensions?.code === 'UNAUTHENTICATED' || err.message.includes('authentication')) {
         console.warn('GraphQL authentication error, attempting token refresh...');
 
-        // For now, we'll just clear the token and let the user re-authenticate
-        // In a full implementation, you would attempt to refresh the token here
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        sessionStorage.removeItem('auth_token');
-        sessionStorage.removeItem('auth_user');
+        // Check if we have a stored token - if so, don't redirect immediately
+        // as the auth store might be in the process of restoring authentication
+        const storedToken = getJWTToken();
+        if (storedToken) {
+          console.log('Stored token found, not redirecting - auth restoration may be in progress');
+          return;
+        }
 
-        // Redirect to login if not already there
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+        // Only redirect if we're not already on the login page and no stored token
+        if (
+          typeof window !== 'undefined' &&
+          !window.location.pathname.includes('/auth/login') &&
+          !window.location.pathname.includes('/auth/unauthorized')
+        ) {
+          console.log('Redirecting to login due to GraphQL authentication error');
           window.location.href = '/auth/login';
         }
       }

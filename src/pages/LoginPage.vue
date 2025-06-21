@@ -179,8 +179,8 @@ const authStore = useAuthStore();
 
 // Form state
 const form = reactive({
-  username: '',
-  password: '',
+  username: 'danieltest123',
+  password: 'I^oT#x!H&4R)I&*d',
   remember: false,
 });
 
@@ -321,13 +321,6 @@ const handleRegister = async (): Promise<void> => {
 
 // Check if user is already authenticated
 onMounted(() => {
-  console.log('LoginPage mounted');
-  console.log('Auth store state:', {
-    isAuthenticated: authStore.isAuthenticated,
-    user: authStore.user,
-    token: authStore.token,
-  });
-
   if (authStore.isAuthenticated) {
     const redirect = route.query.redirect as string;
     void router.push(redirect || '/');

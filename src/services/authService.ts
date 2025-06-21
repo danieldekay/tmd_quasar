@@ -28,6 +28,7 @@ class AuthService {
       const { authToken, user } = response.data?.login || {};
 
       if (!authToken || !user) {
+        console.error('AuthService: Invalid login response - missing authToken or user');
         throw new Error('Invalid login response');
       }
 
@@ -36,12 +37,12 @@ class AuthService {
         id: parseInt(user.id),
         name: user.name,
         email: user.email || '',
-        roles: user.roles?.nodes?.map((role: { name: string }) => role.name) || [],
-        avatar_urls: user.avatar?.url ? { '96': user.avatar.url } : {},
-        url: user.url || '',
-        description: user.description || '',
+        roles: [], // Will be populated later via getCurrentUser if needed
+        avatar_urls: {},
+        url: '',
+        description: '',
         link: '',
-        slug: user.slug || '',
+        slug: '',
       };
 
       return {
@@ -50,10 +51,34 @@ class AuthService {
         expires_in: 3600, // Default expiry time
       };
     } catch (error: unknown) {
+      console.error('AuthService: Login error details:', error);
+      console.error('AuthService: Error type:', typeof error);
+      console.error('AuthService: Error constructor:', error?.constructor?.name);
+
       if (error && typeof error === 'object' && 'graphQLErrors' in error) {
-        const graphQLError = error as { graphQLErrors: Array<{ message: string }> };
+        const graphQLError = error as {
+          graphQLErrors: Array<{ message: string; extensions?: Record<string, unknown> }>;
+        };
+        console.error('AuthService: GraphQL errors:', graphQLError.graphQLErrors);
+        console.error('AuthService: First GraphQL error details:', {
+          message: graphQLError.graphQLErrors[0]?.message,
+          extensions: graphQLError.graphQLErrors[0]?.extensions,
+        });
         throw new Error(graphQLError.graphQLErrors[0]?.message || 'Login failed');
       }
+
+      if (error && typeof error === 'object' && 'networkError' in error) {
+        const networkError = error as { networkError: { message: string } };
+        console.error('AuthService: Network error:', networkError.networkError);
+        throw new Error(networkError.networkError?.message || 'Network error during login');
+      }
+
+      if (error instanceof Error) {
+        console.error('AuthService: Standard error:', error.message);
+        throw new Error(error.message);
+      }
+
+      console.error('AuthService: Unknown error type:', error);
       throw new Error('Login failed');
     }
   }

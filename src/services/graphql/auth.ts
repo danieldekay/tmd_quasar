@@ -39,17 +39,6 @@ export const LOGIN_MUTATION = gql`
         id
         name
         email
-        roles {
-          nodes {
-            name
-          }
-        }
-        avatar {
-          url
-        }
-        url
-        description
-        slug
       }
     }
   }
