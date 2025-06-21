@@ -11,6 +11,8 @@
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:api": "vitest --config vitest.config.api.ts run",
+    "test:api:watch": "vitest --config vitest.config.api.ts",
     "dev": "quasar dev",
     "build": "quasar build",
     "postinstall": "quasar prepare"
