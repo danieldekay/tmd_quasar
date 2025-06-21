@@ -5,100 +5,48 @@ import {
   REFRESH_TOKEN_MUTATION,
   GET_CURRENT_USER_QUERY,
   type LoginInput,
+  type LoginResponse,
   type RefreshTokenInput,
+  type RefreshTokenResponse,
 } from './graphql/auth';
 
-class AuthService {
+export class AuthService {
   /**
-   * Login user with username and password using GraphQL
+   * Login user using GraphQL
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const input: LoginInput = {
-        clientMutationId: `login_${Date.now()}`,
+        clientMutationId: 'tmd-frontend',
         username: credentials.username,
         password: credentials.password,
       };
 
-      const response = await apolloClient.mutate({
+      const { data } = await apolloClient.mutate<{ login: LoginResponse }>({
         mutation: LOGIN_MUTATION,
         variables: { input },
       });
 
-      const { authToken, user } = response.data?.login || {};
-
-      if (!authToken || !user) {
-        console.error('AuthService: Invalid login response - missing authToken or user');
-        throw new Error('Invalid login response');
+      if (!data?.login) {
+        throw new Error('Login failed - no response data');
       }
 
-      // Transform user data to match our User interface
-      const transformedUser: User = {
-        id: parseInt(user.id),
-        name: user.name,
-        email: user.email || '',
-        roles: [], // Will be populated later via getCurrentUser if needed
-        avatar_urls: {},
-        url: '',
-        description: '',
-        link: '',
-        slug: '',
-      };
+      const { authToken, refreshToken, user } = data.login;
 
       return {
         token: authToken,
-        user: transformedUser,
-        expires_in: 3600, // Default expiry time
+        refreshToken,
+        user: {
+          id: parseInt(user.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
+          name: user.name,
+          email: user.email || '',
+          roles: [], // Will be populated later if needed
+        },
       };
-    } catch (error: unknown) {
-      console.error('AuthService: Login error details:', error);
-      console.error('AuthService: Error type:', typeof error);
-      console.error('AuthService: Error constructor:', error?.constructor?.name);
-
-      if (error && typeof error === 'object' && 'graphQLErrors' in error) {
-        const graphQLError = error as {
-          graphQLErrors: Array<{ message: string; extensions?: Record<string, unknown> }>;
-        };
-        console.error('AuthService: GraphQL errors:', graphQLError.graphQLErrors);
-        console.error('AuthService: First GraphQL error details:', {
-          message: graphQLError.graphQLErrors[0]?.message,
-          extensions: graphQLError.graphQLErrors[0]?.extensions,
-        });
-        throw new Error(graphQLError.graphQLErrors[0]?.message || 'Login failed');
-      }
-
-      if (error && typeof error === 'object' && 'networkError' in error) {
-        const networkError = error as { networkError: { message: string } };
-        console.error('AuthService: Network error:', networkError.networkError);
-        throw new Error(networkError.networkError?.message || 'Network error during login');
-      }
-
-      if (error instanceof Error) {
-        console.error('AuthService: Standard error:', error.message);
-        throw new Error(error.message);
-      }
-
-      console.error('AuthService: Unknown error type:', error);
-      throw new Error('Login failed');
-    }
-  }
-
-  /**
-   * Logout user and invalidate token
-   * Note: WPGraphQL JWT Authentication doesn't provide a logout mutation
-   * We just clear the local token
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  logout(_token: string): Promise<void> {
-    try {
-      // Since there's no logout mutation in WPGraphQL JWT Authentication,
-      // we just clear the local token and let it expire on the server
-      console.log('Logout: Clearing local token');
     } catch (error) {
-      // Don't throw error on logout failure
-      console.warn('Logout failed:', error);
+      console.error('Login error:', error);
+      throw new Error('Login failed. Please check your credentials.');
     }
-    return Promise.resolve();
   }
 
   /**
@@ -107,164 +55,113 @@ class AuthService {
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
     try {
       const input: RefreshTokenInput = {
-        clientMutationId: `refresh_${Date.now()}`,
+        clientMutationId: 'tmd-frontend',
         jwtRefreshToken: refreshToken,
       };
 
-      const response = await apolloClient.mutate({
+      const { data } = await apolloClient.mutate<{ refreshJwtAuthToken: RefreshTokenResponse }>({
         mutation: REFRESH_TOKEN_MUTATION,
         variables: { input },
       });
 
-      const { authToken } = response.data?.refreshJwtAuthToken || {};
-
-      if (!authToken) {
-        throw new Error('Invalid refresh response');
+      if (!data?.refreshJwtAuthToken) {
+        throw new Error('Token refresh failed - no response data');
       }
 
-      // Get user details with new token
-      const userDetails = await this.getCurrentUser(authToken);
+      const { authToken } = data.refreshJwtAuthToken;
 
       return {
         token: authToken,
-        user: userDetails,
-        expires_in: 3600, // Default expiry time
+        refreshToken, // Keep the same refresh token
+        user: null, // User data not returned in refresh response
       };
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'graphQLErrors' in error) {
-        const graphQLError = error as { graphQLErrors: Array<{ message: string }> };
-        throw new Error(graphQLError.graphQLErrors[0]?.message || 'Token refresh failed');
-      }
-      throw new Error('Token refresh failed');
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      throw new Error('Token refresh failed - please log in again');
     }
   }
 
   /**
-   * Validate JWT token
-   * Note: WPGraphQL JWT Authentication doesn't provide a validate mutation
-   * We can try to get the current user to validate the token
+   * Validate JWT token by attempting to get current user
    */
   async validateToken(token: string): Promise<boolean> {
     try {
-      // First, do a basic JWT structure check
-      if (!token || typeof token !== 'string') {
-        return false;
-      }
-
-      // Check if token has the basic JWT structure (3 parts separated by dots)
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        return false;
-      }
-
-      // Try to decode the payload to check expiration
-      try {
-        const payload = JSON.parse(atob(parts[1] || ''));
-        const now = Math.floor(Date.now() / 1000);
-
-        // Check if token is expired
-        if (payload.exp && payload.exp < now) {
-          console.warn('Token is expired');
-          return false;
-        }
-      } catch (decodeError) {
-        console.warn('Failed to decode JWT payload:', decodeError);
-        // Continue with API validation even if decode fails
-      }
-
-      // Check if we're online before attempting API call
-      if (!navigator.onLine) {
-        console.warn('Offline - skipping token validation');
-        return true; // Assume token is valid when offline
-      }
-
-      // Try to get current user with the token
-      // If it succeeds, the token is valid
-      await this.getCurrentUser(token);
-      return true;
+      const user = await this.getCurrentUser(token);
+      return user !== null;
     } catch (error) {
-      console.warn('Token validation failed:', error);
+      console.error('Token validation error:', error);
       return false;
     }
   }
 
   /**
-   * Get current user details using GraphQL
+   * Get current user using GraphQL
    */
-  async getCurrentUser(token: string): Promise<User> {
+  async getCurrentUser(token: string): Promise<User | null> {
     try {
-      const response = await apolloClient.query({
+      const { data } = await apolloClient.query({
         query: GET_CURRENT_USER_QUERY,
         context: {
           headers: {
-            authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         },
       });
 
-      const userData = response.data?.viewer;
-
-      if (!userData) {
-        throw new Error('No user data received - token may be invalid or expired');
+      if (!data?.viewer) {
+        return null;
       }
 
+      const { viewer } = data;
       return {
-        id: parseInt(userData.id),
-        name: userData.name,
-        email: userData.email || '',
-        roles: userData.roles?.nodes?.map((role: { name: string }) => role.name) || [],
-        avatar_urls: userData.avatar?.url ? { '96': userData.avatar.url } : {},
-        url: userData.url || '',
-        description: userData.description || '',
-        link: '',
-        slug: userData.slug || '',
+        id: parseInt(viewer.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
+        name: viewer.name,
+        email: viewer.email || '',
+        roles: viewer.roles?.nodes?.map((role: { name: string }) => role.name) || [],
       };
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'graphQLErrors' in error) {
-        const graphQLError = error as { graphQLErrors: Array<{ message: string }> };
-        throw new Error(graphQLError.graphQLErrors[0]?.message || 'Failed to get user details');
-      }
-      throw new Error('Failed to get user details');
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return null;
     }
   }
 
   /**
-   * Register new user (if enabled) - Note: This might need a separate GraphQL mutation
-   * For now, keeping the REST implementation as fallback
+   * Request password reset - redirects to WordPress
    */
-  async register(userData: {
-    username: string;
-    email: string;
-    password: string;
-    name?: string;
-  }): Promise<AuthResponse> {
-    // For registration, we might need a different GraphQL mutation
-    // For now, we'll use the login method after registration
-    // This would need to be implemented based on your WordPress GraphQL schema
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  requestPasswordReset(email: string): void {
+    // Redirect to WordPress password reset page
+    const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+    const resetUrl = `${wordpressUrl}/wp-login.php?action=lostpassword`;
 
-    // After registration, login the user
-    return await this.login({
-      username: userData.username,
-      password: userData.password,
-    });
+    // Open in new tab/window
+    window.open(resetUrl, '_blank');
+
+    // Show a message to the user
+    throw new Error('Please use the WordPress password reset page that opened in a new tab.');
   }
 
   /**
-   * Request password reset - Note: This might need a separate GraphQL mutation
+   * Register new user - redirects to WordPress
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  requestPasswordReset(_email: string): Promise<void> {
-    // This would need to be implemented based on your WordPress GraphQL schema
-    throw new Error('Password reset not implemented in GraphQL yet');
+  register(userData: { username: string; email: string; name: string; password: string }): void {
+    // Redirect to WordPress registration page
+    const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+    const registerUrl = `${wordpressUrl}/wp-login.php?action=register`;
+
+    // Open in new tab/window
+    window.open(registerUrl, '_blank');
+
+    // Show a message to the user
+    throw new Error('Please use the WordPress registration page that opened in a new tab.');
   }
 
   /**
-   * Reset password with reset key - Note: This might need a separate GraphQL mutation
+   * No-op logout for API compatibility
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  resetPassword(_resetKey: string, _newPassword: string): Promise<void> {
-    // This would need to be implemented based on your WordPress GraphQL schema
-    throw new Error('Password reset not implemented in GraphQL yet');
+  logout(): void {
+    // No operation needed; handled in store
   }
 }
 

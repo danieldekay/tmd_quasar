@@ -391,7 +391,7 @@ const refreshToken = async () => {
 
 const handleLogout = async () => {
   try {
-    await authStore.logout();
+    authStore.logout();
     Notify.create({
       type: 'positive',
       message: 'Logged out successfully',

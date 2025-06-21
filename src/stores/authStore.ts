@@ -25,9 +25,9 @@ export interface User {
 
 export interface AuthResponse {
   token: string;
-  user: User;
+  refreshToken?: string;
+  user: User | null;
   expires_in?: number;
-  refresh_token?: string;
 }
 
 export interface LoginCredentials {
@@ -64,8 +64,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Store tokens in cookies
       setJWTToken(response.token, credentials.remember);
-      if (response.refresh_token) {
-        setRefreshToken(response.refresh_token, credentials.remember);
+      if (response.refreshToken) {
+        setRefreshToken(response.refreshToken, credentials.remember);
       }
 
       return true;
@@ -78,11 +78,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const logout = (): void => {
     try {
-      if (token.value) {
-        await authService.logout(token.value);
-      }
+      // No logout API call needed - just clear local state
+      console.log('Logout: Clearing local state');
     } catch (err) {
       console.warn('Logout error:', err);
     } finally {
@@ -97,31 +96,38 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const refreshToken = async (): Promise<boolean> => {
-    const refreshTokenValue = getRefreshToken();
-    if (!refreshTokenValue) return false;
-
     try {
-      const response = await authService.refreshToken(refreshTokenValue);
-      token.value = response.token;
-      user.value = response.user;
+      // Get stored refresh token (you'll need to implement this)
+      const storedRefreshToken = getRefreshToken();
 
-      // Update stored tokens
-      setJWTToken(response.token, true); // Assume remember me for refresh
-      if (response.refresh_token) {
-        setRefreshToken(response.refresh_token, true);
+      if (!storedRefreshToken) {
+        console.warn('No refresh token available - user needs to log in again');
+        logout();
+        return false;
+      }
+
+      const response = await authService.refreshToken(storedRefreshToken);
+
+      token.value = response.token;
+
+      // Update stored token
+      setJWTToken(response.token, true);
+
+      // If we have user data from the refresh, update it
+      if (response.user) {
+        user.value = response.user;
       }
 
       return true;
-    } catch (err) {
-      console.warn('Token refresh failed:', err);
-      await logout();
+    } catch (error) {
+      console.warn('Token refresh failed:', error);
+      logout();
       return false;
     }
   };
 
   const loadStoredAuth = async (): Promise<boolean> => {
     const storedToken = getJWTToken();
-    const refreshTokenValue = getRefreshToken();
 
     if (!storedToken) {
       return false;
@@ -135,27 +141,20 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const isValid = await authService.validateToken(storedToken);
         if (!isValid) {
-          console.warn('Stored token validation failed, attempting refresh');
-          // Try to refresh the token
-          if (refreshTokenValue) {
-            const refreshSuccess = await refreshToken();
-            if (!refreshSuccess) {
-              console.warn('Token refresh failed, but keeping user logged in for better UX');
-            }
-          }
+          console.warn('Stored token validation failed');
+          // Since we don't have refresh tokens, we'll just clear the invalid token
+          // and let the user log in again
+          logout();
+          return false;
         }
       } catch (validationError) {
         console.warn('Token validation error:', validationError);
-        // Try to refresh the token
-        if (refreshTokenValue) {
-          const refreshSuccess = await refreshToken();
-          if (!refreshSuccess) {
-            console.warn('Token refresh failed, but keeping user logged in for better UX');
-          }
-        }
+        // Clear invalid token and let user log in again
+        logout();
+        return false;
       }
 
-      // Try to get user data from the token or refresh
+      // Try to get user data from the token
       if (!user.value) {
         try {
           // Try to get user profile to populate user data
@@ -192,7 +191,7 @@ export const useAuthStore = defineStore('auth', () => {
       return true;
     } catch (err) {
       console.warn('Failed to load stored auth:', err);
-      await logout();
+      logout();
       return false;
     }
   };
