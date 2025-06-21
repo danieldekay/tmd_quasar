@@ -13,6 +13,20 @@
           <!-- Welcome Message -->
           <div class="text-caption q-mr-sm">Welcome, {{ getUserDisplayName() }}!</div>
 
+          <!-- Admin Icon for users with manage_options -->
+          <q-btn
+            v-if="authStore.canManageOptions"
+            flat
+            round
+            dense
+            icon="admin_panel_settings"
+            color="warning"
+            class="q-mr-sm"
+            @click="$router.push('/debug')"
+          >
+            <q-tooltip>Admin Panel</q-tooltip>
+          </q-btn>
+
           <q-btn flat round dense icon="notifications" />
 
           <!-- User Avatar with Menu -->
@@ -41,7 +55,18 @@
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ authStore.user?.name || 'User' }}</q-item-label>
+                  <q-item-label>
+                    {{ authStore.user?.name || 'User' }}
+                    <q-chip
+                      v-if="authStore.canManageOptions"
+                      color="warning"
+                      text-color="white"
+                      size="sm"
+                      class="q-ml-xs"
+                    >
+                      Admin
+                    </q-chip>
+                  </q-item-label>
                   <q-item-label caption>{{ authStore.user?.email || 'No email' }}</q-item-label>
                 </q-item-section>
               </q-item>
@@ -67,6 +92,19 @@
                   <q-icon name="dashboard" />
                 </q-item-section>
                 <q-item-section>Dashboard</q-item-section>
+              </q-item>
+
+              <!-- Admin Menu Item -->
+              <q-item
+                v-if="authStore.canManageOptions"
+                clickable
+                v-close-popup
+                @click="$router.push('/debug')"
+              >
+                <q-item-section avatar>
+                  <q-icon name="admin_panel_settings" color="warning" />
+                </q-item-section>
+                <q-item-section>Admin Panel</q-item-section>
               </q-item>
 
               <q-separator />
