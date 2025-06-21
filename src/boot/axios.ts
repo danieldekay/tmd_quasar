@@ -1,6 +1,7 @@
 import { boot } from 'quasar/wrappers';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
+import { getJWTToken } from '../utils/cookies';
 
 // Extend axios config to include metadata
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -32,7 +33,7 @@ api.interceptors.request.use(
     config.metadata = { startTime: Date.now() };
 
     // Add authentication token if available
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    const token = getJWTToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -77,11 +78,9 @@ api.interceptors.response.use(
       enhancedError.status = error.response.status;
       enhancedError.originalError = error;
 
-      // Clear stored authentication
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      sessionStorage.removeItem('auth_token');
-      sessionStorage.removeItem('auth_user');
+      // Clear stored authentication using the auth store
+      // Note: We don't clear tokens here to avoid conflicts with the auth store
+      // The auth store should handle token clearing
 
       // Redirect to login page
       if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {

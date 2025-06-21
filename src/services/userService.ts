@@ -108,51 +108,113 @@ export interface UserProfile extends User {
 
   // Embedded related data
   _embedded?: {
-    events?: Array<{
+    'wordpress-profile'?: Array<{
       id: number;
-      title: string;
-      slug: string;
+      name: string;
+      url?: string;
+      description?: string;
       link: string;
-      start_date?: string;
-      end_date?: string;
-      city?: string;
-      country?: string;
+      slug: string;
+      avatar_urls: Record<string, string>;
+      meta_box?: unknown[];
+      _links?: unknown;
     }>;
     'authored:events'?: Array<{
-      id: number;
-      title: string;
-      slug: string;
-      link: string;
-      start_date?: string;
-      end_date?: string;
-      city?: string;
-      country?: string;
+      _embedded: {
+        events: Array<{
+          id: number;
+          title: string;
+          slug: string;
+          date: string;
+          date_gmt: string;
+          modified: string;
+          modified_gmt: string;
+          status: string;
+          link: string;
+          start_date?: string;
+          end_date?: string;
+          registration_start_date?: string;
+          edition?: string;
+          country?: string;
+          city?: string;
+          _links?: unknown;
+        }>;
+      };
+      _links: unknown;
+      page: number;
+      per_page: number;
+      count: number;
+      total: number;
     }>;
     'authored:teachers'?: Array<{
-      id: number;
-      title: string;
-      slug: string;
-      link: string;
-      city?: string;
-      country?: string;
+      _embedded: {
+        teachers: Array<{
+          id: number;
+          title: string;
+          slug: string;
+          date: string;
+          date_gmt: string;
+          modified: string;
+          modified_gmt: string;
+          status: string;
+          link: string;
+          city?: string;
+          country?: string;
+          _links?: unknown;
+        }>;
+      };
+      _links: unknown;
+      page: number;
+      per_page: number;
+      count: number;
+      total: number;
     }>;
     'authored:djs'?: Array<{
-      id: number;
-      title: string;
-      slug: string;
-      link: string;
-      city?: string;
-      country?: string;
+      _embedded: {
+        djs: Array<{
+          id: number;
+          title: string;
+          slug: string;
+          date: string;
+          date_gmt: string;
+          modified: string;
+          modified_gmt: string;
+          status: string;
+          link: string;
+          city?: string;
+          country?: string;
+          _links?: unknown;
+        }>;
+      };
+      _links: unknown;
+      page: number;
+      per_page: number;
+      count: number;
+      total: number;
     }>;
     'authored:event-series'?: Array<{
-      id: number;
-      title: string;
-      slug: string;
-      link: string;
-      city?: string;
-      country?: string;
+      _embedded: {
+        'event-series': Array<{
+          id: number;
+          title: string;
+          slug: string;
+          date: string;
+          date_gmt: string;
+          modified: string;
+          modified_gmt: string;
+          status: string;
+          link: string;
+          city?: string;
+          country?: string;
+          _links?: unknown;
+        }>;
+      };
+      _links: unknown;
+      page: number;
+      per_page: number;
+      count: number;
+      total: number;
     }>;
-    author?: unknown[];
   };
 
   // Links to related entities
@@ -174,6 +236,7 @@ export interface UserParams extends BaseParams {
   meta_filters?: string;
   include_events?: boolean;
   essential_only?: boolean;
+  _embed?: boolean;
 }
 
 // User sort options
@@ -242,24 +305,49 @@ export class UserService extends BaseService<UserProfile> {
   }
 
   /**
-   * Get current user profile with enhanced V3 API filtering and pagination
-   * Supports advanced meta filtering, embedded relationships, and performance optimization
+   * Get current user profile using the /me endpoint
+   * Token is automatically added by axios interceptor
    */
+  async getCurrentUserProfile(params?: UserParams, signal?: AbortSignal): Promise<UserProfile>;
   async getCurrentUserProfile(
     token: string,
-    params: UserParams = {},
+    params?: UserParams,
     signal?: AbortSignal,
+  ): Promise<UserProfile>;
+  async getCurrentUserProfile(
+    paramsOrToken: UserParams | string = {},
+    paramsOrSignal?: UserParams | AbortSignal,
+    signalOrUndefined?: AbortSignal,
   ): Promise<UserProfile> {
     try {
+      // Handle overloaded parameters
+      let params: UserParams;
+      let signal: AbortSignal | undefined;
+      let customHeaders: Record<string, string> | undefined;
+
+      if (typeof paramsOrToken === 'string') {
+        // Legacy call with explicit token
+        const token = paramsOrToken;
+        params = (paramsOrSignal as UserParams) || {};
+        signal = signalOrUndefined;
+        customHeaders = { Authorization: `Bearer ${token}` };
+      } else {
+        // New call without token (uses axios interceptor)
+        params = paramsOrToken;
+        signal = paramsOrSignal as AbortSignal;
+        customHeaders = undefined;
+      }
+
       // Build V3 API parameters with advanced filtering
       const apiParams = this.buildUserApiParams(params);
 
-      // Make authenticated request using the endpoint path
-      const response = await this.makeRequest(this.endpoint, apiParams, signal, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Use the /me endpoint for current user profile
+      const response = await this.makeRequest(
+        'me',
+        apiParams,
+        signal,
+        customHeaders ? { headers: customHeaders } : undefined,
+      );
 
       // Transform and enhance the data
       const userProfile = this.transformUser(response.data as UserProfile);
@@ -398,9 +486,13 @@ export class UserService extends BaseService<UserProfile> {
   private buildUserApiParams(params: UserParams): Record<string, unknown> {
     const apiParams: Record<string, unknown> = {
       // Default settings
-      _embed: params.include_events ? true : false,
       meta_fields: params.essential_only ? ESSENTIAL_USER_META_FIELDS : ALL_USER_META_FIELDS,
     };
+
+    // Handle _embed parameter - ensure it's a boolean
+    if (params.include_events || params._embed) {
+      apiParams._embed = true;
+    }
 
     // Add meta filters if provided
     if (params.meta_filters) {

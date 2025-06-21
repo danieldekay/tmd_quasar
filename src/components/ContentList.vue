@@ -25,6 +25,10 @@
               {{ formatDate(item.start_date) }}
             </span>
           </q-item-label>
+          <q-item-label v-if="item.modified" caption class="text-grey-6">
+            <q-icon name="schedule" size="14px" class="q-mr-xs" />
+            Last modified: {{ formatDateTime(item.modified) }}
+          </q-item-label>
         </q-item-section>
 
         <q-item-section side>
@@ -58,12 +62,13 @@
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
 
-const { formatDate } = useFormatters();
+const { formatDate, formatDateTime } = useFormatters();
 const { getCountryName } = useCountries();
 
 interface ContentItem {
   id: number;
   title: string;
+  slug: string;
   type: string;
   typeLabel: string;
   icon: string;
@@ -72,7 +77,10 @@ interface ContentItem {
   country?: string;
   start_date?: string;
   end_date?: string;
-  link?: string;
+  link: string;
+  status?: string;
+  date?: string;
+  modified?: string;
 }
 
 interface Props {

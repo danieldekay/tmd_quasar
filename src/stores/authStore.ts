@@ -41,6 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const token = ref<string | null>(null);
   const isLoading = ref(false);
+  const isLoadingStoredAuth = ref(false);
   const error = ref<string | null>(null);
 
   // Computed
@@ -89,6 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null;
       user.value = null;
       error.value = null;
+      isLoadingStoredAuth.value = false;
 
       // Clear stored tokens
       clearJWTTokens();
@@ -127,11 +129,23 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const loadStoredAuth = async (): Promise<boolean> => {
+    // Prevent concurrent calls - wait for existing call to complete
+    if (isLoadingStoredAuth.value) {
+      // Wait for the current loading to finish
+      while (isLoadingStoredAuth.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      // Return current authentication status
+      return isAuthenticated.value;
+    }
+
     const storedToken = getJWTToken();
 
     if (!storedToken) {
       return false;
     }
+
+    isLoadingStoredAuth.value = true;
 
     try {
       // Set the token immediately for better UX
@@ -193,6 +207,8 @@ export const useAuthStore = defineStore('auth', () => {
       console.warn('Failed to load stored auth:', err);
       logout();
       return false;
+    } finally {
+      isLoadingStoredAuth.value = false;
     }
   };
 
@@ -205,6 +221,7 @@ export const useAuthStore = defineStore('auth', () => {
     user: readonly(user),
     token: readonly(token),
     isLoading: readonly(isLoading),
+    isLoadingStoredAuth: readonly(isLoadingStoredAuth),
     error: readonly(error),
 
     // Computed

@@ -9,7 +9,49 @@
       stats-label="Total Content"
     >
       <template #actions>
-        <q-btn color="primary" icon="add" label="Create New" @click="createNewContent" />
+        <q-btn-dropdown color="primary" icon="add" label="Create New" split @click="createNewEvent">
+          <q-list>
+            <q-item clickable v-close-popup @click="createNewEvent">
+              <q-item-section avatar>
+                <q-icon name="event" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Event</q-item-label>
+                <q-item-label caption>Create a new tango event</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup @click="createNewTeacher">
+              <q-item-section avatar>
+                <q-icon name="school" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Teacher</q-item-label>
+                <q-item-label caption>Add a new teacher profile</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup @click="createNewDJ">
+              <q-item-section avatar>
+                <q-icon name="music_note" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>DJ/Couple</q-item-label>
+                <q-item-label caption>Add a new DJ or couple profile</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup @click="createNewEventSeries">
+              <q-item-section avatar>
+                <q-icon name="event_repeat" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Event Series</q-item-label>
+                <q-item-label caption>Create a new event series</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </template>
     </ListPageHeader>
 
@@ -88,13 +130,13 @@
         <q-tab-panels v-model="activeTab" animated>
           <!-- Published Content -->
           <q-tab-panel name="published" class="q-pa-none">
-            <div v-if="publishedContent.length === 0" class="text-center q-pa-xl">
+            <div v-if="allPublishedContent.length === 0" class="text-center q-pa-xl">
               <q-icon name="check_circle" size="64px" color="positive" />
               <div class="text-h6 q-mt-md">No published content yet</div>
               <div class="text-caption text-grey-6">Your published content will appear here</div>
             </div>
             <div v-else>
-              <ContentList :content="publishedContent" @view="viewContent" @edit="editContent" />
+              <ContentList :content="allPublishedContent" @view="viewContent" @edit="editContent" />
             </div>
           </q-tab-panel>
 
@@ -144,6 +186,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
 import { userService, type UserProfile } from '../services/userService';
+import { useDashboard, type DashboardContentItem } from '../composables/useDashboard';
 import ListPageHeader from '../components/ListPageHeader.vue';
 import OfflineMessage from '../components/OfflineMessage.vue';
 import ContentList from '../components/ContentList.vue';
@@ -157,117 +200,21 @@ const isLoading = ref(false);
 const error = ref<string | null>(null);
 const activeTab = ref('published');
 
+// Use dashboard composable
+const { publishedContent, contentCounts } = useDashboard(profile);
+
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
-const totalContentCount = computed(() => {
-  if (!profile.value?.content_counts) return 0;
-  const counts = profile.value.content_counts;
-  return (
-    counts.event.published +
-    counts.event.draft +
-    counts.event.private +
-    counts.teacher.published +
-    counts.teacher.draft +
-    counts.teacher.private +
-    counts.dj.published +
-    counts.dj.draft +
-    counts.dj.private +
-    counts.event_series.published +
-    counts.event_series.draft +
-    counts.event_series.private
-  );
-});
-
-const publishedCount = computed(() => {
-  if (!profile.value?.content_counts) return 0;
-  const counts = profile.value.content_counts;
-  return (
-    counts.event.published +
-    counts.teacher.published +
-    counts.dj.published +
-    counts.event_series.published
-  );
-});
-
-const scheduledCount = computed(() => {
-  // For now, we'll count scheduled as part of published since the API doesn't distinguish
-  return 0;
-});
-
-const draftCount = computed(() => {
-  if (!profile.value?.content_counts) return 0;
-  const counts = profile.value.content_counts;
-  return counts.event.draft + counts.teacher.draft + counts.dj.draft + counts.event_series.draft;
-});
-
-const privateCount = computed(() => {
-  if (!profile.value?.content_counts) return 0;
-  const counts = profile.value.content_counts;
-  return (
-    counts.event.private + counts.teacher.private + counts.dj.private + counts.event_series.private
-  );
-});
+const totalContentCount = computed(() => contentCounts.value.total);
+const publishedCount = computed(() => contentCounts.value.published);
+const scheduledCount = computed(() => contentCounts.value.scheduled);
+const draftCount = computed(() => contentCounts.value.draft);
+const privateCount = computed(() => contentCounts.value.private);
 
 // Content by status
-const publishedContent = computed(() => {
-  if (!profile.value?._embedded) return [];
-
-  const content = [];
-
-  // Add published events
-  if (profile.value._embedded['authored:events']) {
-    content.push(
-      ...profile.value._embedded['authored:events'].map((event) => ({
-        ...event,
-        type: 'event',
-        typeLabel: 'Event',
-        icon: 'event',
-        color: 'primary',
-      })),
-    );
-  }
-
-  // Add published teachers
-  if (profile.value._embedded['authored:teachers']) {
-    content.push(
-      ...profile.value._embedded['authored:teachers'].map((teacher) => ({
-        ...teacher,
-        type: 'teacher',
-        typeLabel: 'Teacher',
-        icon: 'school',
-        color: 'secondary',
-      })),
-    );
-  }
-
-  // Add published DJs
-  if (profile.value._embedded['authored:djs']) {
-    content.push(
-      ...profile.value._embedded['authored:djs'].map((dj) => ({
-        ...dj,
-        type: 'dj',
-        typeLabel: 'DJ',
-        icon: 'music_note',
-        color: 'accent',
-      })),
-    );
-  }
-
-  // Add published event series
-  if (profile.value._embedded['authored:event-series']) {
-    content.push(
-      ...profile.value._embedded['authored:event-series'].map((series) => ({
-        ...series,
-        type: 'event-series',
-        typeLabel: 'Event Series',
-        icon: 'event_repeat',
-        color: 'positive',
-      })),
-    );
-  }
-
-  return content;
+const allPublishedContent = computed(() => {
+  return publishedContent.value;
 });
 
 const scheduledContent = computed(() => {
@@ -285,48 +232,7 @@ const privateContent = computed(() => {
   return [];
 });
 
-// Methods
-const loadDashboard = async () => {
-  if (!isAuthenticated.value) {
-    error.value = 'You must be logged in to view your dashboard';
-    return;
-  }
-
-  isLoading.value = true;
-  error.value = null;
-
-  try {
-    const token = authStore.token;
-    if (!token) {
-      throw new Error('No authentication token available');
-    }
-
-    profile.value = await userService.getCurrentUserProfile(token, {
-      _embed: true, // Include authored content
-    });
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load dashboard';
-    console.error('Dashboard loading error:', err);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-interface ContentItem {
-  id: number;
-  title: string;
-  type: string;
-  typeLabel: string;
-  icon: string;
-  color: string;
-  city?: string;
-  country?: string;
-  start_date?: string;
-  end_date?: string;
-  link?: string;
-}
-
-const viewContent = (content: ContentItem) => {
+const viewContent = (content: DashboardContentItem) => {
   const routes = {
     event: `/events/${content.id}`,
     teacher: `/teachers/${content.id}`,
@@ -340,16 +246,61 @@ const viewContent = (content: ContentItem) => {
   }
 };
 
-const editContent = (content: ContentItem) => {
+const editContent = (content: DashboardContentItem) => {
   // Redirect to WordPress admin edit screen
   const editUrl = `http://localhost:10014/wp-admin/post.php?post=${content.id}&action=edit`;
   window.open(editUrl, '_blank');
 };
 
-const createNewContent = () => {
-  // Redirect to WordPress admin new post screen
-  const newPostUrl = 'http://localhost:10014/wp-admin/post-new.php';
-  window.open(newPostUrl, '_blank');
+const createNewEvent = () => {
+  // Redirect to WordPress admin new event screen
+  const newEventUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_event';
+  window.open(newEventUrl, '_blank');
+};
+
+const createNewTeacher = () => {
+  // Redirect to WordPress admin new teacher screen
+  const newTeacherUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_teacher';
+  window.open(newTeacherUrl, '_blank');
+};
+
+const createNewDJ = () => {
+  // Redirect to WordPress admin new DJ screen
+  const newDJUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_dj';
+  window.open(newDJUrl, '_blank');
+};
+
+const createNewEventSeries = () => {
+  // Redirect to WordPress admin new event series screen
+  const newEventSeriesUrl =
+    'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_event_series';
+  window.open(newEventSeriesUrl, '_blank');
+};
+
+// Methods
+const loadDashboard = async () => {
+  if (!isAuthenticated.value) {
+    error.value = 'You must be logged in to view your dashboard';
+    return;
+  }
+
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    // Get user profile with embedded content using the /me endpoint
+    // Token is automatically added by axios interceptor
+    profile.value = await userService.getCurrentUserProfile({
+      _embed: true, // Include authored content
+    });
+
+    console.log('Dashboard profile loaded:', profile.value);
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to load dashboard';
+    console.error('Dashboard loading error:', err);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 // Watch for authentication changes

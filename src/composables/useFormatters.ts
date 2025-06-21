@@ -16,6 +16,43 @@ export const useFormatters = () => {
   };
 
   /**
+   * Format a date-time value with relative time for recent dates
+   */
+  const formatDateTime = (value: string | number | boolean | null | undefined): string => {
+    if (value === null || value === undefined || value === '') return '';
+    if (typeof value === 'boolean') return '';
+
+    const date = typeof value === 'number' ? new Date(value) : new Date(String(value));
+    if (Number.isNaN(date.getTime())) return '';
+
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    // Show relative time for recent dates
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+    } else {
+      // For older dates, show formatted date
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  };
+
+  /**
    * Build a human-readable location from city / country.
    */
   const formatLocation = (city?: string | null, country?: string | null): string => {
@@ -133,6 +170,7 @@ export const useFormatters = () => {
 
   return {
     formatDate,
+    formatDateTime,
     formatLocation,
     getEventCategory,
     getCategoryColor,
