@@ -34,14 +34,37 @@ export interface SearchParams {
 export type BaseParams = BaseServiceOptions & PaginationParams & SearchParams;
 
 /**
+ * HAL-compliant API response structure
+ */
+export interface HALResponse<T> {
+  _embedded?: {
+    [key: string]: T[];
+  };
+  _links?: {
+    self?: Array<{ href: string }>;
+    next?: Array<{ href: string }>;
+    prev?: Array<{ href: string }>;
+    last?: Array<{ href: string }>;
+    first?: Array<{ href: string }>;
+  };
+  page?: number;
+  per_page?: number;
+  count?: number;
+  total?: number;
+}
+
+/**
  * Base service class that provides common functionality for all WordPress REST API services
+ * Updated to handle HAL-compliant TMD v3 API responses
  */
 export class BaseService<T = Record<string, unknown>> {
   protected endpoint: string;
   protected defaultOptions: BaseServiceOptions;
+  protected endpointName: string;
 
   constructor(endpoint: string, defaultOptions: BaseServiceOptions = {}) {
     this.endpoint = endpoint;
+    this.endpointName = endpoint.replace(/^\//, ''); // Remove leading slash for _embedded key
     this.defaultOptions = {
       _embed: true,
       ...defaultOptions,
@@ -64,9 +87,34 @@ export class BaseService<T = Record<string, unknown>> {
   }
 
   /**
-   * Extract pagination info from WordPress REST API headers
+   * Extract pagination info from HAL response body (v3 API)
+   * Falls back to headers for legacy support (v2 API)
    */
-  protected extractPaginationInfo(headers: Record<string, string>, currentPage = 1) {
+  protected extractPaginationInfo(
+    response: HALResponse<T> | T[],
+    headers: Record<string, string>,
+    currentPage = 1,
+  ) {
+    // First try to extract from HAL response body (v3 API)
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
+      const halResponse = response;
+
+      if (halResponse.total !== undefined && halResponse.page !== undefined) {
+        const totalCount = halResponse.total;
+        const totalPages = Math.ceil(totalCount / (halResponse.per_page || 10));
+        const page = halResponse.page;
+
+        return {
+          totalCount,
+          totalPages,
+          currentPage: page,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        };
+      }
+    }
+
+    // Fallback to headers for legacy API support
     const totalCount = parseInt(headers['x-wp-total'] || '0', 10);
     const totalPages = parseInt(headers['x-wp-totalpages'] || '1', 10);
 
@@ -80,9 +128,49 @@ export class BaseService<T = Record<string, unknown>> {
   }
 
   /**
+   * Extract data from HAL response or return array directly
+   */
+  protected extractDataFromResponse(response: HALResponse<T> | T[]): T[] {
+    // Handle HAL response format
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
+      const halResponse = response;
+
+      if (halResponse._embedded) {
+        // Try to find data in _embedded using the endpoint name
+        const embeddedData = halResponse._embedded[this.endpointName];
+        if (embeddedData && Array.isArray(embeddedData)) {
+          return embeddedData;
+        }
+
+        // Try other common keys if endpoint name doesn't match
+        const commonKeys = [
+          'events',
+          'djs',
+          'teachers',
+          'couples',
+          'event-series',
+          'orchestras',
+          'brands',
+        ];
+        for (const key of commonKeys) {
+          if (halResponse._embedded[key] && Array.isArray(halResponse._embedded[key])) {
+            return halResponse._embedded[key];
+          }
+        }
+      }
+
+      // If no _embedded data found, return empty array
+      return [];
+    }
+
+    // Handle direct array response (legacy format)
+    return Array.isArray(response) ? response : [];
+  }
+
+  /**
    * Make a GET request with enhanced error handling and offline detection
    */
-  protected async makeRequest<R = T>(
+  protected async makeRequest<R = HALResponse<T> | T[]>(
     path: string,
     params: BaseParams = {},
     signal?: AbortSignal,
@@ -117,12 +205,21 @@ export class BaseService<T = Record<string, unknown>> {
    */
   async getAll(params: BaseParams = {}, signal?: AbortSignal): Promise<PaginatedResponse<T>> {
     try {
-      const { data, headers } = await this.makeRequest<T[]>(this.endpoint, params, signal);
+      const { data, headers } = await this.makeRequest<HALResponse<T> | T[]>(
+        this.endpoint,
+        params,
+        signal,
+      );
       const currentPage = params.page || 1;
-      const pagination = this.extractPaginationInfo(headers, currentPage);
+
+      // Extract actual data array from HAL response
+      const items = this.extractDataFromResponse(data);
+
+      // Extract pagination info from response body or headers
+      const pagination = this.extractPaginationInfo(data, headers, currentPage);
 
       return {
-        data,
+        data: items,
         ...pagination,
       };
     } catch (error) {

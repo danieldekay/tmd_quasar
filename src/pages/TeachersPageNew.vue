@@ -2,24 +2,24 @@
   <BaseListPage
     title="Teachers"
     subtitle="Discover talented tango teachers from around the world"
-    :total-count="state.totalCount"
+    :total-count="teachers.length"
     stats-label="Total Teachers"
-    :loading="state.loading"
-    :error="state.error"
-    :show-empty-state="state.items.length === 0 && !state.loading && !state.error"
+    :loading="loading"
+    :error="error"
+    :show-empty-state="teachers.length === 0 && !loading && !error"
     empty-state-icon="school"
     empty-state-title="No Teachers Found"
     empty-state-message="There are no teachers to display at the moment."
-    :search-query="filters.searchQuery"
+    :search-query="searchQuery"
     :has-active-filters="hasActiveFilters"
     :active-filter-count="activeFilterCount"
-    :display-count="state.items.length"
-    :current-page="state.currentPage"
-    :total-pages="state.totalPages"
-    :show-pagination="state.totalPages > 1"
+    :display-count="teachers.length"
+    :current-page="pagination.currentPage.value"
+    :total-pages="pagination.totalPages.value"
+    :show-pagination="pagination.totalPages.value > 1"
     @update:search-query="updateFilter('searchQuery', $event)"
     @clear-filters="clearFilters"
-    @retry="retry"
+    @retry="() => loadTeachers(true)"
   >
     <template #header-actions>
       <q-btn
@@ -34,7 +34,7 @@
     <template #filters>
       <div class="col-12 col-md-4">
         <q-select
-          :model-value="filters.country"
+          :model-value="selectedCountry"
           :options="countryOptions"
           outlined
           dense
@@ -51,7 +51,7 @@
       </div>
       <div class="col-12 col-md-4">
         <q-select
-          :model-value="filters.role"
+          :model-value="selectedRole"
           :options="roleOptions"
           outlined
           dense
@@ -68,7 +68,7 @@
       </div>
       <div class="col-12 col-md-4">
         <q-select
-          :model-value="filters.gender"
+          :model-value="selectedGender"
           :options="genderOptions"
           outlined
           dense
@@ -87,48 +87,44 @@
 
     <template #active-filters>
       <q-chip
-        v-if="filters.country"
+        v-if="selectedCountry"
         removable
         color="primary"
         text-color="white"
-        :label="`Country: ${getCountryName(filters.country)}`"
+        :label="`Country: ${getCountryName(selectedCountry)}`"
         @remove="updateFilter('country', '')"
       />
       <q-chip
-        v-if="filters.role"
+        v-if="selectedRole"
         removable
         color="secondary"
         text-color="white"
-        :label="`Role: ${filters.role}`"
+        :label="`Role: ${selectedRole}`"
         @remove="updateFilter('role', '')"
       />
       <q-chip
-        v-if="filters.gender"
+        v-if="selectedGender"
         removable
         color="accent"
         text-color="white"
-        :label="`Gender: ${filters.gender}`"
+        :label="`Gender: ${selectedGender}`"
         @remove="updateFilter('gender', '')"
       />
     </template>
 
     <template #content>
       <BaseTable
-        :rows="state.items"
+        :rows="paginatedTeachers"
         :columns="columns"
-        :loading="state.loading"
-        :error="state.error"
-        :current-page="state.currentPage"
-        :rows-per-page="pagination.rowsPerPage"
-        :total-items="state.totalCount"
-        :sort-by="pagination.sortBy"
-        :descending="pagination.descending"
-        :show-top-pagination="false"
+        :loading="loading"
+        :error="error"
+        :current-page="pagination.currentPage.value"
+        :rows-per-page="pagination.rowsPerPage.value"
+        :total-items="filteredTeachers.length"
+        :show-top-pagination="true"
         row-key="id"
-        @update:current-page="updatePagination({ page: $event })"
-        @update:rows-per-page="updatePagination({ rowsPerPage: $event })"
-        @update:sort-by="updatePagination({ sortBy: $event })"
-        @update:descending="updatePagination({ descending: $event })"
+        @update:current-page="pagination.goToPage"
+        @update:rows-per-page="pagination.setRowsPerPage"
         @row-click="handleRowClick"
       >
         <template #body="{ props }">
@@ -170,6 +166,24 @@
               size="sm"
             />
             <span v-else class="text-grey-5">-</span>
+          </q-td>
+          <q-td key="events_count" :props="props">
+            <q-badge
+              v-if="getEventsCount(props.row) > 0"
+              :label="getEventsCount(props.row)"
+              color="primary"
+              rounded
+            />
+            <span v-else class="text-grey-5">0</span>
+          </q-td>
+          <q-td key="couples_count" :props="props">
+            <q-badge
+              v-if="getCouplesCount(props.row) > 0"
+              :label="getCouplesCount(props.row)"
+              color="secondary"
+              rounded
+            />
+            <span v-else class="text-grey-5">0</span>
           </q-td>
           <q-td key="website" :props="props">
             <q-btn
@@ -220,11 +234,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BaseListPage from '../components/BaseListPage.vue';
 import BaseTable from '../components/BaseTable.vue';
-import { useGenericList } from '../composables/useGenericList';
+import { useTablePagination } from '../composables/useTablePagination';
 import { teacherService } from '../services';
 import type { Teacher } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
@@ -234,14 +248,20 @@ const router = useRouter();
 const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
 
-// Define filters interface
-interface TeacherFilters {
-  searchQuery: string;
-  country: string;
-  role: string;
-  gender: string;
-  [key: string]: string; // Index signature for compatibility with ListFilters
-}
+// Pagination
+const pagination = useTablePagination({
+  initialRowsPerPage: 20,
+  rowsPerPageOptions: [10, 20, 50, 100],
+});
+
+// State
+const teachers = ref<Teacher[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+const searchQuery = ref('');
+const selectedCountry = ref('');
+const selectedRole = ref('');
+const selectedGender = ref('');
 
 // Table columns
 const columns = [
@@ -284,6 +304,22 @@ const columns = [
     style: 'width: 80px',
   },
   {
+    name: 'events_count',
+    label: 'Events',
+    field: (row: Teacher) => getEventsCount(row),
+    align: 'center' as const,
+    sortable: true,
+    style: 'width: 80px',
+  },
+  {
+    name: 'couples_count',
+    label: 'Couples',
+    field: (row: Teacher) => getCouplesCount(row),
+    align: 'center' as const,
+    sortable: true,
+    style: 'width: 80px',
+  },
+  {
     name: 'website',
     label: 'Website',
     field: 'website',
@@ -309,110 +345,68 @@ const columns = [
   },
 ];
 
-// Fetch function for the generic list
-const fetchTeachers = async (params: {
-  page: number;
-  perPage: number;
-  sortBy: string;
-  descending: boolean;
-  filters: TeacherFilters;
-}) => {
-  const { page, perPage, sortBy, descending, filters } = params;
+// Computed properties for filtering and pagination
+const filteredTeachers = computed(() => {
+  let filtered = teachers.value;
 
-  // Build API parameters
-  const apiParams: Record<string, unknown> = {
-    page,
-    per_page: perPage,
-    orderby: sortBy === 'name' ? 'title' : sortBy,
-    order: descending ? 'desc' : 'asc',
-  };
-
-  // Add filters
-  if (filters.country) {
-    apiParams.country = filters.country;
-  }
-  if (filters.searchQuery) {
-    apiParams.search = filters.searchQuery;
+  // Apply search filter
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim();
+    filtered = filtered.filter((teacher) => {
+      const name = getTeacherName(teacher).toLowerCase();
+      const location = getLocationText(teacher).toLowerCase();
+      return name.includes(query) || location.includes(query);
+    });
   }
 
-  try {
-    const teachers = await teacherService.getTeachers(apiParams);
-
-    // Filter by role and gender locally since API might not support these filters
-    let filteredTeachers = teachers || [];
-
-    if (filters.role) {
-      filteredTeachers = filteredTeachers.filter(
-        (teacher) => teacher.meta_box?.role === filters.role,
-      );
-    }
-
-    if (filters.gender) {
-      filteredTeachers = filteredTeachers.filter(
-        (teacher) => teacher.meta_box?.gender === filters.gender,
-      );
-    }
-
-    // Since we're getting all teachers and filtering locally,
-    // we need to implement pagination manually
-    const totalCount = filteredTeachers.length;
-    const totalPages = Math.ceil(totalCount / perPage);
-    const startIndex = (page - 1) * perPage;
-    const endIndex = startIndex + perPage;
-    const paginatedTeachers = filteredTeachers.slice(startIndex, endIndex);
-
-    return {
-      items: paginatedTeachers,
-      totalCount,
-      totalPages,
-      currentPage: page,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    };
-  } catch (error) {
-    console.error('Error fetching teachers:', error);
-    throw error;
+  // Apply country filter
+  if (selectedCountry.value) {
+    filtered = filtered.filter((teacher) => teacher.meta_box?.country === selectedCountry.value);
   }
-};
 
-// Use the generic list composable
-const {
-  state,
-  filters,
-  pagination,
-  hasActiveFilters,
-  activeFilterCount,
-  updateFilter,
-  updatePagination,
-  clearFilters,
-  retry,
-  initialize,
-} = useGenericList<Teacher, TeacherFilters>({
-  fetchFn: fetchTeachers,
-  defaultFilters: {
-    searchQuery: '',
-    country: '',
-    role: '',
-    gender: '',
-  },
-  defaultPagination: {
-    page: 1,
-    rowsPerPage: 20,
-    sortBy: 'name',
-    descending: false,
-  },
-  persistenceKey: 'teachers-filters',
-  enableSearch: true,
-  searchMinLength: 2,
-  searchDebounce: 300,
+  // Apply role filter
+  if (selectedRole.value) {
+    filtered = filtered.filter((teacher) => teacher.meta_box?.role === selectedRole.value);
+  }
+
+  // Apply gender filter
+  if (selectedGender.value) {
+    filtered = filtered.filter((teacher) => teacher.meta_box?.gender === selectedGender.value);
+  }
+
+  return filtered;
+});
+
+const paginatedTeachers = computed(() => {
+  const start = (pagination.currentPage.value - 1) * pagination.rowsPerPage.value;
+  const end = start + pagination.rowsPerPage.value;
+  return filteredTeachers.value.slice(start, end);
+});
+
+const hasActiveFilters = computed(() => {
+  return !!(
+    searchQuery.value.trim() ||
+    selectedCountry.value ||
+    selectedRole.value ||
+    selectedGender.value
+  );
+});
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (searchQuery.value.trim()) count++;
+  if (selectedCountry.value) count++;
+  if (selectedRole.value) count++;
+  if (selectedGender.value) count++;
+  return count;
 });
 
 // Filter options
 const countryOptions = computed(() => {
   const countries = new Set<string>();
-  state.value.items.forEach((item) => {
-    if (item.meta_box?.country) {
-      countries.add(item.meta_box.country);
+  teachers.value.forEach((teacher) => {
+    if (teacher.meta_box?.country) {
+      countries.add(teacher.meta_box.country);
     }
   });
   return Array.from(countries)
@@ -434,6 +428,26 @@ const genderOptions = [
 ];
 
 // Helper functions
+const getEventsCount = (teacher: Teacher): number => {
+  // Check if teacher has embedded events
+  if (teacher._embedded?.events) {
+    return teacher._embedded.events.length;
+  }
+  // For now, return 0 as teachers don't seem to have direct event links
+  // This could be enhanced later with a separate API call
+  return 0;
+};
+
+const getCouplesCount = (teacher: Teacher): number => {
+  // Check if teacher has embedded couples
+  if (teacher._embedded?.couples) {
+    return teacher._embedded.couples.length;
+  }
+  // For now, return 0 as teachers don't seem to have direct couple links
+  // This could be enhanced later with a separate API call
+  return 0;
+};
+
 const getTeacherName = (teacher: Teacher): string => {
   const firstName = teacher.meta_box?.first_name || '';
   const lastName = teacher.meta_box?.last_name || '';
@@ -452,6 +466,50 @@ const getTeacherPhoto = (): string => {
   return 'https://cdn.quasar.dev/img/avatar.png';
 };
 
+// Methods
+const loadTeachers = async (showNotification = false) => {
+  try {
+    loading.value = true;
+    error.value = null;
+    teachers.value = await teacherService.getTeachers({ per_page: 999 });
+
+    if (showNotification) {
+      // Add notification if you have useQuasar available
+    }
+  } catch (err) {
+    console.error('Error loading teachers:', err);
+    error.value = 'Failed to load teachers';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedCountry.value = '';
+  selectedRole.value = '';
+  selectedGender.value = '';
+  pagination.goToFirstPage();
+};
+
+const updateFilter = (field: string, value: string) => {
+  switch (field) {
+    case 'searchQuery':
+      searchQuery.value = value;
+      break;
+    case 'country':
+      selectedCountry.value = value;
+      break;
+    case 'role':
+      selectedRole.value = value;
+      break;
+    case 'gender':
+      selectedGender.value = value;
+      break;
+  }
+  pagination.goToFirstPage();
+};
+
 // Event handlers
 const handleRowClick = (teacher: Teacher) => {
   void router.push(`/teachers/${teacher.id}`);
@@ -468,9 +526,14 @@ const handleImageError = (event: Event) => {
   }
 };
 
+// Watch for changes in filtered results to update pagination
+watch(filteredTeachers, (newResults) => {
+  pagination.setTotalItems(newResults.length);
+});
+
 // Initialize the component
 onMounted(() => {
-  initialize();
+  void loadTeachers();
 });
 </script>
 

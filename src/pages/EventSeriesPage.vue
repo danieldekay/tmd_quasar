@@ -87,6 +87,22 @@
             </div>
           </q-td>
 
+          <q-td key="city" :props="props">
+            <div v-if="props.row.city" class="location-content">
+              <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+              {{ props.row.city }}
+            </div>
+            <span v-else class="text-grey-5">—</span>
+          </q-td>
+
+          <q-td key="country" :props="props">
+            <div v-if="props.row.country" class="location-content">
+              <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+              {{ props.row.country }}
+            </div>
+            <span v-else class="text-grey-5">—</span>
+          </q-td>
+
           <q-td key="website" :props="props">
             <q-btn
               v-if="props.row.acf?.website"
@@ -194,6 +210,22 @@ const columns = [
     style: 'width: 15%;',
     sortable: true,
     sort: sortByDate,
+  },
+  {
+    name: 'city',
+    label: 'City',
+    field: 'city',
+    align: 'left' as const,
+    style: 'width: 120px;',
+    sortable: true,
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    field: 'country',
+    align: 'left' as const,
+    style: 'width: 120px;',
+    sortable: true,
   },
   {
     name: 'website',

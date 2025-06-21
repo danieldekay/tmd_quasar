@@ -182,6 +182,12 @@ export interface Teacher extends BaseEntity {
   // Embedded related data
   _embedded?: {
     events?: BaseEvent[];
+    couples?: Array<{
+      id: number;
+      title: string;
+      slug: string;
+      link: string;
+    }>;
     author?: unknown[];
   };
 }
@@ -229,7 +235,7 @@ export interface Couple extends BaseEntity {
       href: string;
       city?: string;
       country?: string;
-      role: 'leader' | 'follower';
+      role: 'leader' | 'follower' | 'both' | 'double-role';
     }>;
     leader?: Teacher[];
     follower?: Teacher[];
