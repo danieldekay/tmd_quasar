@@ -68,15 +68,7 @@
         </div>
 
         <!-- Login Button for unauthenticated users -->
-        <q-btn
-          v-else
-          flat
-          round
-          dense
-          icon="login"
-          @click="$router.push('/login')"
-          aria-label="Sign In"
-        />
+        <q-btn v-else flat color="primary" label="Login" @click="$router.push('/auth/login')" />
       </q-toolbar>
     </q-header>
 
@@ -157,11 +149,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
+import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
-const $q = useQuasar();
 const authStore = useAuthStore();
 
 interface LinkProps {
@@ -222,7 +213,7 @@ function toggleLeftDrawer() {
 const handleLogout = async () => {
   try {
     await authStore.logout();
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Signed out successfully',
       position: 'top',
@@ -230,7 +221,7 @@ const handleLogout = async () => {
     await router.push('/');
   } catch (error) {
     console.error('Logout error:', error);
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to sign out',
       position: 'top',

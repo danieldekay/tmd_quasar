@@ -169,12 +169,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useQuasar } from 'quasar';
+import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
+import { authService } from '../services/authService';
 
 const router = useRouter();
 const route = useRoute();
-const $q = useQuasar();
 const authStore = useAuthStore();
 
 // Form state
@@ -203,6 +203,10 @@ const registerForm = reactive({
 const showRegisterPassword = ref(false);
 const isRegistering = ref(false);
 
+// Debug flag
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const debug = ref(true);
+
 // Handle login
 const handleLogin = async (): Promise<void> => {
   if (!form.username || !form.password) return;
@@ -218,7 +222,7 @@ const handleLogin = async (): Promise<void> => {
     });
 
     if (success) {
-      $q.notify({
+      Notify.create({
         type: 'positive',
         message: 'Welcome back!',
         position: 'top',
@@ -228,7 +232,7 @@ const handleLogin = async (): Promise<void> => {
       const redirect = route.query.redirect as string;
       await router.push(redirect || '/');
     } else {
-      $q.notify({
+      Notify.create({
         type: 'negative',
         message: authStore.error || 'Login failed',
         position: 'top',
@@ -236,7 +240,7 @@ const handleLogin = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('Login error:', error);
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'An unexpected error occurred',
       position: 'top',
@@ -253,8 +257,8 @@ const handleForgotPassword = async (): Promise<void> => {
   isResettingPassword.value = true;
 
   try {
-    await authStore.requestPasswordReset(forgotPasswordEmail.value);
-    $q.notify({
+    await authService.requestPasswordReset(forgotPasswordEmail.value);
+    Notify.create({
       type: 'positive',
       message: 'Password reset link sent to your email',
       position: 'top',
@@ -262,7 +266,7 @@ const handleForgotPassword = async (): Promise<void> => {
     showForgotPassword.value = false;
     forgotPasswordEmail.value = '';
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: error instanceof Error ? error.message : 'Failed to send reset link',
       position: 'top',
@@ -286,14 +290,14 @@ const handleRegister = async (): Promise<void> => {
   isRegistering.value = true;
 
   try {
-    await authStore.register({
+    await authService.register({
       username: registerForm.username,
       email: registerForm.email,
       name: registerForm.name,
       password: registerForm.password,
     });
 
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Account created successfully!',
       position: 'top',
@@ -305,7 +309,7 @@ const handleRegister = async (): Promise<void> => {
     const redirect = route.query.redirect as string;
     await router.push(redirect || '/');
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: error instanceof Error ? error.message : 'Registration failed',
       position: 'top',
@@ -317,6 +321,13 @@ const handleRegister = async (): Promise<void> => {
 
 // Check if user is already authenticated
 onMounted(() => {
+  console.log('LoginPage mounted');
+  console.log('Auth store state:', {
+    isAuthenticated: authStore.isAuthenticated,
+    user: authStore.user,
+    token: authStore.token,
+  });
+
   if (authStore.isAuthenticated) {
     const redirect = route.query.redirect as string;
     void router.push(redirect || '/');

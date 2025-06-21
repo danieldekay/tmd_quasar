@@ -4,64 +4,85 @@ import { useAuthStore } from '../stores/authStore';
 /**
  * Require authentication to access route
  */
-export const requireAuth = (
+export const requireAuth = async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
-): void => {
+): Promise<void> => {
   const authStore = useAuthStore();
 
+  // Load stored authentication if not already loaded
   if (!authStore.isAuthenticated) {
-    // Redirect to login with return URL
+    await authStore.loadStoredAuth();
+  }
+
+  if (authStore.isAuthenticated) {
+    next();
+  } else {
     next({
-      path: '/login',
+      path: '/auth/login',
       query: { redirect: to.fullPath },
     });
-  } else {
-    next();
   }
 };
 
 /**
  * Require specific role to access route
  */
-export const requireRole =
-  (role: string) =>
-  (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext): void => {
+export const requireRole = (requiredRole: string) => {
+  return async (
+    to: RouteLocationNormalized,
+    from: RouteLocationNormalized,
+    next: NavigationGuardNext,
+  ): Promise<void> => {
     const authStore = useAuthStore();
 
+    // Load stored authentication if not already loaded
     if (!authStore.isAuthenticated) {
+      await authStore.loadStoredAuth();
+    }
+
+    if (authStore.isAuthenticated && authStore.hasRole(requiredRole)) {
+      next();
+    } else if (!authStore.isAuthenticated) {
       next({
-        path: '/login',
+        path: '/auth/login',
         query: { redirect: to.fullPath },
       });
-    } else if (!authStore.hasRole(role)) {
-      // Redirect to unauthorized page or home
-      next({ path: '/unauthorized' });
     } else {
-      next();
+      next({
+        path: '/auth/unauthorized',
+      });
     }
   };
+};
 
 /**
  * Require admin role to access route
  */
-export const requireAdmin = (
+export const requireAdmin = async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
-): void => {
+): Promise<void> => {
   const authStore = useAuthStore();
 
+  // Load stored authentication if not already loaded
   if (!authStore.isAuthenticated) {
+    await authStore.loadStoredAuth();
+  }
+
+  if (authStore.isAuthenticated && authStore.isAdmin) {
+    next();
+  } else if (!authStore.isAuthenticated) {
     next({
-      path: '/login',
+      path: '/auth/login',
       query: { redirect: to.fullPath },
     });
-  } else if (!authStore.isAdmin) {
-    next({ path: '/unauthorized' });
   } else {
-    next();
+    next({
+      path: '/auth/unauthorized',
+    });
   }
 };
 

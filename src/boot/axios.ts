@@ -83,10 +83,10 @@ api.interceptors.response.use(
       sessionStorage.removeItem('auth_token');
       sessionStorage.removeItem('auth_user');
 
-      // Redirect to login if not already there
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      // Redirect to login page
+      if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
         const currentPath = window.location.pathname + window.location.search;
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
       }
     } else if (error.response.status >= 500) {
       // Server errors

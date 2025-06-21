@@ -1,268 +1,251 @@
-# JWT Authentication Setup for TMD Quasar App
+# JWT Authentication Setup
+
+This document describes the JWT authentication system implemented in the TMD Quasar frontend using GraphQL.
 
 ## Overview
 
-This document outlines the JWT authentication implementation for the Tango Marathons Directory (TMD) Quasar frontend application. The authentication system integrates with WordPress users and provides secure access to protected API endpoints.
+The authentication system uses GraphQL mutations and queries to handle user authentication with a WordPress backend. The system includes:
 
-## What's Been Implemented
+- User login with username/password
+- JWT token validation
+- User logout
+- Token refresh
+- Current user information retrieval
 
-### Frontend Components
+## GraphQL Endpoints
 
-#### 1. Authentication Store (`src/stores/authStore.ts`)
+The frontend expects the following GraphQL mutations and queries to be available on your WordPress GraphQL endpoint:
 
-- **Pinia store** for managing authentication state
-- **User data management** with TypeScript interfaces
-- **Token storage** with localStorage/sessionStorage support
-- **Remember me functionality**
-- **Automatic token refresh**
-- **Role-based access control**
+### Login Mutation
 
-#### 2. Authentication Service (`src/services/authService.ts`)
-
-- **JWT token management** (login, logout, refresh, validate)
-- **User profile retrieval**
-- **Password reset functionality**
-- **User registration** (if enabled)
-- **Error handling** with proper TypeScript types
-
-#### 3. Route Guards (`src/router/guards.ts`)
-
-- **Authentication guards** for protected routes
-- **Role-based guards** for admin/editor access
-- **Redirect handling** for unauthenticated users
-- **Return URL preservation**
-
-#### 4. UI Components
-
-- **Login Page** (`src/pages/LoginPage.vue`)
-  - Username/password form
-  - Remember me checkbox
-  - Forgot password dialog
-  - Registration dialog
-  - Error handling and validation
-- **Unauthorized Page** (`src/pages/UnauthorizedPage.vue`)
-  - Access denied messaging
-  - Navigation options
-
-#### 5. Updated Layout (`src/layouts/MainLayout.vue`)
-
-- **User authentication status** in header
-- **User avatar and menu** for authenticated users
-- **Login button** for unauthenticated users
-- **User-specific navigation** in sidebar
-- **Logout functionality**
-
-#### 6. API Integration (`src/boot/axios.ts`)
-
-- **Automatic token injection** in requests
-- **401 response handling** with automatic logout
-- **Token refresh** on authentication errors
-- **Redirect to login** for expired tokens
-
-## WordPress Backend Requirements
-
-### 1. Install JWT Authentication Plugin
-
-You need to install and configure a JWT authentication plugin for WordPress. Recommended options:
-
-#### Option A: JWT Authentication for WP REST API
-
-```bash
-# Install via Composer (recommended)
-composer require firebase/php-jwt
-
-# Or install manually from WordPress plugin directory
-# Search for "JWT Authentication for WP REST API"
-```
-
-#### Option B: Simple JWT Authentication
-
-```bash
-# Install via Composer
-composer require simple-jwt-authentication-for-wp-rest-api
-```
-
-### 2. WordPress Configuration
-
-#### Add to `wp-config.php`:
-
-```php
-// JWT Authentication Configuration
-define('JWT_AUTH_SECRET_KEY', 'your-secret-key-here');
-define('JWT_AUTH_CORS_ENABLE', true);
-```
-
-#### Add to `.htaccess` (Apache):
-
-```apache
-RewriteEngine on
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule ^(.*) - [e=HTTP_AUTHORIZATION:%1]
-```
-
-#### Add to `nginx.conf` (Nginx):
-
-```nginx
-location / {
-    try_files $uri $uri/ /index.php?$args;
-
-    # JWT Authentication headers
-    add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-    add_header Access-Control-Allow-Origin "*" always;
+```graphql
+mutation LoginUser($input: LoginInput!) {
+  login(input: $input) {
+    authToken
+    user {
+      id
+      name
+      email
+      roles {
+        nodes {
+          name
+          key
+        }
+      }
+    }
+  }
 }
 ```
 
-### 3. WordPress Functions.php
+### Refresh Token Mutation
 
-Add to your theme's `functions.php` or custom plugin:
-
-```php
-// Enable JWT Authentication
-add_filter('jwt_auth_cors_allow_headers', function($headers) {
-    $headers[] = 'Authorization';
-    return $headers;
-});
-
-// Allow JWT authentication for REST API
-add_filter('rest_authentication_errors', function($result) {
-    if (!empty($result)) {
-        return $result;
-    }
-    if (!is_user_logged_in()) {
-        return true;
-    }
-    return $result;
-});
-
-// Add CORS headers
-add_action('rest_api_init', function() {
-    remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
-    add_filter('rest_pre_serve_request', function($value) {
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT, DELETE');
-        header('Access-Control-Allow-Credentials: true');
-        header('Access-Control-Expose-Headers: Link');
-        header('Access-Control-Allow-Headers: Authorization, Content-Type');
-        return $value;
-    });
-}, 15);
+```graphql
+mutation RefreshAuthToken($input: RefreshJwtAuthTokenInput!) {
+  refreshJwtAuthToken(input: $input) {
+    authToken
+  }
+}
 ```
 
-### 4. API Endpoints Available
+### Get Current User Query
 
-After JWT plugin installation, these endpoints will be available:
+```graphql
+query GetCurrentUser {
+  viewer {
+    id
+    name
+    email
+    roles {
+      nodes {
+        name
+        key
+      }
+    }
+    avatar {
+      url
+    }
+    url
+    description
+    slug
+  }
+}
+```
 
-- `POST /wp-json/jwt-auth/v1/token` - Login
-- `POST /wp-json/jwt-auth/v1/token/validate` - Validate token
-- `POST /wp-json/jwt-auth/v1/token/refresh` - Refresh token
-- `POST /wp-json/jwt-auth/v1/token/revoke` - Logout
-- `GET /wp-json/wp/v2/users/me` - Get current user
+**Note:** The WPGraphQL JWT Authentication plugin does not provide logout or token validation mutations. Logout is handled by clearing the local token, and token validation is done by attempting to fetch the current user.
 
-## Testing the Implementation
+## WordPress Backend Requirements
 
-### 1. Test Authentication Flow
+### 1. GraphQL Plugin
 
-1. **Start the Quasar app**: `pnpm dev`
-2. **Navigate to login page**: `/login`
-3. **Enter WordPress credentials**
-4. **Verify successful login** and redirect
-5. **Check user menu** in header
-6. **Test logout functionality**
+Install and configure a WordPress GraphQL plugin that supports JWT authentication:
 
-### 2. Test Protected Routes
+- **WPGraphQL** (recommended): https://wordpress.org/plugins/wp-graphql/
+- **WPGraphQL for JWT Authentication**: https://github.com/wp-graphql/wp-graphql-jwt-authentication
 
-1. **Add route guards** to protected pages
-2. **Test unauthorized access** redirects to login
-3. **Test authenticated access** works normally
-4. **Test role-based access** for admin features
+### 2. JWT Authentication Setup
 
-### 3. Test API Integration
+1. Install the JWT Authentication plugin:
 
-1. **Verify token injection** in API requests
-2. **Test 401 handling** with invalid tokens
-3. **Test automatic logout** on token expiry
-4. **Test token refresh** functionality
+   ```bash
+   composer require wp-graphql/wp-graphql-jwt-authentication
+   ```
+
+2. Add the following to your `wp-config.php`:
+
+   ```php
+   define('GRAPHQL_JWT_AUTH_SECRET_KEY', 'your-secret-key-here');
+   define('GRAPHQL_JWT_AUTH_CORS_ENABLE', true);
+   ```
+
+3. Configure CORS headers in your `.htaccess` or server configuration:
+   ```apache
+   <IfModule mod_headers.c>
+       Header always set Access-Control-Allow-Origin "*"
+       Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+       Header always set Access-Control-Allow-Headers "X-Requested-With, Content-Type, Origin, Authorization, Accept, Client-Security-Token, Accept-Encoding"
+   </IfModule>
+   ```
+
+### 3. Environment Configuration
+
+Set the following environment variables in your frontend:
+
+```env
+WORDPRESS_API_URL=http://localhost:10014
+```
+
+The GraphQL endpoint will be automatically constructed as: `${WORDPRESS_API_URL}/graphql`
+
+## Frontend Implementation
+
+### Apollo Client Setup
+
+The frontend uses Apollo Client for GraphQL communication. The client is configured in `src/boot/apollo.ts` with:
+
+- Automatic token injection in request headers
+- Error handling for authentication failures
+- Cache management
+
+### Authentication Service
+
+The `AuthService` class (`src/services/authService.ts`) provides the following methods:
+
+- `login(credentials)`: Authenticate user and return JWT token
+- `logout(token)`: Invalidate JWT token
+- `validateToken(token)`: Check if token is valid
+- `getCurrentUser(token)`: Get current user information
+- `refreshToken(refreshToken)`: Refresh JWT token
+
+### State Management
+
+User authentication state is managed using Pinia store (`src/stores/authStore.ts`) with:
+
+- User information storage
+- Token management
+- Authentication status tracking
+- Automatic token refresh
+
+### Route Guards
+
+Protected routes are secured using Vue Router guards that:
+
+- Check authentication status
+- Redirect unauthenticated users to login
+- Handle token expiration
+
+## Usage Examples
+
+### Login
+
+```typescript
+import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore();
+
+try {
+  await authStore.login({
+    username: 'user@example.com',
+    password: 'password123',
+  });
+  // User is now logged in
+} catch (error) {
+  console.error('Login failed:', error);
+}
+```
+
+### Check Authentication Status
+
+```typescript
+const authStore = useAuthStore();
+
+if (authStore.isAuthenticated) {
+  console.log('User is logged in:', authStore.user);
+} else {
+  console.log('User is not authenticated');
+}
+```
+
+### Logout
+
+```typescript
+const authStore = useAuthStore();
+await authStore.logout();
+```
 
 ## Security Considerations
 
-### 1. Token Security
+1. **Token Storage**: JWT tokens are stored in localStorage. Consider using httpOnly cookies for enhanced security in production.
 
-- **Use strong secret keys** for JWT signing
-- **Set appropriate token expiry** (24 hours recommended)
-- **Implement token refresh** before expiry
-- **Secure token storage** (httpOnly cookies preferred)
+2. **Token Expiration**: Implement automatic token refresh before expiration.
 
-### 2. CORS Configuration
+3. **HTTPS**: Always use HTTPS in production to secure token transmission.
 
-- **Restrict origins** to your app domain
-- **Limit allowed methods** to necessary ones
-- **Secure credentials** handling
-- **Validate Authorization headers**
+4. **CORS**: Configure CORS properly to prevent unauthorized access.
 
-### 3. User Management
+5. **Rate Limiting**: Implement rate limiting on authentication endpoints.
 
-- **Strong password requirements**
-- **Account lockout** for failed attempts
-- **Email verification** for new accounts
-- **Role-based permissions**
+## Testing
 
-## Next Steps
+The authentication system includes comprehensive tests in `src/services/__tests__/authService.test.ts` covering:
 
-### Phase 1: Basic Authentication ✅
+- Successful login scenarios
+- Failed authentication attempts
+- Token validation
+- User information retrieval
+- Logout functionality
 
-- [x] JWT authentication infrastructure
-- [x] Login/logout functionality
-- [x] Route protection
-- [x] User state management
+Run tests with:
 
-### Phase 2: User Features
-
-- [ ] User profile management
-- [ ] Password change functionality
-- [ ] Email verification
-- [ ] Account settings
-
-### Phase 3: Social Features
-
-- [ ] Favorites/likes system
-- [ ] User preferences
-- [ ] Personal dashboard
-- [ ] Activity feed
-
-### Phase 4: Advanced Features
-
-- [ ] OAuth integration (Google, Facebook)
-- [ ] Two-factor authentication
-- [ ] Admin user management
-- [ ] Analytics and monitoring
+```bash
+pnpm test src/services/__tests__/authService.test.ts
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **CORS Errors**: Check WordPress CORS configuration
-2. **401 Unauthorized**: Verify JWT plugin installation
-3. **Token Not Found**: Check secret key configuration
-4. **User Not Found**: Verify WordPress user exists
+1. **CORS Errors**: Ensure your WordPress server is configured to allow requests from your frontend domain.
 
-### Debug Commands
+2. **GraphQL Endpoint Not Found**: Verify that the GraphQL plugin is properly installed and the endpoint is accessible.
 
-```bash
-# Test JWT endpoints
-curl -X POST http://localhost:10014/wp-json/jwt-auth/v1/token \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"test"}'
+3. **JWT Secret Key**: Make sure the `GRAPHQL_JWT_AUTH_SECRET_KEY` is properly set in your WordPress configuration.
 
-# Test user endpoint
-curl -X GET http://localhost:10014/wp-json/wp/v2/users/me \
-  -H "Authorization: Bearer YOUR_TOKEN"
+4. **Token Validation Failures**: Check that the token format matches what the WordPress JWT plugin expects.
+
+### Debug Mode
+
+Enable debug logging by setting the environment variable:
+
+```env
+DEBUG=true
 ```
 
-## Support
+This will log authentication requests and responses to the browser console.
 
-For issues with:
+## Next Steps
 
-- **Frontend implementation**: Check the test files and console logs
-- **WordPress configuration**: Verify plugin installation and settings
-- **API endpoints**: Test with curl commands above
-- **CORS issues**: Check browser network tab and server logs
+1. Install and configure the WordPress GraphQL plugin
+2. Set up JWT authentication on the WordPress backend
+3. Test the authentication flow
+4. Implement additional security measures as needed
+5. Add user registration functionality if required

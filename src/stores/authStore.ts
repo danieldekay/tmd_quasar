@@ -1,5 +1,5 @@
-import { defineStore, readonly } from 'pinia';
-import { ref, computed } from 'vue';
+import { defineStore } from 'pinia';
+import { ref, computed, readonly } from 'vue';
 import { authService } from '../services/authService';
 
 export interface User {
