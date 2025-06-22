@@ -19,7 +19,8 @@ interface APIError extends Error {
 }
 
 const api = axios.create({
-  baseURL: process.env.WORDPRESS_API_URL || 'http://localhost:10014/wp-json/tmd/v3',
+  baseURL:
+    process.env.API_BASE_URL || process.env.API_URL || 'http://localhost:10014/wp-json/tmd/v3',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -103,10 +104,17 @@ api.interceptors.response.use(
             // Update the authorization header with the new token
             const newToken = getJWTToken();
             if (newToken && error.config) {
-              error.config.headers.Authorization = `Bearer ${newToken}`;
+              // Create a new config to avoid the request interceptor overwriting the token
+              const retryConfig = {
+                ...error.config,
+                headers: {
+                  ...error.config.headers,
+                  Authorization: `Bearer ${newToken}`,
+                },
+              };
 
-              // Retry the original request
-              const response = await api.request(error.config);
+              // Retry the original request with the new token
+              const response = await api.request(retryConfig);
               isAttemptingRelogin = false;
               return response;
             }
@@ -123,10 +131,14 @@ api.interceptors.response.use(
         }
       }
 
-      // Auto-relogin failed or not attempted, redirect to login
+      // Auto-relogin failed or not attempted, emit event for app to handle
       if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
         const currentPath = window.location.pathname + window.location.search;
-        window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+        // Emit a custom event that the app can listen to for proper navigation
+        const authRedirectEvent = new CustomEvent('auth:redirect', {
+          detail: { redirectPath: currentPath },
+        });
+        window.dispatchEvent(authRedirectEvent);
       }
     } else if (error.response.status >= 500) {
       // Check for specific business logic errors that return 500 status

@@ -52,7 +52,16 @@ export default defineConfig((/* ctx */) => {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        API_BASE_URL:
+          process.env.NODE_ENV === 'production'
+            ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
+            : 'http://localhost:10014/wp-json/tmd/v3',
+        API_URL:
+          process.env.NODE_ENV === 'production'
+            ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
+            : 'http://localhost:10014/wp-json/tmd/v3',
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,

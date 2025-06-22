@@ -17,6 +17,7 @@
     "test:coverage:watch": "vitest --coverage",
     "dev": "quasar dev",
     "build": "quasar build",
+    "serve": "quasar serve dist/spa",
     "postinstall": "quasar prepare"
   },
   "dependencies": {
