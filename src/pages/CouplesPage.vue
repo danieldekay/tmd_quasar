@@ -12,7 +12,7 @@
     <!-- Results Section -->
     <div class="results-section q-px-lg q-pb-lg">
       <BaseTable
-        :rows="couples"
+        :rows="paginatedCouples"
         :columns="columns"
         :loading="loading"
         :pagination="pagination"
@@ -22,11 +22,11 @@
       >
         <template #navbar>
           <TableNavbar
-            :filtered-count="pagination.rowsNumber"
+            :filtered-count="sortedCouples.length"
             :total-count="totalCouples"
             :has-active-filters="hasActiveFilters"
             :current-page="pagination.page"
-            :total-pages="Math.ceil(pagination.rowsNumber / pagination.rowsPerPage)"
+            :total-pages="Math.ceil(sortedCouples.length / pagination.rowsPerPage)"
             :rows-per-page="pagination.rowsPerPage"
             :loading="loading"
             item-name="couple"
@@ -170,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import BaseTable from '../components/BaseTable.vue';
 import TableNavbar from '../components/TableNavbar.vue';
 import { coupleService } from '../services';
@@ -287,6 +287,96 @@ const columns = [
 // Computed properties
 const hasActiveFilters = computed(() => {
   return !!(searchQuery.value.trim() || selectedCountry.value || selectedPartnershipStyle.value);
+});
+
+// Since we load all couples locally, we use local sorting
+const sortedCouples = computed(() => {
+  if (!pagination.value.sortBy) {
+    return couples.value;
+  }
+
+  return [...couples.value].sort((a, b) => {
+    const field = pagination.value.sortBy;
+    const descending = pagination.value.descending;
+
+    let aVal: unknown;
+    let bVal: unknown;
+
+    // Extract field values based on column field
+    switch (field) {
+      case 'names':
+        aVal = getCoupleNames(a);
+        bVal = getCoupleNames(b);
+        break;
+      case 'follower':
+        aVal = getFollowerName(a);
+        bVal = getFollowerName(b);
+        break;
+      case 'leader':
+        aVal = getLeaderName(a);
+        bVal = getLeaderName(b);
+        break;
+      case 'city':
+        aVal = a.meta_box?.city || '';
+        bVal = b.meta_box?.city || '';
+        break;
+      case 'country':
+        aVal = a.meta_box?.country || '';
+        bVal = b.meta_box?.country || '';
+        break;
+      case 'partnership_style':
+        aVal = a.meta_box?.partnership_style || '';
+        bVal = b.meta_box?.partnership_style || '';
+        break;
+      case 'partnership_started':
+        aVal = a.meta_box?.partnership_started || '';
+        bVal = b.meta_box?.partnership_started || '';
+        break;
+      case 'events_count':
+        aVal = getEventsCount(a);
+        bVal = getEventsCount(b);
+        break;
+      case 'date':
+        aVal = a.date;
+        bVal = b.date;
+        break;
+      default:
+        return 0;
+    }
+
+    // Handle null/undefined values
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return descending ? 1 : -1;
+    if (bVal == null) return descending ? -1 : 1;
+
+    // Handle numbers
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      const result = aVal - bVal;
+      return descending ? -result : result;
+    }
+
+    // Handle dates
+    if (field === 'date' || field === 'partnership_started') {
+      const aDate = new Date(aVal as string).getTime();
+      const bDate = new Date(bVal as string).getTime();
+      const result = aDate - bDate;
+      return descending ? -result : result;
+    }
+
+    // Handle strings
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
+      return descending ? -result : result;
+    }
+
+    return 0;
+  });
+});
+
+const paginatedCouples = computed(() => {
+  const start = (pagination.value.page - 1) * pagination.value.rowsPerPage;
+  const end = start + pagination.value.rowsPerPage;
+  return sortedCouples.value.slice(start, end);
 });
 
 // Helper functions
@@ -449,6 +539,14 @@ const handleRowClick = (evt: Event, couple: Record<string, unknown>) => {
 };
 
 // Initialize the component
+// Watch for changes in sorted results to update pagination
+watch(sortedCouples, (newResults) => {
+  pagination.value.rowsNumber = newResults.length;
+  if (pagination.value.page > Math.ceil(newResults.length / pagination.value.rowsPerPage)) {
+    pagination.value.page = 1;
+  }
+});
+
 onMounted(() => {
   void fetchCouples();
 });

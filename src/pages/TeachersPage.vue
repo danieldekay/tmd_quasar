@@ -12,7 +12,7 @@
     <!-- Results Section -->
     <div class="results-section q-px-lg q-pb-lg">
       <BaseTable
-        :rows="teachers"
+        :rows="paginatedTeachers"
         :columns="columns"
         :loading="loading"
         :pagination="pagination"
@@ -22,11 +22,11 @@
       >
         <template #navbar>
           <TableNavbar
-            :filtered-count="pagination.rowsNumber"
+            :filtered-count="sortedTeachers.length"
             :total-count="totalTeachers"
             :has-active-filters="hasActiveFilters"
             :current-page="pagination.page"
-            :total-pages="Math.ceil(pagination.rowsNumber / pagination.rowsPerPage)"
+            :total-pages="Math.ceil(sortedTeachers.length / pagination.rowsPerPage)"
             :rows-per-page="pagination.rowsPerPage"
             :loading="loading"
             item-name="teacher"
@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BaseTable from '../components/BaseTable.vue';
 import TableNavbar from '../components/TableNavbar.vue';
@@ -281,6 +281,88 @@ const hasActiveFilters = computed(() => {
   );
 });
 
+// Since we load all teachers locally, we use local sorting
+const sortedTeachers = computed(() => {
+  if (!pagination.value.sortBy) {
+    return teachers.value;
+  }
+
+  return [...teachers.value].sort((a, b) => {
+    const field = pagination.value.sortBy;
+    const descending = pagination.value.descending;
+
+    let aVal: unknown;
+    let bVal: unknown;
+
+    // Extract field values based on column field
+    switch (field) {
+      case 'name':
+        aVal = getTeacherName(a);
+        bVal = getTeacherName(b);
+        break;
+      case 'city':
+        aVal = a.meta_box?.city || '';
+        bVal = b.meta_box?.city || '';
+        break;
+      case 'country':
+        aVal = a.meta_box?.country || '';
+        bVal = b.meta_box?.country || '';
+        break;
+      case 'role':
+        aVal = a.meta_box?.role || '';
+        bVal = b.meta_box?.role || '';
+        break;
+      case 'couples_count':
+        aVal = getCouplesCount(a);
+        bVal = getCouplesCount(b);
+        break;
+      case 'events_count':
+        aVal = getEventsCount(a);
+        bVal = getEventsCount(b);
+        break;
+      case 'date':
+        aVal = a.date;
+        bVal = b.date;
+        break;
+      default:
+        return 0;
+    }
+
+    // Handle null/undefined values
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return descending ? 1 : -1;
+    if (bVal == null) return descending ? -1 : 1;
+
+    // Handle numbers
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      const result = aVal - bVal;
+      return descending ? -result : result;
+    }
+
+    // Handle dates
+    if (field === 'date') {
+      const aDate = new Date(aVal as string).getTime();
+      const bDate = new Date(bVal as string).getTime();
+      const result = aDate - bDate;
+      return descending ? -result : result;
+    }
+
+    // Handle strings
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
+      return descending ? -result : result;
+    }
+
+    return 0;
+  });
+});
+
+const paginatedTeachers = computed(() => {
+  const start = (pagination.value.page - 1) * pagination.value.rowsPerPage;
+  const end = start + pagination.value.rowsPerPage;
+  return sortedTeachers.value.slice(start, end);
+});
+
 // Methods
 const loadTeachers = async () => {
   try {
@@ -373,6 +455,14 @@ const handleImageError = (event: Event) => {
 };
 
 // Initialize the component
+// Watch for changes in sorted results to update pagination
+watch(sortedTeachers, (newResults) => {
+  pagination.value.rowsNumber = newResults.length;
+  if (pagination.value.page > Math.ceil(newResults.length / pagination.value.rowsPerPage)) {
+    pagination.value.page = 1;
+  }
+});
+
 onMounted(() => {
   void loadTeachers();
 });

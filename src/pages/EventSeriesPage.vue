@@ -41,122 +41,145 @@
     <div v-else class="results-section q-px-lg q-pb-lg">
       <q-card flat bordered class="content-card">
         <!-- Event Series Table -->
-        <BaseTable
-          :rows="paginatedEventSeries"
-          :columns="columns"
-          :loading="loading"
-          :pagination="tablePagination"
-          row-key="id"
-          @request="onRequest"
-          @row-click="handleRowClick"
-        >
-          <template #navbar>
-            <TableNavbar
-              :filtered-count="filteredEventSeries.length"
-              :total-count="eventSeries.length"
-              :has-active-filters="hasActiveFilters"
-              :current-page="tablePagination.page"
-              :total-pages="Math.ceil(filteredEventSeries.length / tablePagination.rowsPerPage)"
-              :rows-per-page="tablePagination.rowsPerPage"
-              :loading="loading"
-              item-name="event series"
-              item-name-plural="event series"
-              @reload="loadEventSeries"
-              @update:rows-per-page="handleRowsPerPageChange"
-              @update:current-page="goToPage"
-            />
-          </template>
-          <template #body-cell-logo="props">
-            <q-td :props="props" class="cursor-pointer">
-              <q-avatar size="40px" rounded>
-                <img
-                  :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
-                  :alt="`Logo of ${props.row.title}`"
-                />
-              </q-avatar>
-            </q-td>
-          </template>
+        <div>
+          <TableNavbar
+            :filtered-count="sortedEventSeries.length"
+            :total-count="eventSeries.length"
+            :has-active-filters="hasActiveFilters"
+            :current-page="tablePagination.page"
+            :total-pages="Math.ceil(sortedEventSeries.length / tablePagination.rowsPerPage)"
+            :rows-per-page="tablePagination.rowsPerPage"
+            :loading="loading"
+            item-name="event series"
+            item-name-plural="event series"
+            @reload="loadEventSeries"
+            @update:rows-per-page="handleRowsPerPageChange"
+            @update:current-page="goToPage"
+          />
+          <q-table
+            :rows="paginatedEventSeries"
+            :columns="columns"
+            :loading="loading"
+            :pagination="tablePagination"
+            :rows-per-page-options="[10, 20, 50, 100]"
+            row-key="id"
+            flat
+            @row-click="handleRowClick"
+            binary-state-sort
+          >
+            <!-- Custom header with click handlers -->
+            <template #header="props">
+              <q-tr :props="props">
+                <q-th
+                  v-for="col in props.cols"
+                  :key="col.name"
+                  :props="props"
+                  :style="col.style"
+                  @click="col.sortable !== false ? handleColumnSort(col.name) : undefined"
+                  :class="col.sortable !== false ? 'cursor-pointer' : ''"
+                >
+                  {{ col.label }}
+                  <q-icon
+                    v-if="col.sortable !== false && tablePagination.sortBy === col.name"
+                    :name="tablePagination.descending ? 'arrow_downward' : 'arrow_upward'"
+                    size="14px"
+                    class="q-ml-xs"
+                  />
+                </q-th>
+              </q-tr>
+            </template>
+            <template #body-cell-logo="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-avatar size="40px" rounded>
+                  <img
+                    :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
+                    :alt="`Logo of ${props.row.title}`"
+                  />
+                </q-avatar>
+              </q-td>
+            </template>
 
-          <template #body-cell-title="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div class="series-title">{{ formatText(props.row.title) }}</div>
-              <div
-                v-if="props.row.acf?.description"
-                class="series-description text-caption text-grey-6"
-              >
-                {{ formatText(truncateDescription(props.row.acf.description)) }}
-              </div>
-            </q-td>
-          </template>
+            <template #body-cell-title="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div class="series-title">{{ formatText(props.row.title) }}</div>
+                <div
+                  v-if="props.row.acf?.description"
+                  class="series-description text-caption text-grey-6"
+                >
+                  {{ formatText(truncateDescription(props.row.acf.description)) }}
+                </div>
+              </q-td>
+            </template>
 
-          <template #body-cell-start_date="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.start_date" class="date-content">
-                <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
-                {{ formatDate(props.row.start_date) }}
-              </div>
-              <span v-else class="text-grey-5">—</span>
-            </q-td>
-          </template>
+            <template #body-cell-start_date="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div v-if="props.row.start_date" class="date-content">
+                  <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
+                  {{ formatDate(props.row.start_date) }}
+                </div>
+                <span v-else class="text-grey-5">—</span>
+              </q-td>
+            </template>
 
-          <template #body-cell-registration_start_date="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.registration_start_date" class="date-content">
-                <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
-                {{ formatDate(props.row.registration_start_date) }}
-              </div>
-              <span v-else class="text-grey-5">TBD</span>
-            </q-td>
-          </template>
+            <template #body-cell-registration_start_date="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div v-if="props.row.registration_start_date" class="date-content">
+                  <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
+                  {{ formatDate(props.row.registration_start_date) }}
+                </div>
+                <span v-else class="text-grey-5">TBD</span>
+              </q-td>
+            </template>
 
-          <template #body-cell-date_added="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div class="date-content">
-                <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
-                {{ formatDate(props.row.date) }}
-              </div>
-            </q-td>
-          </template>
+            <template #body-cell-date_added="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div class="date-content">
+                  <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
+                  {{ formatDate(props.row.date) }}
+                </div>
+              </q-td>
+            </template>
 
-          <template #body-cell-city="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.city" class="location-content">
-                <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-                {{ formatText(props.row.city) }}
-              </div>
-              <span v-else class="text-grey-5">—</span>
-            </q-td>
-          </template>
+            <template #body-cell-city="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div v-if="props.row.city" class="location-content">
+                  <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+                  {{ formatText(props.row.city) }}
+                </div>
+                <span v-else class="text-grey-5">—</span>
+              </q-td>
+            </template>
 
-          <template #body-cell-country="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.country" class="location-content">
-                <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-                {{ formatText(props.row.country) }}
-              </div>
-              <span v-else class="text-grey-5">—</span>
-            </q-td>
-          </template>
+            <template #body-cell-country="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div v-if="props.row.country" class="location-content">
+                  <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+                  {{ formatText(props.row.country) }}
+                </div>
+                <span v-else class="text-grey-5">—</span>
+              </q-td>
+            </template>
 
-          <template #body-cell-website="props">
-            <q-td :props="props" class="cursor-pointer">
-              <q-btn
-                v-if="props.row.acf?.website"
-                flat
-                round
-                color="secondary"
-                icon="launch"
-                size="sm"
-                :href="props.row.acf.website"
-                target="_blank"
-                @click.stop
-              >
-                <q-tooltip>Visit Website</q-tooltip>
-              </q-btn>
-              <span v-else class="text-grey-5">—</span>
-            </q-td>
-          </template>
-        </BaseTable>
+            <template #body-cell-website="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-btn
+                  v-if="props.row.acf?.website"
+                  flat
+                  round
+                  color="secondary"
+                  icon="launch"
+                  size="sm"
+                  :href="props.row.acf.website"
+                  target="_blank"
+                  @click.stop
+                >
+                  <q-tooltip>Visit Website</q-tooltip>
+                </q-btn>
+                <span v-else class="text-grey-5">—</span>
+              </q-td>
+            </template>
+          </q-table>
+        </div>
       </q-card>
     </div>
   </q-page>
@@ -169,7 +192,6 @@ import { useQuasar } from 'quasar';
 import { eventSeriesService } from '../services';
 import type { EventSeries } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
-import BaseTable from '../components/BaseTable.vue';
 import TableNavbar from '../components/TableNavbar.vue';
 import ListPageHeader from '../components/ListPageHeader.vue';
 import ListFilters from '../components/ListFilters.vue';
@@ -293,10 +315,79 @@ const filteredEventSeries = computed(() => {
   });
 });
 
+const sortedEventSeries = computed(() => {
+  if (!tablePagination.value.sortBy) {
+    return filteredEventSeries.value;
+  }
+
+  return [...filteredEventSeries.value].sort((a, b) => {
+    const field = tablePagination.value.sortBy;
+    const descending = tablePagination.value.descending;
+
+    let aVal: unknown;
+    let bVal: unknown;
+
+    // Extract field values based on field name
+    switch (field) {
+      case 'title':
+        aVal = a.title;
+        bVal = b.title;
+        break;
+      case 'start_date':
+        aVal = a.start_date;
+        bVal = b.start_date;
+        break;
+      case 'registration_start_date':
+        aVal = a.registration_start_date;
+        bVal = b.registration_start_date;
+        break;
+      case 'date_added':
+        aVal = a.date;
+        bVal = b.date;
+        break;
+      case 'date':
+        aVal = a.date;
+        bVal = b.date;
+        break;
+      case 'city':
+        aVal = a.city;
+        bVal = b.city;
+        break;
+      case 'country':
+        aVal = a.country;
+        bVal = b.country;
+        break;
+      default:
+        return 0;
+    }
+
+    // Handle null/undefined values
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return descending ? 1 : -1;
+    if (bVal == null) return descending ? -1 : 1;
+
+    // Handle dates
+    if (field.includes('date')) {
+      const aDate = new Date(aVal as string).getTime();
+      const bDate = new Date(bVal as string).getTime();
+      const result = aDate - bDate;
+      return descending ? -result : result;
+    }
+
+    // Handle strings
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
+      return descending ? -result : result;
+    }
+
+    return 0;
+  });
+});
+
 const paginatedEventSeries = computed(() => {
   const start = (tablePagination.value.page - 1) * tablePagination.value.rowsPerPage;
   const end = start + tablePagination.value.rowsPerPage;
-  return filteredEventSeries.value.slice(start, end);
+  return sortedEventSeries.value.slice(start, end);
 });
 
 const hasActiveFilters = computed(() => {
@@ -363,18 +454,17 @@ const clearFilters = () => {
   tablePagination.value.page = 1;
 };
 
-const onRequest = (requestProp: Record<string, unknown>) => {
-  const requestProps = requestProp as {
-    pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
-  };
-  const { page, rowsPerPage, sortBy, descending } = requestProps.pagination;
-
-  tablePagination.value.page = page;
-  tablePagination.value.rowsPerPage = rowsPerPage;
-  tablePagination.value.sortBy = sortBy || 'date';
-  tablePagination.value.descending = descending;
-
-  // For client-side pagination, we don't need to reload data
+const handleColumnSort = (columnName: string) => {
+  if (tablePagination.value.sortBy === columnName) {
+    // Same column - toggle direction
+    tablePagination.value.descending = !tablePagination.value.descending;
+  } else {
+    // New column - set as sort column, default ascending
+    tablePagination.value.sortBy = columnName;
+    tablePagination.value.descending = false;
+  }
+  // Reset to first page when sorting changes
+  tablePagination.value.page = 1;
 };
 
 const handleRowsPerPageChange = (newRowsPerPage: number) => {
@@ -390,8 +480,8 @@ const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
   navigateToSeries(row as unknown as EventSeries);
 };
 
-// Watch for changes in filtered results to update pagination
-watch(filteredEventSeries, (newResults) => {
+// Watch for changes in sorted results to update pagination
+watch(sortedEventSeries, (newResults) => {
   tablePagination.value.rowsNumber = newResults.length;
   if (
     tablePagination.value.page > Math.ceil(newResults.length / tablePagination.value.rowsPerPage)
