@@ -6,125 +6,138 @@
         title="Events"
         v-bind="!filters.showPastEvents ? { subtitle: '(Future Events Only)' } : {}"
         :show-stats="true"
-        :total-count="state.totalCount"
-        :stats-label="formatEventsText(state.totalCount)"
+        :total-count="pagination.rowsNumber"
+        :stats-label="formatEventsText(pagination.rowsNumber)"
       />
 
       <!-- Filters Section -->
       <div class="q-px-lg q-pb-lg">
-        <ListFilters
-          :enable-search="true"
-          :search-query="filters.searchQuery"
-          search-placeholder="Search events, cities, or countries"
-          :search-debounce="300"
-          :has-active-filters="hasFilters()"
-          :active-filter-count="filterCount()"
-          @update:search-query="(val) => updateFilter('searchQuery', val)"
-          @clear-filters="clearFilters"
-        >
-          <template #filters>
-            <div class="col-xs-12 col-sm-6 col-md-3">
-              <q-select
-                :model-value="filters.selectedCountry"
-                @update:model-value="(val) => updateFilter('selectedCountry', val)"
-                :options="countryOptions"
-                label="Filter by Country"
-                clearable
-                dense
-                outlined
-                emit-value
-                map-options
-                :option-label="getCountryName"
-                :option-value="(opt) => opt"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="flag" />
-                </template>
-              </q-select>
-            </div>
+        <q-card flat bordered class="filters-card">
+          <q-card-section>
+            <div class="row q-gutter-md">
+              <div class="col-xs-12 col-sm-6 col-md-3">
+                <q-select
+                  v-model="filters.selectedCountry"
+                  :options="countryOptions"
+                  label="Filter by Country"
+                  clearable
+                  dense
+                  outlined
+                  emit-value
+                  map-options
+                  :option-label="getCountryName"
+                  :option-value="(opt) => opt"
+                  @update:model-value="onFilterChange"
+                >
+                  <template v-slot:prepend>
+                    <q-icon name="flag" />
+                  </template>
+                </q-select>
+              </div>
 
-            <div class="col-xs-12 col-sm-6 col-md-2">
-              <div class="q-mt-sm">
-                <q-checkbox
-                  :model-value="filters.showPastEvents"
-                  @update:model-value="(val) => updateFilter('showPastEvents', val)"
-                  label="Include past events"
+              <div class="col-xs-12 col-sm-6 col-md-2">
+                <div class="q-mt-sm">
+                  <q-checkbox
+                    v-model="filters.showPastEvents"
+                    label="Include past events"
+                    color="primary"
+                    @update:model-value="onFilterChange"
+                  />
+                </div>
+              </div>
+
+              <div class="col-xs-12 col-sm-6 col-md-2">
+                <q-btn
+                  flat
                   color="primary"
+                  icon="refresh"
+                  label="Clear Filters"
+                  @click="clearFilters"
+                  :disable="!hasActiveFilters()"
                 />
               </div>
             </div>
-          </template>
 
-          <template #active-filters>
-            <q-chip
-              v-if="filters.searchQuery"
-              removable
-              @remove="updateFilter('searchQuery', '')"
-              color="primary"
-              text-color="white"
-              size="sm"
-              icon="search"
-            >
-              Search: "{{ filters.searchQuery }}"
-            </q-chip>
-            <q-chip
-              v-if="filters.selectedCountry"
-              removable
-              @remove="updateFilter('selectedCountry', null)"
-              color="secondary"
-              text-color="white"
-              size="sm"
-              icon="flag"
-            >
-              {{ getCountryName(filters.selectedCountry) }}
-            </q-chip>
-          </template>
-        </ListFilters>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="state.loading" class="loading-section q-px-lg">
-        <q-card flat bordered>
-          <q-card-section class="text-center q-py-xl">
-            <q-spinner-dots color="primary" size="3em" />
-            <p class="text-subtitle1 q-mt-md text-grey-6">Loading events...</p>
+            <!-- Active Filters Display -->
+            <div v-if="hasActiveFilters()" class="q-mt-md">
+              <q-chip
+                v-if="filters.selectedCountry"
+                removable
+                @remove="clearCountryFilter"
+                color="secondary"
+                text-color="white"
+                size="sm"
+                icon="flag"
+              >
+                {{ getCountryName(filters.selectedCountry) }}
+              </q-chip>
+              <q-chip
+                v-if="filters.showPastEvents"
+                removable
+                @remove="clearPastEventsFilter"
+                color="primary"
+                text-color="white"
+                size="sm"
+                icon="event"
+              >
+                Include Past Events
+              </q-chip>
+            </div>
           </q-card-section>
         </q-card>
       </div>
 
-      <!-- Error State -->
-      <div v-else-if="state.error" class="error-section q-px-lg">
-        <OfflineMessage :error="state.error" title="Failed to Load Events" @retry="handleRefresh" />
-      </div>
-
-      <!-- Results Section -->
-      <div v-else class="results-section q-px-lg q-pb-lg">
+      <!-- Events Table -->
+      <div class="q-px-lg q-pb-lg">
         <q-card flat bordered class="content-card">
-          <!-- Events Table -->
-          <BaseTable
-            :rows="filteredEvents"
+          <q-table
+            :rows="events"
             :columns="columns"
-            :loading="state.loading"
-            :pagination="tablePagination"
+            :loading="loading"
+            :pagination="pagination"
             row-key="id"
             @request="onRequest"
             @row-click="handleRowClick"
+            :rows-per-page-options="[10, 20, 50, 100]"
+            binary-state-sort
+            flat
+            bordered
+            class="events-table"
           >
-            <template #navbar>
-              <TableNavbar
-                :filtered-count="filteredEvents.length"
-                :total-count="state.totalCount"
-                :has-active-filters="hasFilters()"
-                :current-page="tablePagination.page"
-                :total-pages="Math.ceil(state.totalCount / tablePagination.rowsPerPage)"
-                :rows-per-page="tablePagination.rowsPerPage"
-                :loading="state.loading"
-                item-name="event"
-                @reload="handleRefresh"
-                @update:rows-per-page="handleRowsPerPageChange"
-                @update:current-page="goToPage"
-              />
+            <!-- Search Input -->
+            <template #top>
+              <div class="row full-width items-center q-gutter-md">
+                <div class="col">
+                  <q-input
+                    v-model="searchQuery"
+                    placeholder="Search events, cities, or countries"
+                    dense
+                    outlined
+                    clearable
+                    @update:model-value="onSearchChange"
+                    @clear="onSearchChange"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="search" />
+                    </template>
+                  </q-input>
+                </div>
+                <div class="col-auto">
+                  <q-btn
+                    flat
+                    round
+                    color="primary"
+                    icon="refresh"
+                    @click="handleRefresh"
+                    :loading="loading"
+                  >
+                    <q-tooltip>Refresh Events</q-tooltip>
+                  </q-btn>
+                </div>
+              </div>
             </template>
+
+            <!-- Custom Cell Templates -->
             <template #body-cell-title="props">
               <q-td :props="props" class="event-title-cell cursor-pointer">
                 <div class="event-title-content">
@@ -137,7 +150,8 @@
                 </div>
               </q-td>
             </template>
-            <template #body-cell-dates="props">
+
+            <template #body-cell-start_date="props">
               <q-td :props="props" class="date-cell cursor-pointer">
                 <div class="date-content">
                   <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
@@ -145,6 +159,7 @@
                 </div>
               </q-td>
             </template>
+
             <template #body-cell-city="props">
               <q-td :props="props" class="city-cell cursor-pointer">
                 <div class="city-content">
@@ -157,6 +172,7 @@
                 </div>
               </q-td>
             </template>
+
             <template #body-cell-country="props">
               <q-td :props="props" class="country-cell cursor-pointer">
                 <div class="country-content">
@@ -167,6 +183,7 @@
                 </div>
               </q-td>
             </template>
+
             <template #body-cell-category="props">
               <q-td :props="props" class="category-cell cursor-pointer">
                 <q-chip
@@ -181,18 +198,45 @@
                 <span v-else class="text-grey-5">—</span>
               </q-td>
             </template>
+
             <template #body-cell-teachers="props">
               <q-td :props="props" class="cursor-pointer">
                 <span class="text-grey-5">TBD</span>
               </q-td>
             </template>
+
             <template #body-cell-status="props">
               <q-td :props="props" class="cursor-pointer">
                 <span class="text-grey-5">—</span>
               </q-td>
             </template>
-          </BaseTable>
+
+            <!-- No Data State -->
+            <template #no-data>
+              <div class="text-center q-py-xl">
+                <q-icon name="event_busy" size="3em" color="grey-4" />
+                <p class="text-subtitle1 q-mt-md text-grey-6">No events found</p>
+                <q-btn
+                  v-if="hasActiveFilters()"
+                  flat
+                  color="primary"
+                  label="Clear Filters"
+                  @click="clearFilters"
+                />
+              </div>
+            </template>
+
+            <!-- Loading State -->
+            <template #loading>
+              <q-inner-loading showing color="primary" />
+            </template>
+          </q-table>
         </q-card>
+      </div>
+
+      <!-- Error State -->
+      <div v-if="error" class="error-section q-px-lg">
+        <OfflineMessage :error="error" title="Failed to Load Events" @retry="handleRefresh" />
       </div>
     </q-page>
   </q-pull-to-refresh>
@@ -208,9 +252,6 @@ import { useEventFilters } from '../composables/useEventFilters';
 import { useCountries } from '../composables/useCountries';
 import OfflineMessage from '../components/OfflineMessage.vue';
 import ListPageHeader from '../components/ListPageHeader.vue';
-import ListFilters from '../components/ListFilters.vue';
-import BaseTable from '../components/BaseTable.vue';
-import TableNavbar from '../components/TableNavbar.vue';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -218,26 +259,18 @@ const $q = useQuasar();
 // Use composables
 const {
   filters,
-  updateFilter,
   clearAllFilters: clearFilters,
-  hasActiveFilters: hasFilters,
-  activeFilterCount: filterCount,
+  hasActiveFilters,
   initializeFilters,
 } = useEventFilters();
 
 const { getCountryName, getCountryOptionsFromCodes } = useCountries();
 
 // State
-const state = ref({
-  events: [] as EventListItem[],
-  loading: false,
-  error: null as string | null,
-  totalCount: 0,
-  totalPages: 0,
-  currentPage: 1,
-  hasNextPage: false,
-  hasPrevPage: false,
-});
+const events = ref<EventListItem[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+const searchQuery = ref('');
 
 const allCountries = ref<Set<string>>(new Set());
 
@@ -270,7 +303,7 @@ const columns = [
     sortable: true,
   },
   {
-    name: 'dates',
+    name: 'start_date',
     label: 'Dates',
     field: 'start_date',
     align: 'left' as const,
@@ -315,22 +348,10 @@ const columns = [
   },
 ];
 
-const filteredEvents = computed(() => {
-  const events = state.value.events || [];
-
-  // If we're showing past events, return all events since API filtering is not applied
-  // If we're not showing past events, the API already filtered for future events
-  if (filters.value.showPastEvents) {
-    return events;
-  }
-
-  // API already filtered for future events, so just return them
-  return events;
-});
-
-const tablePagination = ref({
+// Pagination state
+const pagination = ref({
   sortBy: 'start_date',
-  descending: false,
+  descending: true,
   page: 1,
   rowsPerPage: 20,
   rowsNumber: 0,
@@ -343,31 +364,32 @@ const formatEventsText = (count: number): string => {
   return `${count.toLocaleString()} events`;
 };
 
-const onRequest = (requestProp: Record<string, unknown>) => {
-  const requestProps = requestProp as {
-    pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
-  };
-  const { page, rowsPerPage, sortBy, descending } = requestProps.pagination;
+// Handle q-table request
+const onRequest = async (requestProp: {
+  pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
+}) => {
+  const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
 
-  tablePagination.value.page = page;
-  tablePagination.value.rowsPerPage = rowsPerPage;
-  tablePagination.value.sortBy = sortBy || 'start_date';
-  tablePagination.value.descending = descending;
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy || 'start_date';
+  pagination.value.descending = descending;
 
-  void loadEvents(page);
+  await loadEvents();
 };
 
-const loadEvents = async (page?: number, forceReload = false) => {
-  state.value.loading = true;
-  state.value.error = null;
+// Load events from API
+const loadEvents = async (forceReload = false) => {
+  loading.value = true;
+  error.value = null;
 
   try {
     const params: Record<string, unknown> = {
-      page: page || state.value.currentPage,
-      perPage: filters.value.rowsPerPage,
-      orderby: filters.value.sortBy === 'start_date' ? 'meta_value' : 'title',
-      order: filters.value.descending ? 'desc' : 'asc',
-      meta_key: filters.value.sortBy === 'start_date' ? 'start_date' : undefined,
+      page: pagination.value.page,
+      perPage: pagination.value.rowsPerPage,
+      orderby: pagination.value.sortBy === 'start_date' ? 'meta_value' : 'title',
+      order: pagination.value.descending ? 'desc' : 'asc',
+      meta_key: pagination.value.sortBy === 'start_date' ? 'start_date' : undefined,
       taxonomies: true,
     };
 
@@ -387,8 +409,8 @@ const loadEvents = async (page?: number, forceReload = false) => {
     if (filters.value.selectedCountry) {
       params.country = filters.value.selectedCountry;
     }
-    if (filters.value.searchQuery) {
-      params.search = filters.value.searchQuery;
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
     }
     if (forceReload) {
       params._t = Date.now();
@@ -396,16 +418,8 @@ const loadEvents = async (page?: number, forceReload = false) => {
 
     const response = await eventListService.getEvents(params);
 
-    state.value.events = response.events;
-    state.value.totalCount = response.totalCount;
-    state.value.totalPages = response.totalPages;
-    state.value.currentPage = response.currentPage;
-    state.value.hasNextPage = response.hasNextPage;
-    state.value.hasPrevPage = response.hasPrevPage;
-
-    // Update pagination object
-    tablePagination.value.rowsNumber = response.totalCount;
-    tablePagination.value.page = response.currentPage;
+    events.value = response.events;
+    pagination.value.rowsNumber = response.totalCount;
 
     updateCountrySet(response.events);
 
@@ -419,12 +433,13 @@ const loadEvents = async (page?: number, forceReload = false) => {
     }
   } catch (err) {
     console.error('Error loading events:', err);
-    state.value.error = 'Failed to load events';
+    error.value = 'Failed to load events';
   } finally {
-    state.value.loading = false;
+    loading.value = false;
   }
 };
 
+// Navigation
 const navigateToEvent = (event: EventListItem) => {
   void router.push(`/events/${event.id}`);
 };
@@ -433,36 +448,44 @@ const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
   navigateToEvent(row as unknown as EventListItem);
 };
 
+// Refresh and filter handlers
 const handleRefresh = () => {
-  void loadEvents(1, true);
+  void loadEvents(true);
 };
 
 const handlePullToRefresh = (done: () => void) => {
-  void loadEvents(1, true).finally(() => {
+  void loadEvents(true).finally(() => {
     done();
   });
 };
 
-const goToPage = (page: number) => {
-  if (page >= 1 && page <= state.value.totalPages && page !== state.value.currentPage) {
-    void loadEvents(page);
-  }
+// Filter change handlers
+const onFilterChange = () => {
+  pagination.value.page = 1; // Reset to first page
+  void loadEvents();
 };
 
-const handleRowsPerPageChange = (newRowsPerPage: number) => {
-  updateFilter('rowsPerPage', newRowsPerPage);
-  void loadEvents(1); // Reset to first page when changing rows per page
+const onSearchChange = () => {
+  pagination.value.page = 1; // Reset to first page
+  void loadEvents();
+};
+
+const clearCountryFilter = () => {
+  filters.value.selectedCountry = null;
+  onFilterChange();
+};
+
+const clearPastEventsFilter = () => {
+  filters.value.showPastEvents = false;
+  onFilterChange();
 };
 
 // Watch for filter changes
 watch(
-  [
-    () => filters.value.selectedCountry,
-    () => filters.value.searchQuery,
-    () => filters.value.showPastEvents,
-  ],
+  [() => filters.value.selectedCountry, () => filters.value.showPastEvents],
   () => {
-    void loadEvents(1);
+    pagination.value.page = 1; // Reset to first page
+    void loadEvents();
   },
   { deep: true },
 );

@@ -260,6 +260,11 @@ const linksList: LinkProps[] = [
     link: '/events',
   },
   {
+    title: 'Events (Q)',
+    icon: 'event_note',
+    link: '/events-q',
+  },
+  {
     title: 'DJs',
     icon: 'music_note',
     link: '/djs',

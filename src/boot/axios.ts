@@ -86,10 +86,8 @@ api.interceptors.response.use(
         isAttemptingRelogin = true;
 
         try {
-          // Show notification about re-login attempt
-          const { useAuthNotifications } = await import('../composables/useAuthNotifications');
-          const authNotifications = useAuthNotifications();
-          authNotifications.showAutoReloginAttempt();
+          // Note: Removed notification calls - useAuthNotifications can't be called from axios interceptor
+          // The UI can show re-login state through other means (like auth store state changes)
 
           // Dynamically import auth store to avoid circular dependency
           const { useAuthStore } = await import('../stores/authStore');
@@ -100,7 +98,7 @@ api.interceptors.response.use(
           if (reloginSuccess) {
             // Re-login successful, retry the original request
             console.log('Auto-relogin successful, retrying original request');
-            authNotifications.showAutoReloginSuccess();
+            // Note: Success notification removed - UI can show success through auth state
 
             // Update the authorization header with the new token
             const newToken = getJWTToken();
@@ -114,19 +112,12 @@ api.interceptors.response.use(
             }
           } else {
             // Re-login failed
-            authNotifications.showAutoReloginFailed();
+            console.log('Auto-relogin failed');
+            // Note: Failure notification removed - UI can show failure through auth state
           }
         } catch (reloginError) {
           console.warn('Auto-relogin failed:', reloginError);
-
-          // Show failure notification
-          try {
-            const { useAuthNotifications } = await import('../composables/useAuthNotifications');
-            const authNotifications = useAuthNotifications();
-            authNotifications.showAutoReloginFailed();
-          } catch (notificationError) {
-            console.warn('Failed to show relogin failure notification:', notificationError);
-          }
+          // Note: Error notification removed - UI can show error through auth state
         } finally {
           isAttemptingRelogin = false;
         }

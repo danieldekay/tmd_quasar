@@ -15,7 +15,7 @@ export interface User {
   display_name?: string;
   username?: string;
   email: string;
-  roles: string[];
+  roles: string[] | { nodes: Array<{ name: string }> };
   avatar_urls?: Record<string, string>;
   url?: string;
   description?: string;
@@ -46,7 +46,24 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Computed
   const isAuthenticated = computed(() => Boolean(token.value && user.value));
-  const hasRole = computed(() => (role: string) => user.value?.roles.includes(role) ?? false);
+  const hasRole = computed(() => (role: string) => {
+    if (!user.value?.roles) return false;
+
+    // Handle different possible formats of roles
+    if (Array.isArray(user.value.roles)) {
+      return user.value.roles.includes(role);
+    }
+
+    // If roles is an object with nodes (GraphQL format)
+    if (user.value.roles && typeof user.value.roles === 'object' && 'nodes' in user.value.roles) {
+      const roleNodes = (user.value.roles as { nodes: Array<{ name: string }> }).nodes;
+      if (Array.isArray(roleNodes)) {
+        return roleNodes.some((node) => node?.name === role);
+      }
+    }
+
+    return false;
+  });
   const isAdmin = computed(() => hasRole.value('administrator'));
   const canManageOptions = computed(
     () => hasRole.value('administrator') || hasRole.value('manage_options'),
@@ -120,14 +137,8 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = response.user;
       }
 
-      // Show success notification
-      try {
-        const { useAuthNotifications } = await import('../composables/useAuthNotifications');
-        const authNotifications = useAuthNotifications();
-        authNotifications.showTokenRefreshed();
-      } catch (notificationError) {
-        console.warn('Failed to show token refresh notification:', notificationError);
-      }
+      // Note: Success notification removed - useAuthNotifications can't be called from Pinia store
+      // The UI can show success state through other means (like updating the auth state)
 
       return true;
     } catch (error) {

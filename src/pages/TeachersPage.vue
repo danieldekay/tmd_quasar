@@ -9,172 +9,213 @@
       stats-label="Total Teachers"
     />
 
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-section q-px-lg">
+      <q-card flat bordered>
+        <q-card-section class="text-center q-py-xl">
+          <q-spinner-dots color="primary" size="3em" />
+          <p class="text-subtitle1 q-mt-md text-grey-6">Loading teachers...</p>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="error-section q-px-lg">
+      <q-card flat bordered>
+        <q-card-section class="text-center q-py-xl">
+          <q-icon name="error_outline" color="negative" size="3em" />
+          <p class="text-subtitle1 q-mt-md">{{ error }}</p>
+          <q-btn color="primary" @click="retryLoad" label="Retry" class="q-mt-md" />
+        </q-card-section>
+      </q-card>
+    </div>
+
     <!-- Results Section -->
-    <div class="results-section q-px-lg q-pb-lg">
-      <BaseTable
-        :rows="paginatedTeachers"
-        :columns="columns"
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        @request="onRequest"
-        @row-click="handleRowClick"
-      >
-        <template #navbar>
-          <TableNavbar
-            :filtered-count="sortedTeachers.length"
-            :total-count="totalTeachers"
-            :has-active-filters="hasActiveFilters"
-            :current-page="pagination.page"
-            :total-pages="Math.ceil(sortedTeachers.length / pagination.rowsPerPage)"
-            :rows-per-page="pagination.rowsPerPage"
-            :loading="loading"
-            item-name="teacher"
-            @reload="loadTeachers"
-            @update:rows-per-page="onPerPageChange"
-            @update:current-page="goToPage"
-          />
-        </template>
-        <template #body-cell-image="props">
-          <q-td :props="props">
-            <q-avatar size="40px">
-              <img
-                :src="getTeacherPhoto()"
-                :alt="`Photo of ${getTeacherName(props.row)}`"
-                @error="handleImageError"
-              />
-            </q-avatar>
-          </q-td>
-        </template>
-        <template #body-cell-name="props">
-          <q-td :props="props" class="cursor-pointer">
-            <div class="text-weight-medium">{{ getTeacherName(props.row) }}</div>
-          </q-td>
-        </template>
-        <template #body-cell-city="props">
-          <q-td :props="props" class="cursor-pointer">
-            <div v-if="props.row.meta_box?.city" class="location-content">
-              <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-              {{ props.row.meta_box.city }}
+    <div v-else class="results-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="content-card">
+        <!-- Search and Filter Controls -->
+        <div class="q-pa-md border-bottom">
+          <div class="row q-gutter-md items-center">
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="searchQuery"
+                filled
+                placeholder="Search teachers..."
+                clearable
+                dense
+              >
+                <template v-slot:prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
             </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
-        </template>
-        <template #body-cell-country="props">
-          <q-td :props="props" class="cursor-pointer">
-            <div v-if="props.row.meta_box?.country" class="location-content">
-              <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-              {{ getCountryName(props.row.meta_box.country) }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
-        </template>
-        <template #body-cell-role="props">
-          <q-td :props="props" class="cursor-pointer">
-            <q-chip
-              v-if="props.row.meta_box?.role"
-              :label="props.row.meta_box.role"
-              :color="props.row.meta_box.role === 'leader' ? 'blue' : 'pink'"
-              text-color="white"
-              size="sm"
-              dense
-            />
-            <span v-else class="text-grey-5">-</span>
-          </q-td>
-        </template>
-        <template #body-cell-gender="props">
-          <q-td :props="props" class="cursor-pointer">
-            <q-icon
-              v-if="props.row.meta_box?.gender"
-              :name="props.row.meta_box.gender === 'man' ? 'male' : 'female'"
-              :color="props.row.meta_box.gender === 'man' ? 'blue' : 'pink'"
-              size="sm"
-            />
-            <span v-else class="text-grey-5">-</span>
-          </q-td>
-        </template>
-        <template #body-cell-events_count="props">
-          <q-td :props="props" class="cursor-pointer">
-            <q-badge
-              v-if="getEventsCount(props.row) > 0"
-              :label="getEventsCount(props.row)"
-              color="primary"
-              rounded
-            />
-            <span v-else class="text-grey-5">0</span>
-          </q-td>
-        </template>
-        <template #body-cell-couples_count="props">
-          <q-td :props="props" class="cursor-pointer">
-            <q-badge
-              v-if="getCouplesCount(props.row) > 0"
-              :label="getCouplesCount(props.row)"
-              color="secondary"
-              rounded
-            />
-            <span v-else class="text-grey-5">0</span>
-          </q-td>
-        </template>
-        <template #body-cell-website="props">
-          <q-td :props="props" class="cursor-pointer">
-            <q-btn
-              v-if="props.row.meta_box?.website"
-              flat
-              round
-              color="secondary"
-              icon="launch"
-              size="sm"
-              :href="props.row.meta_box.website"
-              target="_blank"
-              @click.stop
-            >
-              <q-tooltip>Visit Website</q-tooltip>
-            </q-btn>
-            <span v-else class="text-grey-5">-</span>
-          </q-td>
-        </template>
-        <template #body-cell-date="props">
-          <q-td :props="props" class="cursor-pointer">
-            <div class="text-caption">{{ formatDate(props.row.date) }}</div>
-          </q-td>
-        </template>
-        <template #body-cell-actions="props">
-          <q-td :props="props" class="cursor-pointer">
-            <div class="row q-gutter-xs">
+            <div class="col-12 col-md-auto">
               <q-btn
                 flat
-                round
                 color="primary"
-                icon="visibility"
-                size="sm"
+                icon="refresh"
+                label="Reload"
+                @click="() => fetchTeachers(true)"
+                :loading="loading"
+              />
+            </div>
+            <div class="col-12 col-md-auto">
+              <q-btn
+                v-if="searchQuery.trim()"
+                flat
+                color="secondary"
+                icon="clear"
+                label="Clear Search"
+                @click="searchQuery = ''"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Quasar Table -->
+        <q-table
+          :rows="teachers"
+          :columns="columns"
+          :loading="loading"
+          :pagination="pagination"
+          :rows-per-page-options="[10, 20, 50, 100]"
+          :filter="searchQuery"
+          row-key="id"
+          flat
+          @row-click="handleRowClick"
+          @request="onRequest"
+          class="teachers-table"
+          binary-state-sort
+        >
+          <template #body-cell-name="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-btn
+                :label="getTeacherName(props.row)"
+                flat
+                no-caps
+                color="primary"
+                class="text-weight-medium q-pa-none"
+                style="text-align: left; justify-content: flex-start"
                 :to="`/teachers/${props.row.id}`"
                 @click.stop
-              >
-                <q-tooltip>View Details</q-tooltip>
-              </q-btn>
-              <q-btn
-                flat
-                round
-                color="secondary"
-                icon="edit"
+              />
+            </q-td>
+          </template>
+
+          <template #body-cell-role="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-chip
+                v-if="props.row.meta_box?.role"
+                :label="formatRole(props.row.meta_box.role)"
+                :color="getRoleColor(props.row.meta_box.role)"
+                text-color="white"
                 size="sm"
-                @click.stop="editTeacher(props.row)"
+                dense
+              />
+              <span v-else class="text-grey-5">-</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-gender="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-icon
+                v-if="props.row.meta_box?.gender"
+                :name="getGenderIcon(props.row.meta_box.gender)"
+                :color="getGenderColor(props.row.meta_box.gender)"
+                size="sm"
               >
-                <q-tooltip>Edit Teacher</q-tooltip>
-              </q-btn>
-            </div>
-          </q-td>
-        </template>
-      </BaseTable>
+                <q-tooltip>{{ formatGender(props.row.meta_box.gender) }}</q-tooltip>
+              </q-icon>
+              <span v-else class="text-grey-5">-</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-city="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.meta_box?.city" class="location-content">
+                <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+                {{ props.row.meta_box.city }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-country="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.meta_box?.country" class="location-content">
+                <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+                {{ getCountryName(props.row.meta_box.country) }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-specializations="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div
+                v-if="props.row.meta_box?.specializations?.length"
+                class="specializations-container"
+              >
+                <q-chip
+                  v-for="spec in props.row.meta_box.specializations.slice(0, 2)"
+                  :key="spec"
+                  :label="spec"
+                  color="purple"
+                  text-color="white"
+                  size="xs"
+                  dense
+                  class="q-mr-xs"
+                />
+                <q-chip
+                  v-if="props.row.meta_box.specializations.length > 2"
+                  :label="`+${props.row.meta_box.specializations.length - 2}`"
+                  color="grey"
+                  text-color="white"
+                  size="xs"
+                  dense
+                >
+                  <q-tooltip>
+                    All specializations: {{ props.row.meta_box.specializations.join(', ') }}
+                  </q-tooltip>
+                </q-chip>
+              </div>
+              <span v-else class="text-grey-5">-</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-teaching_since="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.meta_box?.teaching_since" class="text-caption">
+                {{ props.row.meta_box.teaching_since }}
+              </div>
+              <span v-else class="text-grey-5">-</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-dancing_since="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.meta_box?.dancing_since" class="text-caption">
+                {{ props.row.meta_box.dancing_since }}
+              </div>
+              <span v-else class="text-grey-5">-</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-date="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div class="text-caption">{{ formatDate(props.row.date) }}</div>
+            </q-td>
+          </template>
+        </q-table>
+      </q-card>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import BaseTable from '../components/BaseTable.vue';
-import TableNavbar from '../components/TableNavbar.vue';
+import { useQuasar } from 'quasar';
 import { teacherService } from '../services';
 import type { Teacher } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
@@ -182,6 +223,7 @@ import { useCountries } from '../composables/useCountries';
 import ListPageHeader from '../components/ListPageHeader.vue';
 
 const router = useRouter();
+const $q = useQuasar();
 const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
 
@@ -189,12 +231,10 @@ const { getCountryName } = useCountries();
 const teachers = ref<Teacher[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
-const searchQuery = ref('');
-const selectedCountry = ref('');
-const selectedRole = ref('');
-const selectedGender = ref('');
 const totalTeachers = ref(0);
+const searchQuery = ref('');
 
+// Quasar table pagination
 const pagination = ref({
   sortBy: 'date',
   descending: true,
@@ -203,39 +243,15 @@ const pagination = ref({
   rowsNumber: 0,
 });
 
-// Table columns
+// Table columns (using Quasar's built-in sorting)
 const columns = [
   {
-    name: 'image',
-    label: '',
-    field: 'image',
-    align: 'center' as const,
-    sortable: false,
-    style: 'width: 60px',
-  },
-  {
     name: 'name',
-    label: 'Teacher',
+    label: 'Name',
     field: (row: Record<string, unknown>) => getTeacherName(row as unknown as Teacher),
     align: 'left' as const,
     sortable: true,
-    style: 'width: 200px',
-  },
-  {
-    name: 'city',
-    label: 'City',
-    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.city || '',
-    align: 'left' as const,
-    style: 'width: 120px',
-    sortable: true,
-  },
-  {
-    name: 'country',
-    label: 'Country',
-    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.country || '',
-    align: 'left' as const,
-    style: 'width: 120px',
-    sortable: true,
+    style: 'width: 25%;',
   },
   {
     name: 'role',
@@ -243,131 +259,166 @@ const columns = [
     field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.role || '',
     align: 'center' as const,
     sortable: true,
-    style: 'width: 100px',
+    style: 'width: 10%;',
   },
   {
-    name: 'couples_count',
-    label: 'Couples',
-    field: (row: Record<string, unknown>) => getCouplesCount(row as unknown as Teacher),
+    name: 'gender',
+    label: 'Gender',
+    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.gender || '',
     align: 'center' as const,
     sortable: true,
-    style: 'width: 80px',
+    style: 'width: 8%;',
   },
   {
-    name: 'events_count',
-    label: 'Events',
-    field: (row: Record<string, unknown>) => getEventsCount(row as unknown as Teacher),
+    name: 'city',
+    label: 'City',
+    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.city || '',
+    align: 'left' as const,
+    sortable: true,
+    style: 'width: 12%;',
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.country || '',
+    align: 'left' as const,
+    sortable: true,
+    style: 'width: 12%;',
+  },
+  {
+    name: 'specializations',
+    label: 'Specializations',
+    field: (row: Record<string, unknown>) =>
+      (row as unknown as Teacher).meta_box?.specializations?.join(', ') || '',
+    align: 'left' as const,
+    sortable: true,
+    style: 'width: 20%;',
+  },
+  {
+    name: 'teaching_since',
+    label: 'Teaching Since',
+    field: (row: Record<string, unknown>) =>
+      (row as unknown as Teacher).meta_box?.teaching_since || '',
     align: 'center' as const,
     sortable: true,
-    style: 'width: 80px',
+    style: 'width: 10%;',
+  },
+  {
+    name: 'dancing_since',
+    label: 'Dancing Since',
+    field: (row: Record<string, unknown>) =>
+      (row as unknown as Teacher).meta_box?.dancing_since || '',
+    align: 'center' as const,
+    sortable: true,
+    style: 'width: 10%;',
   },
   {
     name: 'date',
     label: 'Added',
     field: 'date',
-    align: 'left' as const,
+    align: 'center' as const,
     sortable: true,
-    style: 'width: 100px',
+    style: 'width: 8%;',
   },
 ];
 
-// Computed properties
-const hasActiveFilters = computed(() => {
-  return !!(
-    searchQuery.value.trim() ||
-    selectedCountry.value ||
-    selectedRole.value ||
-    selectedGender.value
-  );
-});
-
-// Since we load all teachers locally, we use local sorting
-const sortedTeachers = computed(() => {
-  if (!pagination.value.sortBy) {
-    return teachers.value;
+// Helper functions
+const getTeacherName = (teacher: Teacher): string => {
+  if (teacher.meta_box?.first_name && teacher.meta_box?.last_name) {
+    return `${teacher.meta_box.first_name} ${teacher.meta_box.last_name}`;
   }
 
-  return [...teachers.value].sort((a, b) => {
-    const field = pagination.value.sortBy;
-    const descending = pagination.value.descending;
+  if (teacher.meta_box?.nickname) {
+    return teacher.meta_box.nickname;
+  }
 
-    let aVal: unknown;
-    let bVal: unknown;
+  return teacher.title || 'Unknown Teacher';
+};
 
-    // Extract field values based on column field
-    switch (field) {
-      case 'name':
-        aVal = getTeacherName(a);
-        bVal = getTeacherName(b);
-        break;
-      case 'city':
-        aVal = a.meta_box?.city || '';
-        bVal = b.meta_box?.city || '';
-        break;
-      case 'country':
-        aVal = a.meta_box?.country || '';
-        bVal = b.meta_box?.country || '';
-        break;
-      case 'role':
-        aVal = a.meta_box?.role || '';
-        bVal = b.meta_box?.role || '';
-        break;
-      case 'couples_count':
-        aVal = getCouplesCount(a);
-        bVal = getCouplesCount(b);
-        break;
-      case 'events_count':
-        aVal = getEventsCount(a);
-        bVal = getEventsCount(b);
-        break;
-      case 'date':
-        aVal = a.date;
-        bVal = b.date;
-        break;
-      default:
-        return 0;
-    }
+const formatRole = (role: string): string => {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+};
 
-    // Handle null/undefined values
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return descending ? 1 : -1;
-    if (bVal == null) return descending ? -1 : 1;
+const getRoleColor = (role: string): string => {
+  switch (role.toLowerCase()) {
+    case 'leader':
+      return 'primary';
+    case 'follower':
+      return 'secondary';
+    case 'both':
+      return 'purple';
+    default:
+      return 'grey';
+  }
+};
 
-    // Handle numbers
-    if (typeof aVal === 'number' && typeof bVal === 'number') {
-      const result = aVal - bVal;
-      return descending ? -result : result;
-    }
+const formatGender = (gender: string): string => {
+  switch (gender.toLowerCase()) {
+    case 'm':
+    case 'male':
+      return 'Male';
+    case 'f':
+    case 'female':
+      return 'Female';
+    case 'nb':
+    case 'non-binary':
+      return 'Non-binary';
+    default:
+      return gender;
+  }
+};
 
-    // Handle dates
-    if (field === 'date') {
-      const aDate = new Date(aVal as string).getTime();
-      const bDate = new Date(bVal as string).getTime();
-      const result = aDate - bDate;
-      return descending ? -result : result;
-    }
+const getGenderIcon = (gender: string): string => {
+  switch (gender.toLowerCase()) {
+    case 'm':
+    case 'male':
+      return 'male';
+    case 'f':
+    case 'female':
+      return 'female';
+    case 'nb':
+    case 'non-binary':
+      return 'transgender';
+    default:
+      return 'person';
+  }
+};
 
-    // Handle strings
-    if (typeof aVal === 'string' && typeof bVal === 'string') {
-      const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
-      return descending ? -result : result;
-    }
+const getGenderColor = (gender: string): string => {
+  switch (gender.toLowerCase()) {
+    case 'm':
+    case 'male':
+      return 'blue';
+    case 'f':
+    case 'female':
+      return 'pink';
+    case 'nb':
+    case 'non-binary':
+      return 'purple';
+    default:
+      return 'grey';
+  }
+};
 
-    return 0;
-  });
-});
+// Quasar table request handler
+const onRequest = (props: {
+  pagination: { sortBy?: string; descending: boolean; page: number; rowsPerPage: number };
+}) => {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination;
 
-const paginatedTeachers = computed(() => {
-  const start = (pagination.value.page - 1) * pagination.value.rowsPerPage;
-  const end = start + pagination.value.rowsPerPage;
-  return sortedTeachers.value.slice(start, end);
-});
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy || 'date';
+  pagination.value.descending = descending;
+  pagination.value.rowsNumber = teachers.value.length;
+};
 
 // Methods
-const loadTeachers = async () => {
+const fetchTeachers = async (showNotification = false) => {
   try {
     loading.value = true;
     error.value = null;
+
     // Get the first page to retrieve total count, then fetch all if needed
     const response = await teacherService.getTeachers();
 
@@ -375,13 +426,21 @@ const loadTeachers = async () => {
     if (response.total > 10) {
       const allResponse = await teacherService.getTeachers({ per_page: response.total });
       teachers.value = allResponse.teachers;
-      totalTeachers.value = allResponse.total;
     } else {
       teachers.value = response.teachers;
-      totalTeachers.value = response.total;
     }
 
+    totalTeachers.value = teachers.value.length;
     pagination.value.rowsNumber = teachers.value.length;
+
+    if (showNotification) {
+      $q?.notify?.({
+        type: 'positive',
+        message: 'Teachers refreshed successfully',
+        position: 'top',
+        timeout: 2000,
+      });
+    }
   } catch (err) {
     console.error('Error loading teachers:', err);
     error.value = 'Failed to load teachers';
@@ -390,95 +449,74 @@ const loadTeachers = async () => {
   }
 };
 
-const onRequest = (requestProp: Record<string, unknown>) => {
-  const requestProps = requestProp as {
-    pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
-  };
-  const { page, rowsPerPage, sortBy, descending } = requestProps.pagination;
-
-  pagination.value.page = page;
-  pagination.value.rowsPerPage = rowsPerPage;
-  pagination.value.sortBy = sortBy || 'date';
-  pagination.value.descending = descending;
-
-  // For now, we'll just use client-side pagination since we load all teachers
-  // In the future, this could be enhanced to use server-side pagination
-};
-
-const onPerPageChange = (newRowsPerPage: number) => {
-  pagination.value.rowsPerPage = newRowsPerPage;
-  pagination.value.page = 1;
-};
-
-const goToPage = (page: number) => {
-  pagination.value.page = page;
-};
-
-const handleRowClick = (evt: Event, teacher: Teacher) => {
+const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
+  const teacher = row as unknown as Teacher;
   void router.push(`/teachers/${teacher.id}`);
 };
 
-// Helper functions
-const getEventsCount = (teacher: Teacher): number => {
-  if (teacher._embedded?.events) {
-    return teacher._embedded.events.length;
-  }
-  return 0;
+const retryLoad = () => {
+  error.value = null;
+  void fetchTeachers();
 };
-
-const getCouplesCount = (teacher: Teacher): number => {
-  if (teacher._embedded?.couples) {
-    return teacher._embedded.couples.length;
-  }
-  return 0;
-};
-
-const getTeacherName = (teacher: Teacher): string => {
-  const firstName = teacher.meta_box?.first_name || '';
-  const lastName = teacher.meta_box?.last_name || '';
-  return `${firstName} ${lastName}`.trim() || teacher.title || 'Unknown';
-};
-
-const getTeacherPhoto = (): string => {
-  return 'https://cdn.quasar.dev/img/avatar.png';
-};
-
-const editTeacher = (teacher: Teacher) => {
-  void router.push(`/teachers/${teacher.id}/edit`);
-};
-
-const handleImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.src = 'https://cdn.quasar.dev/img/avatar.png';
-  }
-};
-
-// Initialize the component
-// Watch for changes in sorted results to update pagination
-watch(sortedTeachers, (newResults) => {
-  pagination.value.rowsNumber = newResults.length;
-  if (pagination.value.page > Math.ceil(newResults.length / pagination.value.rowsPerPage)) {
-    pagination.value.page = 1;
-  }
-});
 
 onMounted(() => {
-  void loadTeachers();
+  void fetchTeachers();
 });
 </script>
 
 <style lang="scss" scoped>
 .teachers-directory {
-  background: #fafafa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
 
-.results-section {
-  padding-top: 20px;
+.loading-section,
+.error-section {
+  margin-bottom: 16px;
 }
-</style>
 
-<style lang="scss" scoped>
-// Any custom styles if needed
+.content-card {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.border-bottom {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.teachers-table {
+  :deep(.q-table tbody tr) {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.04);
+    }
+  }
+
+  :deep(.q-table th) {
+    font-weight: 600;
+    color: #424242;
+  }
+}
+
+.location-content {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+
+  .q-icon {
+    opacity: 0.8;
+  }
+}
+
+.specializations-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 </style>

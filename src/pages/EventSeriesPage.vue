@@ -2,10 +2,11 @@
   <q-page class="event-series-directory">
     <!-- Header Section -->
     <ListPageHeader
-      title="Event Series"
+      title="Event Series Directory"
+      subtitle="Discover tango event series from around the world"
       :show-stats="true"
       :total-count="eventSeries.length"
-      :stats-label="formatSeriesText(eventSeries.length)"
+      stats-label="Total Event Series"
     />
 
     <!-- Filters Section -->
@@ -13,13 +14,27 @@
       <ListFilters
         :enable-search="true"
         :search-query="searchQuery"
-        search-placeholder="Search event series..."
+        search-placeholder="Search by series name or description..."
         :search-debounce="300"
         :has-active-filters="hasActiveFilters"
         :active-filter-count="activeFilterCount"
-        @update:search-query="searchQuery = $event"
-        @clear-filters="clearFilters"
-      />
+        @update:search-query="onSearchChange"
+        @clear-filters="clearAllFilters"
+      >
+        <template #active-filters>
+          <q-chip
+            v-if="searchQuery"
+            removable
+            @remove="clearSearch"
+            color="primary"
+            text-color="white"
+            size="sm"
+            icon="search"
+          >
+            Search: "{{ searchQuery }}"
+          </q-chip>
+        </template>
+      </ListFilters>
     </div>
 
     <!-- Loading State -->
@@ -34,152 +49,158 @@
 
     <!-- Error State -->
     <div v-else-if="error" class="error-section q-px-lg">
-      <OfflineMessage :error="error" title="Failed to Load Event Series" @retry="loadEventSeries" />
+      <OfflineMessage :error="error" title="Failed to Load Event Series" @retry="retryLoad" />
     </div>
 
     <!-- Results Section -->
     <div v-else class="results-section q-px-lg q-pb-lg">
       <q-card flat bordered class="content-card">
-        <!-- Event Series Table -->
-        <div>
-          <TableNavbar
-            :filtered-count="sortedEventSeries.length"
-            :total-count="eventSeries.length"
-            :has-active-filters="hasActiveFilters"
-            :current-page="tablePagination.page"
-            :total-pages="Math.ceil(sortedEventSeries.length / tablePagination.rowsPerPage)"
-            :rows-per-page="tablePagination.rowsPerPage"
-            :loading="loading"
-            item-name="event series"
-            item-name-plural="event series"
-            @reload="loadEventSeries"
-            @update:rows-per-page="handleRowsPerPageChange"
-            @update:current-page="goToPage"
-          />
-          <q-table
-            :rows="paginatedEventSeries"
-            :columns="columns"
-            :loading="loading"
-            :pagination="tablePagination"
-            :rows-per-page-options="[10, 20, 50, 100]"
-            row-key="id"
-            flat
-            @row-click="handleRowClick"
-            binary-state-sort
-          >
-            <!-- Custom header with click handlers -->
-            <template #header="props">
-              <q-tr :props="props">
-                <q-th
-                  v-for="col in props.cols"
-                  :key="col.name"
-                  :props="props"
-                  :style="col.style"
-                  @click="col.sortable !== false ? handleColumnSort(col.name) : undefined"
-                  :class="col.sortable !== false ? 'cursor-pointer' : ''"
-                >
-                  {{ col.label }}
-                  <q-icon
-                    v-if="col.sortable !== false && tablePagination.sortBy === col.name"
-                    :name="tablePagination.descending ? 'arrow_downward' : 'arrow_upward'"
-                    size="14px"
-                    class="q-ml-xs"
-                  />
-                </q-th>
-              </q-tr>
-            </template>
-            <template #body-cell-logo="props">
-              <q-td :props="props" class="cursor-pointer">
-                <q-avatar size="40px" rounded>
-                  <img
-                    :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
-                    :alt="`Logo of ${props.row.title}`"
-                  />
-                </q-avatar>
-              </q-td>
-            </template>
-
-            <template #body-cell-title="props">
-              <q-td :props="props" class="cursor-pointer">
-                <div class="series-title">{{ formatText(props.row.title) }}</div>
-                <div
-                  v-if="props.row.acf?.description"
-                  class="series-description text-caption text-grey-6"
-                >
-                  {{ formatText(truncateDescription(props.row.acf.description)) }}
-                </div>
-              </q-td>
-            </template>
-
-            <template #body-cell-start_date="props">
-              <q-td :props="props" class="cursor-pointer">
-                <div v-if="props.row.start_date" class="date-content">
-                  <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
-                  {{ formatDate(props.row.start_date) }}
-                </div>
-                <span v-else class="text-grey-5">—</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-registration_start_date="props">
-              <q-td :props="props" class="cursor-pointer">
-                <div v-if="props.row.registration_start_date" class="date-content">
-                  <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
-                  {{ formatDate(props.row.registration_start_date) }}
-                </div>
-                <span v-else class="text-grey-5">TBD</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-date_added="props">
-              <q-td :props="props" class="cursor-pointer">
-                <div class="date-content">
-                  <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
-                  {{ formatDate(props.row.date) }}
-                </div>
-              </q-td>
-            </template>
-
-            <template #body-cell-city="props">
-              <q-td :props="props" class="cursor-pointer">
-                <div v-if="props.row.city" class="location-content">
-                  <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-                  {{ formatText(props.row.city) }}
-                </div>
-                <span v-else class="text-grey-5">—</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-country="props">
-              <q-td :props="props" class="cursor-pointer">
-                <div v-if="props.row.country" class="location-content">
-                  <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-                  {{ formatText(props.row.country) }}
-                </div>
-                <span v-else class="text-grey-5">—</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-website="props">
-              <q-td :props="props" class="cursor-pointer">
-                <q-btn
-                  v-if="props.row.acf?.website"
-                  flat
-                  round
-                  color="secondary"
-                  icon="launch"
-                  size="sm"
-                  :href="props.row.acf.website"
-                  target="_blank"
-                  @click.stop
-                >
-                  <q-tooltip>Visit Website</q-tooltip>
-                </q-btn>
-                <span v-else class="text-grey-5">—</span>
-              </q-td>
-            </template>
-          </q-table>
+        <!-- Search and Filter Controls -->
+        <div class="q-pa-md border-bottom">
+          <div class="row q-gutter-md items-center">
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="searchQuery"
+                filled
+                placeholder="Search event series..."
+                clearable
+                dense
+                @update:model-value="onSearchChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+            </div>
+            <div class="col-12 col-md-auto">
+              <q-btn
+                flat
+                color="primary"
+                icon="refresh"
+                label="Reload"
+                @click="() => loadEventSeries(true)"
+                :loading="loading"
+              />
+            </div>
+            <div class="col-12 col-md-auto">
+              <q-btn
+                v-if="hasActiveFilters"
+                flat
+                color="secondary"
+                icon="clear"
+                label="Clear Filters"
+                @click="clearAllFilters"
+              />
+            </div>
+          </div>
         </div>
+
+        <!-- Quasar Table -->
+        <q-table
+          :rows="filteredEventSeries"
+          :columns="columns"
+          :loading="loading"
+          :pagination="pagination"
+          :rows-per-page-options="[10, 20, 50, 100]"
+          :filter="searchQuery"
+          row-key="id"
+          flat
+          @row-click="handleRowClick"
+          @request="onRequest"
+          class="event-series-table"
+          binary-state-sort
+        >
+          <template #body-cell-logo="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-avatar size="40px" rounded>
+                <img
+                  :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
+                  :alt="`Logo of ${props.row.title}`"
+                />
+              </q-avatar>
+            </q-td>
+          </template>
+
+          <template #body-cell-title="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div class="series-title">{{ formatText(props.row.title) }}</div>
+              <div
+                v-if="props.row.acf?.description"
+                class="series-description text-caption text-grey-6"
+              >
+                {{ formatText(truncateDescription(props.row.acf.description)) }}
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-start_date="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.start_date" class="date-content">
+                <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
+                {{ formatDate(props.row.start_date) }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-registration_start_date="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.registration_start_date" class="date-content">
+                <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
+                {{ formatDate(props.row.registration_start_date) }}
+              </div>
+              <span v-else class="text-grey-5">TBD</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-date_added="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div class="date-content">
+                <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
+                {{ formatDate(props.row.date) }}
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-city="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.city" class="location-content">
+                <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+                {{ formatText(props.row.city) }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-country="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.country" class="location-content">
+                <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+                {{ formatText(props.row.country) }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-website="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-btn
+                v-if="props.row.acf?.website"
+                flat
+                round
+                color="secondary"
+                icon="launch"
+                size="sm"
+                :href="props.row.acf.website"
+                target="_blank"
+                @click.stop
+              >
+                <q-tooltip>Visit Website</q-tooltip>
+              </q-btn>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+        </q-table>
       </q-card>
     </div>
   </q-page>
@@ -192,7 +213,6 @@ import { useQuasar } from 'quasar';
 import { eventSeriesService } from '../services';
 import type { EventSeries } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
-import TableNavbar from '../components/TableNavbar.vue';
 import ListPageHeader from '../components/ListPageHeader.vue';
 import ListFilters from '../components/ListFilters.vue';
 import OfflineMessage from '../components/OfflineMessage.vue';
@@ -207,7 +227,8 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
 
-const tablePagination = ref({
+// Quasar table pagination (using Quasar's built-in format)
+const pagination = ref({
   sortBy: 'date',
   descending: true,
   page: 1,
@@ -229,7 +250,7 @@ const sortByDate = (a: unknown, b: unknown): number => {
   return getDateValue(a) - getDateValue(b);
 };
 
-// Table columns
+// Table columns (using Quasar's built-in sorting)
 const columns = [
   {
     name: 'logo',
@@ -300,7 +321,7 @@ const columns = [
   },
 ];
 
-// Computed properties
+// Computed properties (using Quasar's built-in filtering)
 const filteredEventSeries = computed(() => {
   if (!searchQuery.value.trim()) {
     return eventSeries.value;
@@ -315,81 +336,6 @@ const filteredEventSeries = computed(() => {
   });
 });
 
-const sortedEventSeries = computed(() => {
-  if (!tablePagination.value.sortBy) {
-    return filteredEventSeries.value;
-  }
-
-  return [...filteredEventSeries.value].sort((a, b) => {
-    const field = tablePagination.value.sortBy;
-    const descending = tablePagination.value.descending;
-
-    let aVal: unknown;
-    let bVal: unknown;
-
-    // Extract field values based on field name
-    switch (field) {
-      case 'title':
-        aVal = a.title;
-        bVal = b.title;
-        break;
-      case 'start_date':
-        aVal = a.start_date;
-        bVal = b.start_date;
-        break;
-      case 'registration_start_date':
-        aVal = a.registration_start_date;
-        bVal = b.registration_start_date;
-        break;
-      case 'date_added':
-        aVal = a.date;
-        bVal = b.date;
-        break;
-      case 'date':
-        aVal = a.date;
-        bVal = b.date;
-        break;
-      case 'city':
-        aVal = a.city;
-        bVal = b.city;
-        break;
-      case 'country':
-        aVal = a.country;
-        bVal = b.country;
-        break;
-      default:
-        return 0;
-    }
-
-    // Handle null/undefined values
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return descending ? 1 : -1;
-    if (bVal == null) return descending ? -1 : 1;
-
-    // Handle dates
-    if (field.includes('date')) {
-      const aDate = new Date(aVal as string).getTime();
-      const bDate = new Date(bVal as string).getTime();
-      const result = aDate - bDate;
-      return descending ? -result : result;
-    }
-
-    // Handle strings
-    if (typeof aVal === 'string' && typeof bVal === 'string') {
-      const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
-      return descending ? -result : result;
-    }
-
-    return 0;
-  });
-});
-
-const paginatedEventSeries = computed(() => {
-  const start = (tablePagination.value.page - 1) * tablePagination.value.rowsPerPage;
-  const end = start + tablePagination.value.rowsPerPage;
-  return sortedEventSeries.value.slice(start, end);
-});
-
 const hasActiveFilters = computed(() => {
   return !!searchQuery.value.trim();
 });
@@ -399,13 +345,6 @@ const activeFilterCount = computed(() => {
 });
 
 // Methods
-const formatSeriesText = (count: number): string => {
-  if (count === 1) {
-    return '1 event series';
-  }
-  return `${count.toLocaleString()} event series`;
-};
-
 const truncateDescription = (description: string): string => {
   if (!description) return '';
   const maxLength = 100;
@@ -414,6 +353,19 @@ const truncateDescription = (description: string): string => {
 
 const navigateToSeries = (series: EventSeries) => {
   void router.push(`/event-series/${series.id}`);
+};
+
+// Quasar table request handler (for pagination and sorting)
+const onRequest = (props: {
+  pagination: { sortBy?: string; descending: boolean; page: number; rowsPerPage: number };
+}) => {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination;
+
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy || 'date';
+  pagination.value.descending = descending;
+  pagination.value.rowsNumber = filteredEventSeries.value.length;
 };
 
 const loadEventSeries = async (showNotification = false) => {
@@ -431,7 +383,7 @@ const loadEventSeries = async (showNotification = false) => {
       eventSeries.value = response.eventSeries;
     }
 
-    tablePagination.value.rowsNumber = eventSeries.value.length;
+    pagination.value.rowsNumber = eventSeries.value.length;
 
     if (showNotification) {
       $q?.notify?.({
@@ -449,44 +401,34 @@ const loadEventSeries = async (showNotification = false) => {
   }
 };
 
-const clearFilters = () => {
+const clearAllFilters = () => {
   searchQuery.value = '';
-  tablePagination.value.page = 1;
+  pagination.value.page = 1;
 };
 
-const handleColumnSort = (columnName: string) => {
-  if (tablePagination.value.sortBy === columnName) {
-    // Same column - toggle direction
-    tablePagination.value.descending = !tablePagination.value.descending;
-  } else {
-    // New column - set as sort column, default ascending
-    tablePagination.value.sortBy = columnName;
-    tablePagination.value.descending = false;
-  }
-  // Reset to first page when sorting changes
-  tablePagination.value.page = 1;
+const clearSearch = () => {
+  searchQuery.value = '';
+  pagination.value.page = 1;
 };
 
-const handleRowsPerPageChange = (newRowsPerPage: number) => {
-  tablePagination.value.rowsPerPage = newRowsPerPage;
-  tablePagination.value.page = 1;
-};
-
-const goToPage = (page: number) => {
-  tablePagination.value.page = page;
+const onSearchChange = () => {
+  pagination.value.page = 1;
 };
 
 const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
   navigateToSeries(row as unknown as EventSeries);
 };
 
-// Watch for changes in sorted results to update pagination
-watch(sortedEventSeries, (newResults) => {
-  tablePagination.value.rowsNumber = newResults.length;
-  if (
-    tablePagination.value.page > Math.ceil(newResults.length / tablePagination.value.rowsPerPage)
-  ) {
-    tablePagination.value.page = 1;
+const retryLoad = () => {
+  error.value = null;
+  void loadEventSeries();
+};
+
+// Watch for changes in filtered results to update pagination
+watch(filteredEventSeries, (newResults) => {
+  pagination.value.rowsNumber = newResults.length;
+  if (pagination.value.page > Math.ceil(newResults.length / pagination.value.rowsPerPage)) {
+    pagination.value.page = 1;
   }
 });
 
@@ -513,6 +455,26 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.border-bottom {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.event-series-table {
+  :deep(.q-table tbody tr) {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.04);
+    }
+  }
+
+  :deep(.q-table th) {
+    font-weight: 600;
+    color: #424242;
+  }
 }
 
 .series-title {
