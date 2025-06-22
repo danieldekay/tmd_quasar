@@ -5,8 +5,7 @@
 The Tango Marathons project is a Vue.js-based frontend application that operates as a modern, performant web application. It functions in a headless manner where:
 
 - WordPress serves as the Content Management System (CMS) and backend, handling all content editing and management.
-- The Vue.js application provides the frontend interface, consuming data via the WordPress REST API.
-- The Vue.js frontend code is integrated within the WordPress `wp-content/` directory, allowing WordPress to serve the Vue application as its active theme or via a plugin.
+- The Vue.js application provides the frontend interface, consuming data via the WordPress REST API. This constitutes a headless WordPress architecture.
 
 ## 2. Technical Stack
 
@@ -20,7 +19,12 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 - **Package Manager**: pnpm
 - **Code Quality**: ESLint + Stylelint
 - **Type Checking**: TypeScript
-- **API Integration**: WordPress REST API at `/wp-json/tmd/v3` (all endpoints use this base)
+- **API Integration**: WordPress REST API.
+  - **Local Development**: Primarily uses `/wp-json/tmd/v3` for all content types.
+  - **Production**:
+    - Events: `/wp-json/tmd/v2`
+    - DJs, Teachers, Event Series: `/wp-json/tmd/v3` and standard WordPress `/wp/json/wp/v2` endpoints.
+  - See `docs/api.md` for detailed endpoint information.
 - **Date Formatting**: All dates are displayed in ISO format (`YYYY-MM-DD`) everywhere in the app for consistency and internationalization.
 - **Linting Rules**: Strict TypeScript and ESLint rules, including no floating promises (`@typescript-eslint/no-floating-promises`), and consistent use of the `void` operator or error handling for all Promises.
 - **User Preferences**: Cookie-based persistence for filters and user preferences with 30-day expiry
@@ -61,12 +65,16 @@ The Tango Marathons project is a Vue.js-based frontend application that operates
 
 ### 3.2 WordPress Integration
 
-- WordPress REST API integration for content consumption
-- Read-only access to WordPress content
-- Authentication for protected API endpoints
-- **Base URL for API:** `/wp-json/tmd/v3` (development and production)
-- **Server-side pagination** with proper WordPress header parsing (`x-wp-total`, `x-wp-totalpages`)
-- **Advanced filtering** support for date ranges, countries, and search queries
+- WordPress REST API integration for content consumption (Headless CMS model).
+- Read-only access to WordPress content.
+- Authentication for protected API endpoints (if applicable, primarily read-only for this frontend).
+- **API Base URLs & Versions (see `docs/api.md` for specifics):**
+  - **Local Development**: Primarily `/wp-json/tmd/v3` for Events, DJs, Teachers, Event Series.
+  - **Production**:
+    - Events: `/wp-json/tmd/v2`
+    - DJs, Teachers, Event Series: `/wp-json/tmd/v3` and standard WordPress `/wp-json/wp/v2`.
+- **Server-side pagination** with proper WordPress header parsing (`x-wp-total`, `x-wp-totalpages`).
+- **Advanced filtering** support for date ranges, countries, and search queries.
 
 ### 3.3 Data Storage & Assets
 
@@ -240,9 +248,9 @@ The project utilizes Quasar's comprehensive component library with enhanced impl
 
 Required environment variables:
 
-- `VITE_WP_API_URL` - WordPress REST API URL (should point to `/wp-json/tmd/v3`)
-- `VITE_WP_USERNAME` - WordPress API username
-- `VITE_WP_PASSWORD` - WordPress API password
+- `VITE_WP_API_URL` - WordPress REST API URL (e.g., `http://localhost:10014/wp-json` for local, `https://www.tangomarathons.com/wp-json` for production. The specific versioned paths like `tmd/v2` or `tmd/v3` will be appended by the services).
+- `VITE_WP_USERNAME` - WordPress API username (if needed for specific endpoints)
+- `VITE_WP_PASSWORD` - WordPress API password (if needed for specific endpoints)
 
 ### 6.2 Development Configuration
 
