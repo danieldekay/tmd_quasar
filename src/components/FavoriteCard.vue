@@ -78,9 +78,9 @@
             <q-icon name="schedule" color="orange" size="20px" />
             <div class="col">
               <div class="text-weight-medium text-orange">Reminder Set</div>
-              <div v-if="reminder.reminderDate" class="text-body2 q-mt-xs">
+              <div v-if="isValidDate(reminder.reminderDate)" class="text-body2 q-mt-xs">
                 <q-icon name="event" size="14px" class="q-mr-xs" />
-                {{ formatDateTime(reminder.reminderDate) }}
+                {{ formatReminderDate(reminder.reminderDate) }}
               </div>
               <div v-if="reminder.reminderNote" class="text-body2 q-mt-xs">
                 <q-icon name="note" size="14px" class="q-mr-xs" />
@@ -101,10 +101,12 @@
     </q-card-section>
 
     <!-- Card Actions -->
-    <q-card-actions align="right" class="q-pt-none">
+    <q-card-actions class="q-pt-none">
       <q-btn flat dense color="primary" icon="visibility" label="View" @click="navigateToDetail" />
 
-      <!-- Interaction Buttons for easy management -->
+      <q-space />
+
+      <!-- Interaction Buttons right-aligned -->
       <InteractionButtons
         :target-id="item.id"
         :target-type="contentTypeMap[item.type] || 'tmd_event'"
@@ -148,20 +150,49 @@ const emit = defineEmits<{
 const router = useRouter();
 const { formatDate } = useFormatters();
 
-// Enhanced date formatting for reminders
+// Enhanced date formatting for reminders with validation
 const formatDateTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+  if (!dateString || dateString === 'Invalid Date') {
+    return 'Invalid Date';
+  }
+
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  } catch {
+    return 'Invalid Date';
+  }
 };
 
-// Type configuration
+// Helper to check if date is valid
+const isValidDate = (dateString?: string): boolean => {
+  if (!dateString || dateString === 'Invalid Date') return false;
+  try {
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  } catch {
+    return false;
+  }
+};
+
+// Helper to format reminder date safely
+const formatReminderDate = (dateString?: string): string => {
+  if (!isValidDate(dateString)) return '';
+  return formatDateTime(dateString!);
+};
+
+// Type configuration with dashboard icons
 const typeConfig = computed(() => {
   const configs = {
     event: { label: 'Event', icon: 'event', color: 'primary' },

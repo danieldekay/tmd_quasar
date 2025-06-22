@@ -1,0 +1,11 @@
+---
+description: 
+globs: *.test.ts
+alwaysApply: false
+---
+Start with simple tests that don't require extensive mocking, before you go to more advanced tests.
+
+Pay attention to:
+- typing. Our linter won't allow any type mismatches or ambiguity.
+
+Run `pnpm test` without watch mode.

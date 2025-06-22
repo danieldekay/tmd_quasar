@@ -85,8 +85,33 @@
                   <q-icon name="favorite" />
                 </q-item-section>
                 <q-item-section>My Favorites</q-item-section>
-                <q-item-section side v-if="getTotalInteractionCount() > 0">
-                  <q-badge :label="getTotalInteractionCount()" color="red-6" rounded />
+                <q-item-section side v-if="getInteractionCounts().total > 0">
+                  <div class="row items-center q-gutter-xs">
+                    <q-badge
+                      v-if="getInteractionCounts().likes > 0"
+                      :label="getInteractionCounts().likes"
+                      color="red-6"
+                      rounded
+                    >
+                      <q-tooltip>{{ getInteractionCounts().likes }} Likes</q-tooltip>
+                    </q-badge>
+                    <q-badge
+                      v-if="getInteractionCounts().bookmarks > 0"
+                      :label="getInteractionCounts().bookmarks"
+                      color="amber-6"
+                      rounded
+                    >
+                      <q-tooltip>{{ getInteractionCounts().bookmarks }} Bookmarks</q-tooltip>
+                    </q-badge>
+                    <q-badge
+                      v-if="getInteractionCounts().reminders > 0"
+                      :label="getInteractionCounts().reminders"
+                      color="green-6"
+                      rounded
+                    >
+                      <q-tooltip>{{ getInteractionCounts().reminders }} Reminders</q-tooltip>
+                    </q-badge>
+                  </div>
                 </q-item-section>
               </q-item>
 
@@ -151,8 +176,33 @@
               <q-icon name="favorite" />
             </q-item-section>
             <q-item-section> My Favorites </q-item-section>
-            <q-item-section side v-if="getTotalInteractionCount() > 0">
-              <q-badge :label="getTotalInteractionCount()" color="red-6" rounded />
+            <q-item-section side v-if="getInteractionCounts().total > 0">
+              <div class="row items-center q-gutter-xs">
+                <q-badge
+                  v-if="getInteractionCounts().likes > 0"
+                  :label="getInteractionCounts().likes"
+                  color="red-6"
+                  rounded
+                >
+                  <q-tooltip>{{ getInteractionCounts().likes }} Likes</q-tooltip>
+                </q-badge>
+                <q-badge
+                  v-if="getInteractionCounts().bookmarks > 0"
+                  :label="getInteractionCounts().bookmarks"
+                  color="amber-6"
+                  rounded
+                >
+                  <q-tooltip>{{ getInteractionCounts().bookmarks }} Bookmarks</q-tooltip>
+                </q-badge>
+                <q-badge
+                  v-if="getInteractionCounts().reminders > 0"
+                  :label="getInteractionCounts().reminders"
+                  color="green-6"
+                  rounded
+                >
+                  <q-tooltip>{{ getInteractionCounts().reminders }} Reminders</q-tooltip>
+                </q-badge>
+              </div>
             </q-item-section>
           </q-item>
 
@@ -321,8 +371,18 @@ function getUserAvatar(): string {
   return '';
 }
 
-function getTotalInteractionCount(): number {
+function getInteractionCounts(): {
+  total: number;
+  likes: number;
+  bookmarks: number;
+  reminders: number;
+} {
   const counts = interactionCache.interactionCounts.value;
-  return counts.likes + counts.bookmarks + counts.reminders + counts.follows;
+  return {
+    total: counts.likes + counts.bookmarks + counts.reminders + counts.follows,
+    likes: counts.likes,
+    bookmarks: counts.bookmarks,
+    reminders: counts.reminders,
+  };
 }
 </script>

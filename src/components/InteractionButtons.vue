@@ -71,7 +71,8 @@
         v-if="
           hasReminder &&
           interactionState.reminder?.date &&
-          isValidDate(interactionState.reminder.date)
+          isValidDate(interactionState.reminder.date) &&
+          formatReminderDate(interactionState.reminder.date) !== 'Invalid Date'
         "
         color="green-8"
         floating
@@ -311,11 +312,14 @@ const isValidDate = (dateStr: string): boolean => {
 };
 
 const formatReminderDate = (dateStr: string): string => {
-  if (!dateStr || !isValidDate(dateStr)) return 'Invalid Date';
+  if (!dateStr || !isValidDate(dateStr)) return '';
   try {
-    return new Date(dateStr).toLocaleDateString();
+    const date = new Date(dateStr);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}/${day}`;
   } catch {
-    return 'Invalid Date';
+    return '';
   }
 };
 </script>
