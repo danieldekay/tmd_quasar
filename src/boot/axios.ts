@@ -83,8 +83,9 @@ api.interceptors.response.use(
       enhancedError.originalError = error;
 
       // Try automatic re-login if not already attempting
-      if (!isAttemptingRelogin) {
+      if (!isAttemptingRelogin && reloginAttempts < MAX_RELOGIN_ATTEMPTS) {
         isAttemptingRelogin = true;
+        reloginAttempts++;
 
         try {
           // Note: Removed notification calls - useAuthNotifications can't be called from axios interceptor
