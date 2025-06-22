@@ -1,6 +1,7 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { interactionService } from '../services/interactionService';
+import { useInteractionCache } from './useInteractionCache';
 import type { InteractionType, ContentType, UserInteraction } from '../services/types';
 import { Notify } from 'quasar';
 
@@ -17,17 +18,23 @@ export interface InteractionState {
 
 export function useInteractions(targetId: number, targetType: ContentType) {
   const authStore = useAuthStore();
+  const cache = useInteractionCache();
 
   // State
   const interactions = ref<UserInteraction[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  // Computed interaction state
+  // Computed interaction state (now uses cache for instant updates)
   const interactionState = computed<InteractionState>(() => {
-    const userInteractions = interactions.value.filter(
-      (i) => i.target_post_id === targetId && i.target_post_type === targetType,
-    );
+    // Get interactions from cache first for instant updates
+    const cachedInteractions = cache.getCachedInteractions(targetId, targetType);
+    const userInteractions =
+      cachedInteractions.length > 0
+        ? cachedInteractions
+        : interactions.value.filter(
+            (i) => i.target_post_id === targetId && i.target_post_type === targetType,
+          );
 
     const liked = userInteractions.some((i) => i.interaction_type === 'like');
     const bookmarked = userInteractions.some((i) => i.interaction_type === 'bookmark');
@@ -51,6 +58,19 @@ export function useInteractions(targetId: number, targetType: ContentType) {
   });
 
   const isAuthenticated = computed(() => authStore.isAuthenticated);
+
+  // Watch cache changes for reactive updates
+  watch(
+    () => cache.cache.value,
+    () => {
+      // Trigger reactivity when cache changes
+      const cachedInteractions = cache.getCachedInteractions(targetId, targetType);
+      if (cachedInteractions.length > 0) {
+        interactions.value = cachedInteractions;
+      }
+    },
+    { deep: true },
+  );
 
   // Methods
   const loadInteractions = async () => {
@@ -220,12 +240,25 @@ export function useInteractions(targetId: number, targetType: ContentType) {
   const toggleLike = async () => {
     try {
       if (interactionState.value.liked) {
+        // Optimistic update - remove from cache immediately
+        cache.removeFromCache(targetId, targetType, 'like');
         await deleteInteraction('like');
       } else {
+        // Optimistic update - add to cache immediately
+        const optimisticInteraction: UserInteraction = {
+          id: Date.now(), // Temporary ID
+          interaction_type: 'like',
+          target_post_id: targetId,
+          target_post_type: targetType,
+          interaction_date: new Date().toISOString(),
+          notification_sent: false,
+        };
+        cache.addToCache(optimisticInteraction, true);
         await createInteraction('like');
       }
     } catch (err) {
-      // Error is already handled and notified in createInteraction/deleteInteraction
+      // On error, reload from server to correct state
+      await loadInteractions();
       console.error('Toggle like failed:', err);
     }
   };
@@ -233,12 +266,22 @@ export function useInteractions(targetId: number, targetType: ContentType) {
   const toggleBookmark = async () => {
     try {
       if (interactionState.value.bookmarked) {
+        cache.removeFromCache(targetId, targetType, 'bookmark');
         await deleteInteraction('bookmark');
       } else {
+        const optimisticInteraction: UserInteraction = {
+          id: Date.now(),
+          interaction_type: 'bookmark',
+          target_post_id: targetId,
+          target_post_type: targetType,
+          interaction_date: new Date().toISOString(),
+          notification_sent: false,
+        };
+        cache.addToCache(optimisticInteraction, true);
         await createInteraction('bookmark');
       }
     } catch (err) {
-      // Error is already handled and notified in createInteraction/deleteInteraction
+      await loadInteractions();
       console.error('Toggle bookmark failed:', err);
     }
   };
@@ -246,18 +289,46 @@ export function useInteractions(targetId: number, targetType: ContentType) {
   const toggleFollow = async () => {
     try {
       if (interactionState.value.following) {
+        cache.removeFromCache(targetId, targetType, 'follow');
         await deleteInteraction('follow');
       } else {
+        const optimisticInteraction: UserInteraction = {
+          id: Date.now(),
+          interaction_type: 'follow',
+          target_post_id: targetId,
+          target_post_type: targetType,
+          interaction_date: new Date().toISOString(),
+          notification_sent: false,
+        };
+        cache.addToCache(optimisticInteraction, true);
         await createInteraction('follow');
       }
     } catch (err) {
-      // Error is already handled and notified in createInteraction/deleteInteraction
+      await loadInteractions();
       console.error('Toggle follow failed:', err);
     }
   };
 
   const setReminder = async (date: string, note: string = '') => {
     try {
+      // Optimistic update - remove existing reminder from cache first
+      if (interactionState.value.reminder) {
+        cache.removeFromCache(targetId, targetType, 'reminder');
+      }
+
+      // Optimistic update - add new reminder to cache immediately
+      const optimisticInteraction: UserInteraction = {
+        id: Date.now(),
+        interaction_type: 'reminder',
+        target_post_id: targetId,
+        target_post_type: targetType,
+        interaction_date: new Date().toISOString(),
+        expires_date: date,
+        reminder_note: note,
+        notification_sent: false,
+      };
+      cache.addToCache(optimisticInteraction, true);
+
       // Remove existing reminder first
       if (interactionState.value.reminder) {
         await deleteInteraction('reminder');
@@ -269,7 +340,7 @@ export function useInteractions(targetId: number, targetType: ContentType) {
         reminder_note: note,
       });
     } catch (err) {
-      // Error is already handled and notified in createInteraction/deleteInteraction
+      await loadInteractions();
       console.error('Set reminder failed:', err);
       throw err; // Re-throw for setReminder to handle in UI
     }
@@ -277,9 +348,10 @@ export function useInteractions(targetId: number, targetType: ContentType) {
 
   const removeReminder = async () => {
     try {
+      cache.removeFromCache(targetId, targetType, 'reminder');
       await deleteInteraction('reminder');
     } catch (err) {
-      // Error is already handled and notified in deleteInteraction
+      await loadInteractions();
       console.error('Remove reminder failed:', err);
       throw err; // Re-throw for removeReminder to handle in UI
     }

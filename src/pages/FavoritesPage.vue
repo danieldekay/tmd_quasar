@@ -1,236 +1,309 @@
 <template>
-  <q-page class="favorites-page">
+  <q-page class="q-pa-md">
     <!-- Header -->
-    <ListPageHeader
-      title="My Favorites"
-      subtitle="Your bookmarked events, teachers, DJs, and more"
-      show-stats
-      :total-count="totalFavorites"
-      stats-label="Total Favorites"
-    />
-
-    <!-- Loading State -->
-    <div v-if="isLoading" class="q-pa-lg">
-      <q-card flat bordered>
-        <q-card-section class="text-center q-pa-xl">
-          <q-spinner-dots size="50px" color="primary" />
-          <div class="text-h6 q-mt-md">Loading your favorites...</div>
-        </q-card-section>
-      </q-card>
+    <div class="row justify-between items-center q-mb-lg">
+      <div>
+        <h1 class="text-h4 text-weight-bold q-mb-xs">My Favorites</h1>
+        <p class="text-grey-6">Your bookmarked events, teachers, DJs, and more</p>
+      </div>
+      <div class="text-right">
+        <div class="text-h5 text-primary text-weight-bold">{{ totalFavorites }}</div>
+        <div class="text-caption text-grey-6">Total Favorites</div>
+      </div>
     </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="q-pa-lg">
-      <OfflineMessage :error="error" title="Failed to load favorites" @retry="loadFavorites" />
+    <!-- Tabs -->
+    <q-tabs
+      v-model="activeTab"
+      dense
+      class="text-grey-6"
+      active-color="primary"
+      indicator-color="primary"
+      align="left"
+    >
+      <q-tab name="all" label="All" :badge="totalFavorites || undefined" />
+      <q-tab name="bookmarks" label="Bookmarks" :badge="bookmarksCount || undefined" />
+      <q-tab name="likes" label="Likes" :badge="likesCount || undefined" />
+      <q-tab name="reminders" label="Reminders" :badge="remindersCount || undefined" />
+      <q-tab name="following" label="Following" :badge="followingCount || undefined" />
+    </q-tabs>
+
+    <q-separator class="q-mb-lg" />
+
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center q-py-xl">
+      <q-spinner-dots size="50px" color="primary" />
+      <div class="text-grey-6 q-mt-md">Loading your favorites...</div>
     </div>
 
     <!-- Content -->
-    <div v-else class="q-pa-lg">
-      <!-- Filter Tabs -->
-      <q-card flat bordered>
-        <q-tabs
-          v-model="activeTab"
-          dense
-          class="text-grey"
-          active-color="primary"
-          indicator-color="primary"
-          align="justify"
-          narrow-indicator
-        >
-          <q-tab name="all" label="All" />
-          <q-tab name="bookmarks" label="Bookmarks" />
-          <q-tab name="likes" label="Likes" />
-          <q-tab name="reminders" label="Reminders" />
-          <q-tab name="follows" label="Following" />
-        </q-tabs>
+    <q-tab-panels v-else v-model="activeTab" animated>
+      <!-- All Tab -->
+      <q-tab-panel name="all">
+        <div v-if="allFavorites.length === 0" class="text-center q-py-xl">
+          <q-icon name="favorite_border" size="60px" color="grey-4" />
+          <div class="text-h6 q-mt-md text-grey-6">No favorites yet</div>
+          <div class="text-body2 text-grey-5 q-mt-sm">
+            Start exploring and bookmark your favorite events, teachers, and DJs
+          </div>
+        </div>
+        <div v-else class="row q-gutter-md">
+          <FavoriteCard
+            v-for="item in allFavorites"
+            :key="`${item.type}_${item.id}`"
+            :item="item"
+            :interaction-type="item.primaryInteraction"
+            @remove="handleRemove"
+          />
+        </div>
+      </q-tab-panel>
 
-        <q-separator />
+      <!-- Bookmarks Tab -->
+      <q-tab-panel name="bookmarks">
+        <div v-if="bookmarks.length === 0" class="text-center q-py-xl">
+          <q-icon name="bookmark_border" size="60px" color="grey-4" />
+          <div class="text-h6 q-mt-md text-grey-6">No bookmarks yet</div>
+          <div class="text-body2 text-grey-5 q-mt-sm">
+            Bookmark events and content to save them for later
+          </div>
+        </div>
+        <div v-else class="row q-gutter-md">
+          <FavoriteCard
+            v-for="item in bookmarks"
+            :key="`${item.type}_${item.id}`"
+            :item="item"
+            interaction-type="bookmark"
+            @remove="handleRemove"
+          />
+        </div>
+      </q-tab-panel>
 
-        <q-tab-panels v-model="activeTab" animated>
-          <!-- All Favorites -->
-          <q-tab-panel name="all" class="q-pa-none">
-            <div v-if="allFavorites.length === 0" class="text-center q-pa-xl">
-              <q-icon name="favorite_border" size="64px" color="grey-5" />
-              <div class="text-h6 q-mt-md">No favorites yet</div>
-              <div class="text-caption text-grey-6">
-                Start exploring and save your favorite content
-              </div>
-              <q-btn
-                color="primary"
-                label="Browse Events"
-                class="q-mt-md"
-                @click="$router.push('/events')"
-              />
-            </div>
-            <div v-else>
-              <ContentList :content="allFavorites" @view="viewContent" @edit="editContent" />
-            </div>
-          </q-tab-panel>
+      <!-- Likes Tab -->
+      <q-tab-panel name="likes">
+        <div v-if="likes.length === 0" class="text-center q-py-xl">
+          <q-icon name="favorite_border" size="60px" color="grey-4" />
+          <div class="text-h6 q-mt-md text-grey-6">No likes yet</div>
+          <div class="text-body2 text-grey-5 q-mt-sm">
+            Like events and content to show your appreciation
+          </div>
+        </div>
+        <div v-else class="row q-gutter-md">
+          <FavoriteCard
+            v-for="item in likes"
+            :key="`${item.type}_${item.id}`"
+            :item="item"
+            interaction-type="like"
+            @remove="handleRemove"
+          />
+        </div>
+      </q-tab-panel>
 
-          <!-- Bookmarks -->
-          <q-tab-panel name="bookmarks" class="q-pa-none">
-            <div v-if="bookmarkedContent.length === 0" class="text-center q-pa-xl">
-              <q-icon name="bookmark_border" size="64px" color="grey-5" />
-              <div class="text-h6 q-mt-md">No bookmarks</div>
-              <div class="text-caption text-grey-6">Bookmark content to save it for later</div>
-            </div>
-            <div v-else>
-              <ContentList :content="bookmarkedContent" @view="viewContent" @edit="editContent" />
-            </div>
-          </q-tab-panel>
+      <!-- Reminders Tab -->
+      <q-tab-panel name="reminders">
+        <div v-if="reminders.length === 0" class="text-center q-py-xl">
+          <q-icon name="schedule" size="60px" color="grey-4" />
+          <div class="text-h6 q-mt-md text-grey-6">No reminders set</div>
+          <div class="text-body2 text-grey-5 q-mt-sm">
+            Set reminders for events so you don't miss them
+          </div>
+        </div>
+        <div v-else class="row q-gutter-md">
+          <FavoriteCard
+            v-for="item in reminders"
+            :key="`${item.type}_${item.id}`"
+            :item="item"
+            interaction-type="reminder"
+            @remove="handleRemove"
+          />
+        </div>
+      </q-tab-panel>
 
-          <!-- Likes -->
-          <q-tab-panel name="likes" class="q-pa-none">
-            <div v-if="likedContent.length === 0" class="text-center q-pa-xl">
-              <q-icon name="favorite_border" size="64px" color="grey-5" />
-              <div class="text-h6 q-mt-md">No liked content</div>
-              <div class="text-caption text-grey-6">Like content to show your appreciation</div>
-            </div>
-            <div v-else>
-              <ContentList :content="likedContent" @view="viewContent" @edit="editContent" />
-            </div>
-          </q-tab-panel>
-
-          <!-- Reminders -->
-          <q-tab-panel name="reminders" class="q-pa-none">
-            <div v-if="reminderContent.length === 0" class="text-center q-pa-xl">
-              <q-icon name="alarm" size="64px" color="grey-5" />
-              <div class="text-h6 q-mt-md">No reminders</div>
-              <div class="text-caption text-grey-6">Set reminders for important events</div>
-            </div>
-            <div v-else>
-              <ContentList :content="reminderContent" @view="viewContent" @edit="editContent" />
-            </div>
-          </q-tab-panel>
-
-          <!-- Following -->
-          <q-tab-panel name="follows" class="q-pa-none">
-            <div v-if="followedContent.length === 0" class="text-center q-pa-xl">
-              <q-icon name="notifications_none" size="64px" color="grey-5" />
-              <div class="text-h6 q-mt-md">Not following anything</div>
-              <div class="text-caption text-grey-6">Follow content to get updates</div>
-            </div>
-            <div v-else>
-              <ContentList :content="followedContent" @view="viewContent" @edit="editContent" />
-            </div>
-          </q-tab-panel>
-        </q-tab-panels>
-      </q-card>
-    </div>
+      <!-- Following Tab -->
+      <q-tab-panel name="following">
+        <div v-if="following.length === 0" class="text-center q-py-xl">
+          <q-icon name="person_add_alt" size="60px" color="grey-4" />
+          <div class="text-h6 q-mt-md text-grey-6">Not following anyone yet</div>
+          <div class="text-body2 text-grey-5 q-mt-sm">
+            Follow teachers, DJs, and event organizers to stay updated
+          </div>
+        </div>
+        <div v-else class="row q-gutter-md">
+          <FavoriteCard
+            v-for="item in following"
+            :key="`${item.type}_${item.id}`"
+            :item="item"
+            interaction-type="follow"
+            @remove="handleRemove"
+          />
+        </div>
+      </q-tab-panel>
+    </q-tab-panels>
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
-import type { DashboardContentItem } from '../composables/useDashboard';
-import ListPageHeader from '../components/ListPageHeader.vue';
-import OfflineMessage from '../components/OfflineMessage.vue';
-import ContentList from '../components/ContentList.vue';
+import { useInteractionCache } from '../composables/useInteractionCache';
+import { contentService, type ContentItem } from '../services/contentService';
+import type { InteractionType } from '../services/types';
+import FavoriteCard from '../components/FavoriteCard.vue';
 
-// Define interface for favorite items with interaction data
-interface FavoriteItem extends DashboardContentItem {
-  interaction_type: 'bookmark' | 'like' | 'reminder' | 'follow';
-  interaction_date: string;
-  expires_date?: string;
-  reminder_note?: string;
-  private_note?: string;
+const activeTab = ref('all');
+const loading = ref(true);
+const { cache, syncWithServer } = useInteractionCache();
+
+// Store content items separately
+const contentItems = ref<Map<string, ContentItem>>(new Map());
+
+// Enhanced interface to handle multiple interactions per item
+interface ConsolidatedFavoriteItem extends ContentItem {
+  interactions: Array<{
+    type: InteractionType;
+    date: string;
+    reminderDate?: string | undefined;
+    reminderNote?: string | undefined;
+  }>;
+  primaryInteraction: InteractionType; // The most recent or important interaction
+  interactionDate: string; // Most recent interaction date
 }
 
-const router = useRouter();
-const authStore = useAuthStore();
-
-// State
-const isLoading = ref(false);
-const error = ref<string | null>(null);
-const activeTab = ref('all');
-const favorites = ref<FavoriteItem[]>([]);
-
-// Computed properties
-const isAuthenticated = computed(() => authStore.isAuthenticated);
-
-const totalFavorites = computed(() => favorites.value.length);
-
-// Filter favorites by interaction type
+// Computed properties for each interaction type
 const allFavorites = computed(() => {
-  // For now, return empty array since the API endpoints are not yet accessible
-  // This will be populated once the interaction endpoints are enabled
-  return favorites.value;
+  const itemsMap = new Map<string, ConsolidatedFavoriteItem>();
+
+  Array.from(cache.value.values()).forEach((cacheItem) => {
+    const contentKey = `${cacheItem.target_post_type}_${cacheItem.target_post_id}`;
+    const content = contentItems.value.get(contentKey);
+
+    if (content) {
+      const itemKey = `${content.type}_${content.id}`;
+
+      if (itemsMap.has(itemKey)) {
+        // Add interaction to existing item
+        const existingItem = itemsMap.get(itemKey)!;
+        existingItem.interactions.push({
+          type: cacheItem.interaction_type,
+          date: cacheItem.interaction_date,
+          reminderDate: cacheItem.expires_date,
+          reminderNote: cacheItem.reminder_note,
+        });
+
+        // Update primary interaction if this one is more recent
+        if (new Date(cacheItem.interaction_date) > new Date(existingItem.interactionDate)) {
+          existingItem.primaryInteraction = cacheItem.interaction_type;
+          existingItem.interactionDate = cacheItem.interaction_date;
+        }
+      } else {
+        // Create new consolidated item
+        const consolidatedItem: ConsolidatedFavoriteItem = {
+          ...content,
+          interactions: [
+            {
+              type: cacheItem.interaction_type,
+              date: cacheItem.interaction_date,
+              reminderDate: cacheItem.expires_date,
+              reminderNote: cacheItem.reminder_note,
+            },
+          ],
+          primaryInteraction: cacheItem.interaction_type,
+          interactionDate: cacheItem.interaction_date,
+        };
+
+        itemsMap.set(itemKey, consolidatedItem);
+      }
+    }
+  });
+
+  return Array.from(itemsMap.values()).sort(
+    (a, b) => new Date(b.interactionDate).getTime() - new Date(a.interactionDate).getTime(),
+  );
 });
 
-const bookmarkedContent = computed(() => {
-  return favorites.value.filter((item) => item.interaction_type === 'bookmark');
-});
+const bookmarks = computed(() =>
+  allFavorites.value.filter((item) =>
+    item.interactions.some((interaction) => interaction.type === 'bookmark'),
+  ),
+);
 
-const likedContent = computed(() => {
-  return favorites.value.filter((item) => item.interaction_type === 'like');
-});
+const likes = computed(() =>
+  allFavorites.value.filter((item) =>
+    item.interactions.some((interaction) => interaction.type === 'like'),
+  ),
+);
 
-const reminderContent = computed(() => {
-  return favorites.value.filter((item) => item.interaction_type === 'reminder');
-});
+const reminders = computed(() =>
+  allFavorites.value.filter((item) =>
+    item.interactions.some((interaction) => interaction.type === 'reminder'),
+  ),
+);
 
-const followedContent = computed(() => {
-  return favorites.value.filter((item) => item.interaction_type === 'follow');
-});
+const following = computed(() =>
+  allFavorites.value.filter((item) =>
+    item.interactions.some((interaction) => interaction.type === 'follow'),
+  ),
+);
 
-// Methods
+// Counts
+const totalFavorites = computed(() => allFavorites.value.length);
+const bookmarksCount = computed(() => bookmarks.value.length);
+const likesCount = computed(() => likes.value.length);
+const remindersCount = computed(() => reminders.value.length);
+const followingCount = computed(() => following.value.length);
+
+// Load favorites content
 const loadFavorites = async () => {
-  if (!isAuthenticated.value) {
-    error.value = 'You must be logged in to view your favorites';
-    return;
-  }
-
-  isLoading.value = true;
-  error.value = null;
+  loading.value = true;
 
   try {
-    // TODO: Implement when interaction endpoints are available
-    // const response = await interactionService.getUserInteractions();
-    // favorites.value = response;
+    // Sync cache to get latest interactions
+    await syncWithServer();
 
-    // For now, show empty state with a small delay to simulate loading
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    favorites.value = [];
+    // Get all content items that need to be fetched
+    const contentToFetch = Array.from(cache.value.values()).map((item) => ({
+      id: item.target_post_id,
+      type: item.target_post_type.replace('tmd_', '') as
+        | 'event'
+        | 'teacher'
+        | 'dj'
+        | 'teacher_couple'
+        | 'event_series',
+    }));
 
-    console.log('Favorites loaded (placeholder)');
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load favorites';
-    console.error('Favorites loading error:', err);
+    if (contentToFetch.length > 0) {
+      // Batch fetch content
+      const fetchedContent = await contentService.getMultipleContent(contentToFetch);
+
+      // Store content in our local map
+      fetchedContent.forEach((content) => {
+        const contentKey = `tmd_${content.type}_${content.id}`;
+        contentItems.value.set(contentKey, content);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to load favorites:', error);
   } finally {
-    isLoading.value = false;
+    loading.value = false;
   }
 };
 
-const viewContent = (content: DashboardContentItem) => {
-  const routes = {
-    event: `/events/${content.id}`,
-    teacher: `/teachers/${content.id}`,
-    dj: `/djs/${content.id}`,
-    'event-series': `/event-series/${content.id}`,
-  };
-
-  const route = routes[content.type as keyof typeof routes];
-  if (route) {
-    void router.push(route);
-  }
+// Handle removing an interaction
+const handleRemove = (item: ConsolidatedFavoriteItem) => {
+  // The FavoriteCard component will handle the actual removal
+  // This is just for any additional cleanup if needed
+  console.log('Removing favorite:', item);
 };
 
-const editContent = (content: DashboardContentItem) => {
-  // Redirect to WordPress admin edit screen
-  const editUrl = `http://localhost:10014/wp-admin/post.php?post=${content.id}&action=edit`;
-  window.open(editUrl, '_blank');
-};
-
-// Lifecycle
 onMounted(() => {
   void loadFavorites();
 });
 </script>
 
-<style lang="scss" scoped>
-.favorites-page {
-  // Add any specific styling for the favorites page here
+<style scoped>
+.q-tab-panels {
+  background: transparent;
+}
+
+.q-tab-panel {
+  padding: 0;
 }
 </style>

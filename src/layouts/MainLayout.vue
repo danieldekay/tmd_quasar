@@ -85,6 +85,9 @@
                   <q-icon name="favorite" />
                 </q-item-section>
                 <q-item-section>My Favorites</q-item-section>
+                <q-item-section side v-if="getTotalInteractionCount() > 0">
+                  <q-badge :label="getTotalInteractionCount()" color="red-6" rounded />
+                </q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup @click="$router.push('/dashboard')">
@@ -148,6 +151,9 @@
               <q-icon name="favorite" />
             </q-item-section>
             <q-item-section> My Favorites </q-item-section>
+            <q-item-section side v-if="getTotalInteractionCount() > 0">
+              <q-badge :label="getTotalInteractionCount()" color="red-6" rounded />
+            </q-item-section>
           </q-item>
 
           <q-item clickable v-ripple to="/dashboard">
@@ -179,10 +185,12 @@ import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
 import { useSessionMonitor } from '../composables/useSessionMonitor';
+import { useInteractionCache } from '../composables/useInteractionCache';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const sessionMonitor = useSessionMonitor();
+const interactionCache = useInteractionCache();
 
 interface LinkProps {
   title: string;
@@ -311,5 +319,10 @@ function getUserAvatar(): string {
   }
 
   return '';
+}
+
+function getTotalInteractionCount(): number {
+  const counts = interactionCache.interactionCounts.value;
+  return counts.likes + counts.bookmarks + counts.reminders + counts.follows;
 }
 </script>

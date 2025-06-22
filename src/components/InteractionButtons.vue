@@ -3,14 +3,15 @@
     <!-- Like Button -->
     <q-btn
       v-if="showLike"
-      :flat="layout === 'floating'"
+      :flat="!isLiked"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="isLiked ? 'red-6' : 'grey-6'"
-      :text-color="isLiked ? 'white' : undefined"
+      :color="isLiked ? 'red-6' : 'grey-8'"
+      :text-color="isLiked ? 'white' : 'white'"
       :unelevated="isLiked"
+      :outline="!isLiked"
       :icon="isLiked ? 'favorite' : 'favorite_border'"
-      :class="buttonClass"
+      :class="[buttonClass, { 'interaction-active': isLiked }]"
       @click="handleToggleLike"
       :loading="isLoading"
     >
@@ -20,14 +21,15 @@
     <!-- Bookmark Button -->
     <q-btn
       v-if="showBookmark"
-      :flat="layout === 'floating'"
+      :flat="!isBookmarked"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="isBookmarked ? 'amber-6' : 'grey-6'"
-      :text-color="isBookmarked ? 'white' : undefined"
+      :color="isBookmarked ? 'amber-6' : 'grey-8'"
+      :text-color="isBookmarked ? 'white' : 'white'"
       :unelevated="isBookmarked"
+      :outline="!isBookmarked"
       :icon="isBookmarked ? 'bookmark' : 'bookmark_border'"
-      :class="buttonClass"
+      :class="[buttonClass, { 'interaction-active': isBookmarked }]"
       @click="handleToggleBookmark"
       :loading="isLoading"
     >
@@ -37,21 +39,24 @@
     <!-- Reminder Button (Events only) -->
     <q-btn
       v-if="showReminder && targetType === 'tmd_event'"
-      :flat="layout === 'floating'"
+      :flat="!hasReminder"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="hasReminder ? 'green-6' : 'grey-6'"
-      :text-color="hasReminder ? 'white' : undefined"
+      :color="hasReminder ? 'green-6' : 'grey-8'"
+      :text-color="hasReminder ? 'white' : 'white'"
       :unelevated="hasReminder"
+      :outline="!hasReminder"
       :icon="hasReminder ? 'notifications_active' : 'notifications_none'"
-      :class="[buttonClass, { 'reminder-pulse': hasReminder }]"
+      :class="[buttonClass, { 'interaction-active': hasReminder, 'reminder-pulse': hasReminder }]"
       @click="openReminderDialog"
       :loading="isLoading"
     >
       <q-tooltip>
         <div v-if="hasReminder">
           <div class="text-weight-bold">Reminder set</div>
-          <div v-if="interactionState.reminder?.date">
+          <div
+            v-if="interactionState.reminder?.date && isValidDate(interactionState.reminder.date)"
+          >
             {{ new Date(interactionState.reminder.date).toLocaleString() }}
           </div>
           <div v-if="interactionState.reminder?.note" class="text-caption">
@@ -63,25 +68,30 @@
       </q-tooltip>
       <!-- Badge for active reminder showing date -->
       <q-badge
-        v-if="hasReminder && interactionState.reminder?.date"
+        v-if="
+          hasReminder &&
+          interactionState.reminder?.date &&
+          isValidDate(interactionState.reminder.date)
+        "
         color="green-8"
         floating
         rounded
-        :label="new Date(interactionState.reminder.date).toLocaleDateString()"
+        :label="formatReminderDate(interactionState.reminder.date)"
       />
     </q-btn>
 
     <!-- Follow Button (Profiles only) -->
     <q-btn
       v-if="showFollow && isProfileType"
-      :flat="layout === 'floating'"
+      :flat="!isFollowing"
       :round="layout === 'floating'"
       :dense="layout === 'compact'"
-      :color="isFollowing ? 'blue-6' : 'grey-6'"
-      :text-color="isFollowing ? 'white' : undefined"
+      :color="isFollowing ? 'blue-6' : 'grey-8'"
+      :text-color="isFollowing ? 'white' : 'white'"
       :unelevated="isFollowing"
+      :outline="!isFollowing"
       :icon="isFollowing ? 'person_remove' : 'person_add'"
-      :class="buttonClass"
+      :class="[buttonClass, { 'interaction-active': isFollowing }]"
       @click="handleToggleFollow"
       :loading="isLoading"
     >
@@ -292,6 +302,22 @@ const handleRemoveReminder = async () => {
     console.error('Failed to remove reminder:', error);
   }
 };
+
+// Helper functions for date validation and formatting
+const isValidDate = (dateStr: string): boolean => {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+};
+
+const formatReminderDate = (dateStr: string): string => {
+  if (!dateStr || !isValidDate(dateStr)) return 'Invalid Date';
+  try {
+    return new Date(dateStr).toLocaleDateString();
+  } catch {
+    return 'Invalid Date';
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -323,6 +349,13 @@ const handleRemoveReminder = async () => {
   }
 }
 
+// Enhanced interaction button styles for floating layout
+.floating-buttons {
+  .q-btn {
+    margin: 4px;
+  }
+}
+
 // Pulse animation for active reminders
 @keyframes reminder-pulse {
   0% {
@@ -338,5 +371,75 @@ const handleRemoveReminder = async () => {
 
 .reminder-pulse {
   animation: reminder-pulse 2s infinite;
+}
+
+// Better contrast for inactive buttons
+.q-btn--outline {
+  border-width: 2px !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+
+  .q-icon {
+    opacity: 1;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05);
+  }
+}
+
+// Enhanced active state
+.interaction-active {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  // Color-specific glows for active buttons
+  &.q-btn--red {
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+
+    &:hover {
+      box-shadow: 0 6px 16px rgba(244, 67, 54, 0.6);
+    }
+  }
+
+  &.q-btn--amber {
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+
+    &:hover {
+      box-shadow: 0 6px 16px rgba(255, 193, 7, 0.6);
+    }
+  }
+
+  &.q-btn--green {
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+
+    &:hover {
+      box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
+    }
+  }
+
+  &.q-btn--blue {
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+
+    &:hover {
+      box-shadow: 0 6px 16px rgba(33, 150, 243, 0.6);
+    }
+  }
+}
+
+// Faster state transitions
+.q-btn {
+  transition: all 0.15s ease !important;
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 </style>
