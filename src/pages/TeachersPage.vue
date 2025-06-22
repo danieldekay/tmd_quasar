@@ -1,5 +1,14 @@
 <template>
   <q-page class="teachers-directory">
+    <!-- Header Section -->
+    <ListPageHeader
+      title="Teachers Directory"
+      subtitle="Discover tango teachers from around the world"
+      :show-stats="true"
+      :total-count="totalTeachers"
+      stats-label="Total Teachers"
+    />
+
     <!-- Results Section -->
     <div class="results-section q-px-lg q-pb-lg">
       <BaseTable
@@ -170,6 +179,7 @@ import { teacherService } from '../services';
 import type { Teacher } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
+import ListPageHeader from '../components/ListPageHeader.vue';
 
 const router = useRouter();
 const { formatDate } = useFormatters();
@@ -276,10 +286,20 @@ const loadTeachers = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await teacherService.getTeachers({ per_page: 999 });
-    teachers.value = response;
-    totalTeachers.value = response.length;
-    pagination.value.rowsNumber = response.length;
+    // Get the first page to retrieve total count, then fetch all if needed
+    const response = await teacherService.getTeachers();
+
+    // If we have more than 10 items, fetch all of them
+    if (response.total > 10) {
+      const allResponse = await teacherService.getTeachers({ per_page: response.total });
+      teachers.value = allResponse.teachers;
+      totalTeachers.value = allResponse.total;
+    } else {
+      teachers.value = response.teachers;
+      totalTeachers.value = response.total;
+    }
+
+    pagination.value.rowsNumber = teachers.value.length;
   } catch (err) {
     console.error('Error loading teachers:', err);
     error.value = 'Failed to load teachers';

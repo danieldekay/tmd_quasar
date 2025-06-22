@@ -329,7 +329,17 @@ const loadEventSeries = async (showNotification = false) => {
   try {
     loading.value = true;
     error.value = null;
-    eventSeries.value = await eventSeriesService.getEventSeries();
+    // Get the first page to retrieve total count, then fetch all if needed
+    const response = await eventSeriesService.getEventSeries();
+
+    // If we have more than 10 items, fetch all of them
+    if (response.total > 10) {
+      const allResponse = await eventSeriesService.getEventSeries({ per_page: response.total });
+      eventSeries.value = allResponse.eventSeries;
+    } else {
+      eventSeries.value = response.eventSeries;
+    }
+
     tablePagination.value.rowsNumber = eventSeries.value.length;
 
     if (showNotification) {

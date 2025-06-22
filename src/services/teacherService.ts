@@ -42,7 +42,7 @@ class TeacherService extends BaseService<Teacher> {
    * Get teachers with enhanced V3 API filtering and pagination
    * Supports advanced meta filtering, embedded relationships, and performance optimization
    */
-  async getTeachers(params: TeacherParams = {}, signal?: AbortSignal): Promise<Teacher[]> {
+  async getTeachers(params: TeacherParams = {}, signal?: AbortSignal) {
     try {
       // Build V3 API parameters with advanced filtering
       const apiParams = this.buildTeacherApiParams(params);
@@ -53,7 +53,11 @@ class TeacherService extends BaseService<Teacher> {
       // Transform and enhance the data
       const teachers = this.transformTeachers(response.data);
 
-      return teachers;
+      return {
+        teachers,
+        totalPages: response.totalPages,
+        total: response.totalCount,
+      };
     } catch (error) {
       throw new Error(
         `Failed to fetch teachers: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -116,7 +120,8 @@ class TeacherService extends BaseService<Teacher> {
     params: TeacherParams = {},
     signal?: AbortSignal,
   ): Promise<Teacher[]> {
-    return this.getTeachers({ ...params, role }, signal);
+    const response = await this.getTeachers({ ...params, role }, signal);
+    return response.teachers;
   }
 
   /**
@@ -127,7 +132,8 @@ class TeacherService extends BaseService<Teacher> {
     params: TeacherParams = {},
     signal?: AbortSignal,
   ): Promise<Teacher[]> {
-    return this.getTeachers({ ...params, gender }, signal);
+    const response = await this.getTeachers({ ...params, gender }, signal);
+    return response.teachers;
   }
 
   /**
@@ -139,7 +145,11 @@ class TeacherService extends BaseService<Teacher> {
     signal?: AbortSignal,
   ): Promise<Teacher[]> {
     const metaFilters = { country };
-    return this.getTeachers({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getTeachers(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.teachers;
   }
 
   /**
@@ -151,7 +161,11 @@ class TeacherService extends BaseService<Teacher> {
     signal?: AbortSignal,
   ): Promise<Teacher[]> {
     const metaFilters = { city };
-    return this.getTeachers({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getTeachers(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.teachers;
   }
 
   /**
@@ -164,8 +178,8 @@ class TeacherService extends BaseService<Teacher> {
   ): Promise<Teacher[]> {
     // Note: This would require custom meta filtering if the API supports it
     // For now, we'll filter client-side
-    const teachers = await this.getTeachers(params, signal);
-    return teachers.filter((teacher) => {
+    const response = await this.getTeachers(params, signal);
+    return response.teachers.filter((teacher) => {
       const teacherSpecs = teacher.meta_box?.specializations || [];
       return specializations.some((spec) => teacherSpecs.includes(spec));
     });
@@ -180,7 +194,11 @@ class TeacherService extends BaseService<Teacher> {
     signal?: AbortSignal,
   ): Promise<Teacher[]> {
     const metaFilters = { teaching_since: year };
-    return this.getTeachers({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getTeachers(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.teachers;
   }
 
   /**
@@ -192,7 +210,11 @@ class TeacherService extends BaseService<Teacher> {
     signal?: AbortSignal,
   ): Promise<Teacher[]> {
     const metaFilters = { dancing_since: year };
-    return this.getTeachers({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getTeachers(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.teachers;
   }
 
   /**
@@ -352,8 +374,8 @@ class TeacherService extends BaseService<Teacher> {
    * Get teacher statistics and insights
    */
   async getTeacherStats(signal?: AbortSignal): Promise<ReturnType<typeof this.analyzeTeacherData>> {
-    const teachers = await this.getTeachers({ per_page: 1000 }, signal);
-    return this.analyzeTeacherData(teachers);
+    const response = await this.getTeachers({ per_page: 1000 }, signal);
+    return this.analyzeTeacherData(response.teachers);
   }
 }
 

@@ -37,7 +37,7 @@ class CoupleService extends BaseService<Couple> {
    * Get couples with enhanced V3 API filtering and pagination
    * Supports advanced meta filtering, embedded relationships, and performance optimization
    */
-  async getCouples(params: CoupleParams = {}, signal?: AbortSignal): Promise<Couple[]> {
+  async getCouples(params: CoupleParams = {}, signal?: AbortSignal) {
     try {
       // Build V3 API parameters with advanced filtering
       const apiParams = this.buildCoupleApiParams(params);
@@ -48,7 +48,11 @@ class CoupleService extends BaseService<Couple> {
       // Transform and enhance the data
       const couples = this.transformCouples(response.data);
 
-      return couples;
+      return {
+        couples,
+        totalPages: response.totalPages,
+        total: response.totalCount,
+      };
     } catch (error) {
       console.error('CoupleService.getCouples - Error:', error);
       throw new Error(
@@ -86,11 +90,11 @@ class CoupleService extends BaseService<Couple> {
     signal?: AbortSignal,
   ): Promise<Couple[]> {
     // Check if teacher is leader or follower
-    const leaderCouples = await this.getCouples({ ...params, leader_id: teacherId }, signal);
-    const followerCouples = await this.getCouples({ ...params, follower_id: teacherId }, signal);
+    const leaderResponse = await this.getCouples({ ...params, leader_id: teacherId }, signal);
+    const followerResponse = await this.getCouples({ ...params, follower_id: teacherId }, signal);
 
     // Combine and deduplicate
-    const allCouples = [...leaderCouples, ...followerCouples];
+    const allCouples = [...leaderResponse.couples, ...followerResponse.couples];
     const uniqueCouples = allCouples.filter(
       (couple, index, self) => index === self.findIndex((c) => c.id === couple.id),
     );
@@ -107,7 +111,11 @@ class CoupleService extends BaseService<Couple> {
     signal?: AbortSignal,
   ): Promise<Couple[]> {
     const metaFilters = { country };
-    return this.getCouples({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getCouples(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.couples;
   }
 
   /**
@@ -119,7 +127,11 @@ class CoupleService extends BaseService<Couple> {
     signal?: AbortSignal,
   ): Promise<Couple[]> {
     const metaFilters = { city };
-    return this.getCouples({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getCouples(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.couples;
   }
 
   /**
@@ -131,7 +143,11 @@ class CoupleService extends BaseService<Couple> {
     signal?: AbortSignal,
   ): Promise<Couple[]> {
     const metaFilters = { partnership_style: style };
-    return this.getCouples({ ...params, meta_filters: JSON.stringify(metaFilters) }, signal);
+    const response = await this.getCouples(
+      { ...params, meta_filters: JSON.stringify(metaFilters) },
+      signal,
+    );
+    return response.couples;
   }
 
   /**
@@ -144,8 +160,8 @@ class CoupleService extends BaseService<Couple> {
   ): Promise<Couple[]> {
     // Note: This would require custom meta filtering if the API supports it
     // For now, we'll filter client-side
-    const couples = await this.getCouples(params, signal);
-    return couples.filter((couple) => {
+    const response = await this.getCouples(params, signal);
+    return response.couples.filter((couple) => {
       const coupleSpecs = couple.meta_box?.specializations_couple || [];
       return specializations.some((spec) => coupleSpecs.includes(spec));
     });
@@ -155,14 +171,16 @@ class CoupleService extends BaseService<Couple> {
    * Get couples who have events
    */
   async getCouplesWithEvents(params: CoupleParams = {}, signal?: AbortSignal): Promise<Couple[]> {
-    return this.getCouples({ ...params, include_events: true }, signal);
+    const response = await this.getCouples({ ...params, include_events: true }, signal);
+    return response.couples;
   }
 
   /**
    * Get couples with teacher information
    */
   async getCouplesWithTeachers(params: CoupleParams = {}, signal?: AbortSignal): Promise<Couple[]> {
-    return this.getCouples({ ...params, include_teachers: true }, signal);
+    const response = await this.getCouples({ ...params, include_teachers: true }, signal);
+    return response.couples;
   }
 
   /**
@@ -348,8 +366,8 @@ class CoupleService extends BaseService<Couple> {
    * Get couple statistics and insights
    */
   async getCoupleStats(signal?: AbortSignal): Promise<ReturnType<typeof this.analyzeCoupleData>> {
-    const couples = await this.getCouples({ per_page: 1000 }, signal);
-    return this.analyzeCoupleData(couples);
+    const response = await this.getCouples({ per_page: 1000 }, signal);
+    return this.analyzeCoupleData(response.couples);
   }
 }
 

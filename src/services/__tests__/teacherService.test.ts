@@ -39,14 +39,18 @@ describe('TeacherService', () => {
   });
 
   it('should fetch teachers successfully', async () => {
-    const teachers = await teacherService.getTeachers();
+    const response = await teacherService.getTeachers();
 
-    expect(teachers).toBeDefined();
-    expect(Array.isArray(teachers)).toBe(true);
-    expect(teachers.length).toBeGreaterThan(0);
+    expect(response).toBeDefined();
+    expect(response).toHaveProperty('teachers');
+    expect(response).toHaveProperty('total');
+    expect(response).toHaveProperty('totalPages');
+    expect(Array.isArray(response.teachers)).toBe(true);
+    expect(response.teachers.length).toBeGreaterThan(0);
+    expect(response.total).toBe(1);
 
-    if (teachers.length > 0) {
-      const teacher = teachers[0];
+    if (response.teachers.length > 0) {
+      const teacher = response.teachers[0];
       expect(teacher).toHaveProperty('id');
       expect(teacher).toHaveProperty('title');
       expect(teacher).toHaveProperty('meta_box');

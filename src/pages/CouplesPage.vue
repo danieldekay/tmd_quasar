@@ -1,5 +1,14 @@
 <template>
   <q-page class="couples-directory">
+    <!-- Header Section -->
+    <ListPageHeader
+      title="Couples Directory"
+      subtitle="Discover tango couples from around the world"
+      :show-stats="true"
+      :total-count="totalCouples"
+      stats-label="Total Couples"
+    />
+
     <!-- Results Section -->
     <div class="results-section q-px-lg q-pb-lg">
       <BaseTable
@@ -168,6 +177,7 @@ import { coupleService } from '../services';
 import type { Couple } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
+import ListPageHeader from '../components/ListPageHeader.vue';
 
 const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
@@ -390,10 +400,20 @@ const fetchCouples = async () => {
   try {
     loading.value = true;
     error.value = null;
+    // Get the first page to retrieve total count, then fetch all if needed
     const response = await coupleService.getCouples();
-    couples.value = response;
-    totalCouples.value = response.length;
-    pagination.value.rowsNumber = response.length;
+
+    // If we have more than 10 items, fetch all of them
+    if (response.total > 10) {
+      const allResponse = await coupleService.getCouples({ per_page: response.total });
+      couples.value = allResponse.couples;
+      totalCouples.value = allResponse.total;
+    } else {
+      couples.value = response.couples;
+      totalCouples.value = response.total;
+    }
+
+    pagination.value.rowsNumber = couples.value.length;
   } catch (err) {
     console.error('Error loading couples:', err);
     error.value = 'Failed to load couples';
