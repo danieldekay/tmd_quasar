@@ -9,6 +9,7 @@ export interface LoginInput {
 
 export interface LoginResponse {
   authToken: string;
+  refreshToken: string;
   user: {
     id: string;
     name: string;
@@ -35,6 +36,7 @@ export const LOGIN_MUTATION = gql`
   mutation LoginUser($input: LoginInput!) {
     login(input: $input) {
       authToken
+      refreshToken
       user {
         id
         name

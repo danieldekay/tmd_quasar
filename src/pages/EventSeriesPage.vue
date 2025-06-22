@@ -1,294 +1,478 @@
 <template>
-  <BaseListPage
-    title="Event Series"
-    :loading="loading"
-    loading-message="Loading event series..."
-    :error="error"
-    error-title="Failed to Load Event Series"
-    :show-empty-state="!loading && !error && eventSeries.length === 0"
-    empty-state-icon="event_repeat"
-    empty-state-title="No event series found"
-    empty-state-message="No event series match your current search criteria."
-    :enable-search="true"
-    :search-query="searchQuery"
-    search-placeholder="Search event series..."
-    :has-active-filters="hasActiveFilters"
-    :active-filter-count="activeFilterCount"
-    :show-stats="true"
-    :total-count="filteredEventSeries.length"
-    :stats-label="formatSeriesText(filteredEventSeries.length)"
-    :display-count="filteredEventSeries.length"
-    :show-results-header="!loading && !error && eventSeries.length > 0"
-    enable-pull-to-refresh
-    @update:search-query="searchQuery = $event"
-    @clear-filters="clearFilters"
-    @retry="loadEventSeries"
-    @pull-to-refresh="handlePullToRefresh"
-  >
-    <template #content>
-      <BaseTable
-        :rows="paginatedEventSeries"
-        :columns="columns"
-        :current-page="pagination.currentPage.value"
-        :rows-per-page="pagination.rowsPerPage.value"
-        :total-items="filteredEventSeries.length"
-        :loading="loading"
-        :error="error"
-        :clickable-rows="true"
-        :show-top-pagination="true"
-        loading-message="Loading event series..."
-        empty-icon="event_repeat"
-        empty-title="No event series found"
-        empty-message="No event series match your current search criteria."
-        @update:current-page="pagination.goToPage"
-        @update:rows-per-page="pagination.setRowsPerPage"
-        @row-click="navigateToSeries"
-      >
-        <template #body="{ props }">
-          <q-td key="logo" :props="props">
-            <q-avatar size="40px" rounded>
-              <img
-                :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
-                :alt="`Logo of ${props.row.title}`"
+  <q-page class="event-series-list-page">
+    <!-- Header -->
+    <div class="page-header q-pa-lg">
+      <div class="row items-center justify-between">
+        <div class="col">
+          <h1 class="text-h4 text-weight-bold q-mb-xs">Event Series Directory</h1>
+          <p class="text-subtitle1 text-grey-6 q-ma-none">
+            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} event
+            series found based on filters
+          </p>
+        </div>
+        <div class="col-auto">
+          <q-btn round color="primary" icon="refresh" @click="refreshData" :loading="loading">
+            <q-tooltip>Refresh Event Series</q-tooltip>
+          </q-btn>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section q-px-lg q-pb-md">
+      <q-card flat bordered class="filters-card">
+        <q-card-section>
+          <div class="row q-gutter-md">
+            <!-- Search -->
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="searchQuery"
+                placeholder="Search event series, cities, or countries..."
+                dense
+                outlined
+                clearable
+                @update:model-value="onSearchChange"
+                @clear="onSearchChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+            </div>
+
+            <!-- Country Filter -->
+            <div class="col-12 col-md-3">
+              <q-select
+                v-model="selectedCountry"
+                :options="countryOptions"
+                label="Filter by Country"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                :option-label="getCountryName"
+                :option-value="(opt) => opt"
+                @update:model-value="onFilterChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="flag" />
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Series Type Filter -->
+            <div class="col-12 col-md-4">
+              <q-select
+                v-model="selectedSeriesType"
+                :options="seriesTypeOptions"
+                label="Filter by Series Type"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                @update:model-value="onFilterChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="repeat" />
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Clear Filters -->
+            <div class="col-12 col-md-1">
+              <q-btn
+                flat
+                color="grey-7"
+                icon="clear_all"
+                label="Clear Filters"
+                @click="clearFilters"
+                :disable="!hasActiveFilters"
               />
-            </q-avatar>
-          </q-td>
-
-          <q-td key="title" :props="props">
-            <div class="series-title">{{ props.row.title }}</div>
-            <div
-              v-if="props.row.acf?.description"
-              class="series-description text-caption text-grey-6"
-            >
-              {{ truncateDescription(props.row.acf.description) }}
             </div>
-          </q-td>
+          </div>
 
-          <q-td key="start_date" :props="props">
-            <div v-if="props.row.start_date" class="date-content">
-              <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
-              {{ formatDate(props.row.start_date) }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
-
-          <q-td key="registration_start_date" :props="props">
-            <div v-if="props.row.registration_start_date" class="date-content">
-              <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
-              {{ formatDate(props.row.registration_start_date) }}
-            </div>
-            <span v-else class="text-grey-5">TBD</span>
-          </q-td>
-
-          <q-td key="date_added" :props="props">
-            <div class="date-content">
-              <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
-              {{ formatDate(props.row.date) }}
-            </div>
-          </q-td>
-
-          <q-td key="city" :props="props">
-            <div v-if="props.row.city" class="location-content">
-              <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-              {{ props.row.city }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
-
-          <q-td key="country" :props="props">
-            <div v-if="props.row.country" class="location-content">
-              <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-              {{ props.row.country }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
-
-          <q-td key="website" :props="props">
-            <q-btn
-              v-if="props.row.acf?.website"
-              flat
-              round
-              color="secondary"
-              icon="launch"
+          <!-- Active Filters Display -->
+          <div v-if="hasActiveFilters" class="q-mt-md">
+            <q-chip
+              v-if="selectedCountry"
+              removable
+              @remove="clearCountryFilter"
               size="sm"
-              :href="props.row.acf.website"
-              target="_blank"
-              @click.stop
+              icon="flag"
             >
-              <q-tooltip>Visit Website</q-tooltip>
-            </q-btn>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
+              {{ getCountryName(selectedCountry) }}
+            </q-chip>
+            <q-chip
+              v-if="selectedSeriesType"
+              removable
+              @remove="clearSeriesTypeFilter"
+              size="sm"
+              icon="repeat"
+            >
+              {{ getSeriesTypeLabel(selectedSeriesType) }}
+            </q-chip>
+            <q-chip v-if="searchQuery" removable @remove="clearSearch" size="sm" icon="search">
+              Search: "{{ searchQuery }}"
+            </q-chip>
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Event Series Table -->
+    <div class="table-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="table-card">
+        <q-table
+          :rows="eventSeries"
+          :columns="columns"
+          :loading="loading"
+          v-model:pagination="pagination"
+          row-key="id"
+          @request="onRequest"
+          @row-click="handleRowClick"
+          :rows-per-page-options="[10, 20, 50, 100]"
+          binary-state-sort
+          flat
+          bordered
+          class="event-series-table"
+        >
+          <!-- Custom Cell Templates -->
+          <template #body-cell-name="props">
+            <q-td :props="props" class="series-name-cell cursor-pointer">
+              <div class="series-name-content">
+                <div class="series-name text-weight-medium">
+                  {{ formatText(props.row.title) }}
+                </div>
+                <div
+                  v-if="props.row.description"
+                  class="series-description text-caption text-grey-6"
+                >
+                  {{ formatText(props.row.description) }}
+                </div>
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-start_date="props">
+            <q-td :props="props" class="date-cell cursor-pointer">
+              <div class="date-content">
+                <q-icon name="event" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-city="props">
+            <q-td :props="props" class="city-cell cursor-pointer">
+              <div class="city-content">
+                <q-icon name="place" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{
+                  formatText(capitalizeCity(props.row.city))
+                }}</span>
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-country="props">
+            <q-td :props="props" class="country-cell cursor-pointer">
+              <div class="country-content">
+                <q-icon name="flag" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-series_type="props">
+            <q-td :props="props" class="series-type-cell cursor-pointer">
+              <q-chip
+                v-if="props.row.series_type"
+                size="sm"
+                :color="getSeriesTypeColor(props.row.series_type)"
+                text-color="white"
+                :icon="getSeriesTypeIcon(props.row.series_type)"
+              >
+                {{ getSeriesTypeLabel(props.row.series_type) }}
+              </q-chip>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-status="props">
+            <q-td :props="props" class="cursor-pointer">
+              <span>{{ getStatusLabel(props.row.status) }}</span>
+            </q-td>
+          </template>
+
+          <!-- No Data State -->
+          <template #no-data>
+            <div class="text-center q-py-xl">
+              <q-icon name="repeat" size="4em" color="grey-4" />
+              <p class="text-h6 q-mt-md text-grey-6">No event series found</p>
+              <p class="text-body2 text-grey-5 q-mb-md">
+                Try adjusting your search criteria or filters
+              </p>
+              <q-btn
+                v-if="hasActiveFilters"
+                flat
+                color="primary"
+                label="Clear All Filters"
+                @click="clearFilters"
+              />
+            </div>
+          </template>
+
+          <!-- Loading State -->
+          <template #loading>
+            <q-inner-loading showing color="primary" />
+          </template>
+        </q-table>
+      </q-card>
+    </div>
+
+    <!-- Error State -->
+    <div v-if="error" class="error-section q-px-lg">
+      <q-banner class="bg-negative" icon="error">
+        <template v-slot:avatar>
+          <q-icon name="error" color="white" />
         </template>
-      </BaseTable>
-    </template>
-  </BaseListPage>
+        Failed to load event series
+        <template v-slot:action>
+          <q-btn flat color="white" label="Retry" @click="refreshData" />
+        </template>
+      </q-banner>
+    </div>
+  </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { eventSeriesService } from '../services';
-import type { EventSeries } from '../services/types';
+import { eventSeriesService, type EventSeries } from '../services';
 import { useFormatters } from '../composables/useFormatters';
-import { useTablePagination } from '../composables/useTablePagination';
-import BaseListPage from '../components/BaseListPage.vue';
-import BaseTable from '../components/BaseTable.vue';
+import { useCountries } from '../composables/useCountries';
 
 const router = useRouter();
 const $q = useQuasar();
-const { formatDate } = useFormatters();
 
-// Pagination
-const pagination = useTablePagination({
-  initialRowsPerPage: 20,
-  rowsPerPageOptions: [10, 20, 50, 100],
-});
+// Composables
+const { getCountryName, getCountryOptionsFromCodes } = useCountries();
+const { formatDate, formatText } = useFormatters();
 
 // State
 const eventSeries = ref<EventSeries[]>([]);
-const loading = ref(true);
+const loading = ref(false);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
+const selectedCountry = ref<string | null>(null);
+const selectedSeriesType = ref<string | null>(null);
+const allCountries = ref<Set<string>>(new Set());
+const totalCount = ref(0);
 
-// Helper function for date sorting
-const sortByDate = (a: unknown, b: unknown): number => {
-  const getDateValue = (value: unknown): number => {
-    if (!value) return 0;
-    if (typeof value === 'string') {
-      const date = new Date(value);
-      return isNaN(date.getTime()) ? 0 : date.getTime();
-    }
-    return 0;
-  };
+// Computed
+const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-  return getDateValue(a) - getDateValue(b);
-};
+const seriesTypeOptions = computed(() => [
+  { label: 'Marathon', value: 'marathon' },
+  { label: 'Festival', value: 'festival' },
+  { label: 'Encuentro', value: 'encuentro' },
+  { label: 'Workshop', value: 'workshop' },
+]);
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value || selectedCountry.value || selectedSeriesType.value;
+});
 
 // Table columns
 const columns = [
   {
-    name: 'logo',
-    label: 'Logo',
-    field: 'logo',
-    align: 'center' as const,
-    style: 'width: 80px;',
-    sortable: false,
-  },
-  {
-    name: 'title',
-    label: 'Event Series',
+    name: 'name',
+    label: 'Series Name',
     field: 'title',
     align: 'left' as const,
-    style: 'width: 40%;',
     sortable: true,
+    style: 'min-width: 250px',
   },
   {
     name: 'start_date',
     label: 'Start Date',
     field: 'start_date',
     align: 'left' as const,
-    style: 'width: 15%;',
     sortable: true,
-    sort: sortByDate,
-  },
-  {
-    name: 'registration_start_date',
-    label: 'Registration',
-    field: 'registration_start_date',
-    align: 'left' as const,
-    style: 'width: 15%;',
-    sortable: true,
-    sort: sortByDate,
-  },
-  {
-    name: 'date_added',
-    label: 'Added',
-    field: 'date',
-    align: 'left' as const,
-    style: 'width: 15%;',
-    sortable: true,
-    sort: sortByDate,
+    style: 'min-width: 120px',
   },
   {
     name: 'city',
     label: 'City',
     field: 'city',
     align: 'left' as const,
-    style: 'width: 120px;',
     sortable: true,
+    style: 'min-width: 120px',
   },
   {
     name: 'country',
     label: 'Country',
     field: 'country',
     align: 'left' as const,
-    style: 'width: 120px;',
     sortable: true,
+    style: 'min-width: 120px',
   },
   {
-    name: 'website',
-    label: 'Website',
-    field: 'website',
+    name: 'series_type',
+    label: 'Series Type',
+    field: 'series_type',
     align: 'center' as const,
-    style: 'width: 100px;',
-    sortable: false,
+    sortable: true,
+    style: 'min-width: 120px',
+  },
+  {
+    name: 'status',
+    label: 'Status',
+    field: 'status',
+    align: 'center' as const,
+    sortable: true,
+    style: 'min-width: 100px',
   },
 ];
 
-// Computed properties
-const filteredEventSeries = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return eventSeries.value;
+// Pagination state
+const pagination = ref({
+  sortBy: 'name',
+  descending: false,
+  page: 1,
+  rowsPerPage: 20,
+  rowsNumber: 0,
+});
+
+// Helper functions
+const capitalizeCity = (city: string): string => {
+  if (!city) return '';
+  return city
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const getStatusLabel = (status: string): string => {
+  switch (status?.toLowerCase()) {
+    case 'publish':
+      return 'Published';
+    case 'draft':
+      return 'Draft';
+    case 'private':
+      return 'Private';
+    default:
+      return 'Unknown';
   }
+};
 
-  const query = searchQuery.value.toLowerCase().trim();
-  return eventSeries.value.filter((series) => {
-    return (
-      series.title.toLowerCase().includes(query) ||
-      (series.acf?.description && series.acf.description.toLowerCase().includes(query))
-    );
+const getSeriesTypeLabel = (seriesType: string): string => {
+  switch (seriesType) {
+    case 'marathon':
+      return 'Marathon';
+    case 'festival':
+      return 'Festival';
+    case 'encuentro':
+      return 'Encuentro';
+    case 'workshop':
+      return 'Workshop';
+    default:
+      return seriesType;
+  }
+};
+
+const getSeriesTypeColor = (seriesType: string): string => {
+  switch (seriesType) {
+    case 'marathon':
+      return 'red-7';
+    case 'festival':
+      return 'purple-6';
+    case 'encuentro':
+      return 'blue-6';
+    case 'workshop':
+      return 'orange-6';
+    default:
+      return 'grey-6';
+  }
+};
+
+const getSeriesTypeIcon = (seriesType: string): string => {
+  switch (seriesType) {
+    case 'marathon':
+      return 'directions_run';
+    case 'festival':
+      return 'celebration';
+    case 'encuentro':
+      return 'groups';
+    case 'workshop':
+      return 'school';
+    default:
+      return 'repeat';
+  }
+};
+
+const updateCountrySet = (eventSeries: EventSeries[]) => {
+  eventSeries.forEach((series) => {
+    if (series.country) allCountries.value.add(series.country);
   });
-});
-
-const paginatedEventSeries = computed(() => {
-  const start = (pagination.currentPage.value - 1) * pagination.rowsPerPage.value;
-  const end = start + pagination.rowsPerPage.value;
-  return filteredEventSeries.value.slice(start, end);
-});
-
-const hasActiveFilters = computed(() => {
-  return !!searchQuery.value.trim();
-});
-
-const activeFilterCount = computed(() => {
-  return searchQuery.value.trim() ? 1 : 0;
-});
-
-// Methods
-const formatSeriesText = (count: number): string => {
-  return pagination.formatItemsText(count, 'event series', 'event series');
 };
 
-const truncateDescription = (description: string): string => {
-  if (!description) return '';
-  const maxLength = 100;
-  return description.length > maxLength ? description.substring(0, maxLength) + '...' : description;
-};
+// API functions
+const loadEventSeries = async (forceReload = false) => {
+  loading.value = true;
+  error.value = null;
 
-const navigateToSeries = (series: EventSeries) => {
-  void router.push(`/event-series/${series.id}`);
-};
-
-const loadEventSeries = async (showNotification = false) => {
   try {
-    loading.value = true;
-    error.value = null;
-    eventSeries.value = await eventSeriesService.getEventSeries();
+    const params: Record<string, unknown> = {
+      page: pagination.value.page,
+      perPage: pagination.value.rowsPerPage,
+      orderby: pagination.value.sortBy === 'name' ? 'title' : pagination.value.sortBy,
+      order: pagination.value.descending ? 'desc' : 'asc',
+      meta_fields: 'start_date,end_date,country,city,series_type',
+    };
 
-    if (showNotification) {
-      $q?.notify?.({
+    if (selectedCountry.value) {
+      params.country = selectedCountry.value;
+    }
+    if (selectedSeriesType.value) {
+      params.series_type = selectedSeriesType.value;
+    }
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
+    }
+    if (forceReload) {
+      params._t = Date.now();
+    }
+
+    const response = await eventSeriesService.getEventSeries(params);
+
+    eventSeries.value = response.eventSeries;
+    pagination.value.rowsNumber = response.total;
+
+    // Load total count without filters if we don't have it yet or if it's a fresh load
+    if (totalCount.value === 0 || forceReload) {
+      try {
+        const totalParams = {
+          page: 1,
+          perPage: 1,
+          orderby: 'title' as const,
+          order: 'asc' as const,
+          meta_fields: 'start_date,end_date,country,city,series_type',
+        };
+        const totalResponse = await eventSeriesService.getEventSeries(totalParams);
+        totalCount.value = totalResponse.total;
+      } catch (totalErr) {
+        console.warn('Failed to load total count:', totalErr);
+        totalCount.value = response.total;
+      }
+    }
+
+    updateCountrySet(response.eventSeries);
+
+    if (forceReload) {
+      $q.notify({
         type: 'positive',
         message: 'Event series refreshed successfully',
         position: 'top',
@@ -303,48 +487,244 @@ const loadEventSeries = async (showNotification = false) => {
   }
 };
 
+// Event handlers
+const onRequest = async (requestProp: {
+  pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
+}) => {
+  const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
+
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy || 'name';
+  pagination.value.descending = descending;
+
+  await loadEventSeries();
+};
+
+const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
+  const seriesId = row.id as number;
+  void router.push(`/event-series/${seriesId}`);
+};
+
+const refreshData = () => {
+  void loadEventSeries(true);
+};
+
+const onSearchChange = () => {
+  pagination.value.page = 1;
+  void loadEventSeries();
+};
+
+const onFilterChange = () => {
+  pagination.value.page = 1;
+  void loadEventSeries();
+};
+
 const clearFilters = () => {
   searchQuery.value = '';
-  pagination.goToFirstPage();
+  selectedCountry.value = null;
+  selectedSeriesType.value = null;
+  pagination.value.page = 1;
+  void loadEventSeries();
 };
 
-const handlePullToRefresh = (done: () => void) => {
-  void loadEventSeries(true).finally(() => {
-    done();
-  });
+const clearCountryFilter = () => {
+  selectedCountry.value = null;
+  onFilterChange();
 };
 
-// Watch for changes in filtered results to update pagination
-watch(filteredEventSeries, (newResults) => {
-  pagination.setTotalItems(newResults.length);
-});
+const clearSeriesTypeFilter = () => {
+  selectedSeriesType.value = null;
+  onFilterChange();
+};
 
+const clearSearch = () => {
+  searchQuery.value = '';
+  onSearchChange();
+};
+
+// Watchers
+watch(
+  [selectedCountry, selectedSeriesType],
+  () => {
+    pagination.value.page = 1;
+    void loadEventSeries();
+  },
+  { deep: true },
+);
+
+// Lifecycle
 onMounted(() => {
   void loadEventSeries();
 });
 </script>
 
 <style lang="scss" scoped>
-.series-title {
-  color: #1976d2;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  margin-bottom: 4px;
+.event-series-list-page {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
 }
 
-.series-description {
-  font-size: 11px;
-  line-height: 1.3;
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.date-content {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
+.filters-section {
+  .filters-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin-top: 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+}
 
-  .q-icon {
-    opacity: 0.8;
+.table-section {
+  .table-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+  }
+
+  .event-series-table {
+    :deep(.q-table__top) {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 20px;
+    }
+
+    :deep(.q-table__bottom) {
+      background-color: #fafafa;
+      border-top: 1px solid #e0e0e0;
+      padding: 12px 20px;
+    }
+
+    :deep(.q-table thead th) {
+      background: white;
+      color: black !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 12px !important;
+      border-bottom: none !important;
+
+      .q-icon {
+        color: rgba(0, 0, 0, 0.7);
+        transition: all 0.2s ease;
+
+        &.q-table__sort-icon--active {
+          color: black;
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    :deep(.q-table tbody tr) {
+      transition: all 0.2s ease;
+      border-bottom: 1px solid #f0f0f0;
+
+      &:nth-child(even) {
+        background-color: #fafafa;
+      }
+
+      &:hover {
+        background-color: rgba(25, 118, 210, 0.08) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .q-td {
+        padding: 14px 12px !important;
+        vertical-align: top;
+        border-bottom: none !important;
+      }
+    }
+  }
+}
+
+.series-name-cell {
+  .series-name-content {
+    .series-name {
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: none;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+    }
+
+    .series-description {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+  }
+}
+
+.date-cell,
+.city-cell,
+.country-cell {
+  .date-content,
+  .city-content,
+  .country-content {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+
+    .q-icon {
+      opacity: 0.8;
+    }
+  }
+}
+
+.series-type-cell {
+  text-align: center;
+}
+
+.error-section {
+  .q-banner {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .page-header {
+    .text-h4 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .filters-section {
+    .filters-card {
+      .row {
+        .col-12 {
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
+
+  .table-section {
+    .event-series-table {
+      :deep(.q-table thead th) {
+        padding: 10px 8px !important;
+        font-size: 11px !important;
+      }
+
+      :deep(.q-table tbody tr .q-td) {
+        padding: 10px 8px !important;
+        font-size: 12px;
+      }
+    }
   }
 }
 </style>

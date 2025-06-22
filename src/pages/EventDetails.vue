@@ -49,6 +49,14 @@
               </template>
             </div>
           </div>
+
+          <!-- Floating Interaction Buttons -->
+          <InteractionButtons
+            v-if="event?.id"
+            :target-id="event.id"
+            target-type="tmd_event"
+            layout="floating"
+          />
         </q-img>
       </div>
 
@@ -586,7 +594,9 @@ import { useQuasar } from 'quasar';
 import { eventDetailsService as eventService } from '../services';
 import type { EventDetails, DJ, Teacher } from '../services/types';
 import DJCard from '../components/DJCard.vue';
+import InteractionButtons from '../components/InteractionButtons.vue';
 import { useFormatters } from '../composables/useFormatters';
+import { useInteractions } from '../composables/useInteractions';
 
 defineOptions({ name: 'EventDetails' });
 
@@ -611,6 +621,9 @@ const teachersError = ref<string | null>(null);
 
 // Map-related state
 const mapImageError = ref(false);
+
+// Interactions
+const interactions = useInteractions(Number(route.params.id), 'tmd_event');
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
@@ -1241,6 +1254,8 @@ const loadEvent = async (done?: () => void) => {
     // Load DJs and Teachers after event is loaded
     loadDJs();
     loadTeachers();
+    // Load interactions for this event
+    void interactions.loadInteractions();
   } catch (err) {
     console.error('Error loading event:', err);
     error.value = 'Failed to load event';

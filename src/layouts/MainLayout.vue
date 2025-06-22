@@ -85,6 +85,34 @@
                   <q-icon name="favorite" />
                 </q-item-section>
                 <q-item-section>My Favorites</q-item-section>
+                <q-item-section side v-if="getInteractionCounts().total > 0">
+                  <div class="row items-center q-gutter-xs">
+                    <q-badge
+                      v-if="getInteractionCounts().likes > 0"
+                      :label="getInteractionCounts().likes"
+                      color="red-6"
+                      rounded
+                    >
+                      <q-tooltip>{{ getInteractionCounts().likes }} Likes</q-tooltip>
+                    </q-badge>
+                    <q-badge
+                      v-if="getInteractionCounts().bookmarks > 0"
+                      :label="getInteractionCounts().bookmarks"
+                      color="amber-6"
+                      rounded
+                    >
+                      <q-tooltip>{{ getInteractionCounts().bookmarks }} Bookmarks</q-tooltip>
+                    </q-badge>
+                    <q-badge
+                      v-if="getInteractionCounts().reminders > 0"
+                      :label="getInteractionCounts().reminders"
+                      color="green-6"
+                      rounded
+                    >
+                      <q-tooltip>{{ getInteractionCounts().reminders }} Reminders</q-tooltip>
+                    </q-badge>
+                  </div>
+                </q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup @click="$router.push('/dashboard')">
@@ -148,6 +176,34 @@
               <q-icon name="favorite" />
             </q-item-section>
             <q-item-section> My Favorites </q-item-section>
+            <q-item-section side v-if="getInteractionCounts().total > 0">
+              <div class="row items-center q-gutter-xs">
+                <q-badge
+                  v-if="getInteractionCounts().likes > 0"
+                  :label="getInteractionCounts().likes"
+                  color="red-6"
+                  rounded
+                >
+                  <q-tooltip>{{ getInteractionCounts().likes }} Likes</q-tooltip>
+                </q-badge>
+                <q-badge
+                  v-if="getInteractionCounts().bookmarks > 0"
+                  :label="getInteractionCounts().bookmarks"
+                  color="amber-6"
+                  rounded
+                >
+                  <q-tooltip>{{ getInteractionCounts().bookmarks }} Bookmarks</q-tooltip>
+                </q-badge>
+                <q-badge
+                  v-if="getInteractionCounts().reminders > 0"
+                  :label="getInteractionCounts().reminders"
+                  color="green-6"
+                  rounded
+                >
+                  <q-tooltip>{{ getInteractionCounts().reminders }} Reminders</q-tooltip>
+                </q-badge>
+              </div>
+            </q-item-section>
           </q-item>
 
           <q-item clickable v-ripple to="/dashboard">
@@ -174,13 +230,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
+import { useSessionMonitor } from '../composables/useSessionMonitor';
+import { useInteractionCache } from '../composables/useInteractionCache';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const sessionMonitor = useSessionMonitor();
+const interactionCache = useInteractionCache();
 
 interface LinkProps {
   title: string;
@@ -200,6 +260,11 @@ const linksList: LinkProps[] = [
     link: '/events',
   },
   {
+    title: 'Event Series',
+    icon: 'event_repeat',
+    link: '/event-series',
+  },
+  {
     title: 'DJs',
     icon: 'music_note',
     link: '/djs',
@@ -213,11 +278,6 @@ const linksList: LinkProps[] = [
     title: 'Couples',
     icon: 'people',
     link: '/couples',
-  },
-  {
-    title: 'Event Series',
-    icon: 'event_repeat',
-    link: '/event-series',
   },
   {
     title: 'About',
@@ -244,7 +304,7 @@ function toggleLeftDrawer() {
 
 const handleLogout = async () => {
   try {
-    await authStore.logout();
+    authStore.logout();
     Notify.create({
       type: 'positive',
       message: 'Signed out successfully',
@@ -265,6 +325,19 @@ const handleLogout = async () => {
 onMounted(async () => {
   await authStore.loadStoredAuth();
 });
+
+// Watch authentication state to start/stop session monitoring
+watch(
+  () => authStore.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated) {
+      sessionMonitor.startMonitoring();
+    } else {
+      sessionMonitor.stopMonitoring();
+    }
+  },
+  { immediate: true },
+);
 
 function getUserDisplayName(): string {
   if (!authStore.user?.name) return 'User';
@@ -296,5 +369,20 @@ function getUserAvatar(): string {
   }
 
   return '';
+}
+
+function getInteractionCounts(): {
+  total: number;
+  likes: number;
+  bookmarks: number;
+  reminders: number;
+} {
+  const counts = interactionCache.interactionCounts.value;
+  return {
+    total: counts.likes + counts.bookmarks + counts.reminders + counts.follows,
+    likes: counts.likes,
+    bookmarks: counts.bookmarks,
+    reminders: counts.reminders,
+  };
 }
 </script>

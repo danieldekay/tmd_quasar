@@ -392,7 +392,13 @@ test_endpoint() {
     
     echo -e "${YELLOW}Testing: ${test_name}${NC}"
     
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -442,7 +448,13 @@ test_hal_structure() {
     
     echo -e "${YELLOW}Testing HAL: ${test_name}${NC}"
     
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -488,7 +500,13 @@ test_embed() {
     
     echo -e "${YELLOW}Testing _embed: ${test_name}${NC}"
     
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}?_embed=true" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}?_embed=true\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -521,13 +539,19 @@ test_pagination() {
     
     echo -e "${YELLOW}Testing Pagination: ${test_name}${NC}"
     
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
     # Test page 1
-    local response1=$(curl -s "${BASE_URL}/${endpoint}?per_page=2&page=1" 2>/dev/null)
+    local response1=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?per_page=2&page=1\"" 2>/dev/null)
     local count1=$(echo "$response1" | jq '.count' 2>/dev/null)
     local page1=$(echo "$response1" | jq '.page' 2>/dev/null)
     
     # Test page 2
-    local response2=$(curl -s "${BASE_URL}/${endpoint}?per_page=2&page=2" 2>/dev/null)
+    local response2=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?per_page=2&page=2\"" 2>/dev/null)
     local count2=$(echo "$response2" | jq '.count' 2>/dev/null)
     local page2=$(echo "$response2" | jq '.page' 2>/dev/null)
     
@@ -552,12 +576,18 @@ test_sorting() {
     
     echo -e "${YELLOW}Testing Sorting: ${test_name} by ${orderby}${NC}"
     
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
     # Test ASC
-    local response_asc=$(curl -s "${BASE_URL}/${endpoint}?orderby=${orderby}&order=asc&per_page=2" 2>/dev/null)
+    local response_asc=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?orderby=${orderby}&order=asc&per_page=2\"" 2>/dev/null)
     local first_asc=$(echo "$response_asc" | jq -r "._embedded.\"$embedded_key\"[0].title // ._embedded.\"$embedded_key\"[0].${orderby} // \"null\"" 2>/dev/null)
     
     # Test DESC  
-    local response_desc=$(curl -s "${BASE_URL}/${endpoint}?orderby=${orderby}&order=desc&per_page=2" 2>/dev/null)
+    local response_desc=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?orderby=${orderby}&order=desc&per_page=2\"" 2>/dev/null)
     local first_desc=$(echo "$response_desc" | jq -r "._embedded.\"$embedded_key\"[0].title // ._embedded.\"$embedded_key\"[0].${orderby} // \"null\"" 2>/dev/null)
     
     if [[ "$first_asc" != "null" && "$first_desc" != "null" && "$first_asc" != "$first_desc" ]]; then
@@ -581,7 +611,13 @@ test_meta_fields() {
     
     echo -e "${YELLOW}Testing Meta Fields: ${test_name}${NC}"
     
-    local response=$(curl -s "${BASE_URL}/${endpoint}?meta_fields=${meta_fields}&per_page=1" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?meta_fields=${meta_fields}&per_page=1\"" 2>/dev/null)
     local first_item=$(echo "$response" | jq "._embedded.\"$embedded_key\"[0]" 2>/dev/null)
     
     # Check if at least one meta field is present
@@ -615,7 +651,13 @@ test_meta_filtering() {
     
     echo -e "${YELLOW}Testing Meta Filtering: ${test_name}${NC}"
     
-    local response=$(curl -s "${BASE_URL}/${endpoint}?meta_filters=${meta_filter}" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?meta_filters=${meta_filter}\"" 2>/dev/null)
     local total=$(echo "$response" | jq '.total' 2>/dev/null)
     local has_links=$(echo "$response" | jq 'has("_links")' 2>/dev/null)
     
@@ -639,8 +681,14 @@ test_single_item() {
     
     echo -e "${YELLOW}Testing Single Item: ${test_name}${NC}"
     
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
     # Get first item ID
-    local collection_response=$(curl -s "${BASE_URL}/${endpoint}?per_page=1" 2>/dev/null)
+    local collection_response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?per_page=1\"" 2>/dev/null)
     local item_id=$(echo "$collection_response" | jq -r "._embedded.\"$embedded_key\"[0].id // \"null\"" 2>/dev/null)
     
     if [[ "$item_id" == "null" || "$item_id" == "" ]]; then
@@ -650,7 +698,7 @@ test_single_item() {
     fi
     
     # Test single item endpoint
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}/${item_id}" 2>/dev/null)
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}/${item_id}\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -664,7 +712,7 @@ test_single_item() {
             ((TESTS_PASSED++))
             
             # Also test single item with embed
-            local embed_response=$(curl -s "${BASE_URL}/${endpoint}/${item_id}?_embed=true" 2>/dev/null)
+            local embed_response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}/${item_id}?_embed=true\"" 2>/dev/null)
             local has_embedded=$(echo "$embed_response" | jq 'has("_embedded")' 2>/dev/null)
             
             if [[ "$has_embedded" == "true" ]]; then
@@ -805,7 +853,13 @@ test_endpoint 'djs?meta_filters={"tmd_dj_real_name":{"value":"a","compare":"LIKE
 print_section "Error Handling Tests"
 
 echo -e "${YELLOW}Testing Invalid Event ID${NC}"
-response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/events/999999" 2>/dev/null)
+# Include JWT token if available
+auth_header=""
+if [[ -n "$JWT_TOKEN" ]]; then
+    auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+fi
+
+response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/events/999999\"" 2>/dev/null)
 http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
 body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
 

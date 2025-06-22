@@ -11,8 +11,13 @@ export const requireAuth = async (
 ): Promise<void> => {
   const authStore = useAuthStore();
 
-  // Load stored authentication if not already loaded
-  if (!authStore.isAuthenticated) {
+  // Load stored authentication if not already loaded and not currently loading
+  // and we haven't already attempted to load stored auth and failed
+  if (
+    !authStore.isAuthenticated &&
+    !authStore.isLoadingStoredAuth &&
+    !authStore.hasAttemptedStoredAuth
+  ) {
     await authStore.loadStoredAuth();
   }
 
@@ -37,8 +42,13 @@ export const requireRole = (requiredRole: string) => {
   ): Promise<void> => {
     const authStore = useAuthStore();
 
-    // Load stored authentication if not already loaded
-    if (!authStore.isAuthenticated) {
+    // Load stored authentication if not already loaded and not currently loading
+    // and we haven't already attempted to load stored auth and failed
+    if (
+      !authStore.isAuthenticated &&
+      !authStore.isLoadingStoredAuth &&
+      !authStore.hasAttemptedStoredAuth
+    ) {
       await authStore.loadStoredAuth();
     }
 
@@ -67,8 +77,13 @@ export const requireAdmin = async (
 ): Promise<void> => {
   const authStore = useAuthStore();
 
-  // Load stored authentication if not already loaded
-  if (!authStore.isAuthenticated) {
+  // Load stored authentication if not already loaded and not currently loading
+  // and we haven't already attempted to load stored auth and failed
+  if (
+    !authStore.isAuthenticated &&
+    !authStore.isLoadingStoredAuth &&
+    !authStore.hasAttemptedStoredAuth
+  ) {
     await authStore.loadStoredAuth();
   }
 
@@ -96,8 +111,13 @@ export const requireManageOptions = async (
 ): Promise<void> => {
   const authStore = useAuthStore();
 
-  // Load stored authentication if not already loaded
-  if (!authStore.isAuthenticated) {
+  // Load stored authentication if not already loaded and not currently loading
+  // and we haven't already attempted to load stored auth and failed
+  if (
+    !authStore.isAuthenticated &&
+    !authStore.isLoadingStoredAuth &&
+    !authStore.hasAttemptedStoredAuth
+  ) {
     await authStore.loadStoredAuth();
   }
 

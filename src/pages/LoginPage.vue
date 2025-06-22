@@ -251,16 +251,16 @@ const handleLogin = async (): Promise<void> => {
 };
 
 // Handle forgot password
-const handleForgotPassword = async (): Promise<void> => {
+const handleForgotPassword = (): void => {
   if (!forgotPasswordEmail.value) return;
 
   isResettingPassword.value = true;
 
   try {
-    await authService.requestPasswordReset(forgotPasswordEmail.value);
+    authService.requestPasswordReset(forgotPasswordEmail.value);
     Notify.create({
       type: 'positive',
-      message: 'Password reset link sent to your email',
+      message: 'Password reset page opened in new tab',
       position: 'top',
     });
     showForgotPassword.value = false;
@@ -268,7 +268,7 @@ const handleForgotPassword = async (): Promise<void> => {
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: error instanceof Error ? error.message : 'Failed to send reset link',
+      message: error instanceof Error ? error.message : 'Failed to open reset page',
       position: 'top',
     });
   } finally {
@@ -290,7 +290,7 @@ const handleRegister = async (): Promise<void> => {
   isRegistering.value = true;
 
   try {
-    await authService.register({
+    authService.register({
       username: registerForm.username,
       email: registerForm.email,
       name: registerForm.name,
@@ -299,7 +299,7 @@ const handleRegister = async (): Promise<void> => {
 
     Notify.create({
       type: 'positive',
-      message: 'Account created successfully!',
+      message: 'Registration page opened in new tab',
       position: 'top',
     });
 
@@ -311,7 +311,7 @@ const handleRegister = async (): Promise<void> => {
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: error instanceof Error ? error.message : 'Registration failed',
+      message: error instanceof Error ? error.message : 'Failed to open registration page',
       position: 'top',
     });
   } finally {

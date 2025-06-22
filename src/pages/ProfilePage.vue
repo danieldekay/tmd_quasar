@@ -219,9 +219,9 @@
                 <q-icon name="event" color="primary" />
                 Events ({{ profile.content_counts.event.published }})
               </div>
-              <q-list v-if="profile._embedded?.['authored:events']" dense>
+              <q-list v-if="profile._embedded?.['authored:events']?.[0]?._embedded?.events" dense>
                 <q-item
-                  v-for="event in profile._embedded['authored:events']"
+                  v-for="event in profile._embedded['authored:events'][0]._embedded.events"
                   :key="event.id"
                   clickable
                   @click="viewEvent(event.id)"
@@ -246,9 +246,12 @@
                 <q-icon name="school" color="secondary" />
                 Teachers ({{ profile.content_counts.teacher.published }})
               </div>
-              <q-list v-if="profile._embedded?.['authored:teachers']" dense>
+              <q-list
+                v-if="profile._embedded?.['authored:teachers']?.[0]?._embedded?.teachers"
+                dense
+              >
                 <q-item
-                  v-for="teacher in profile._embedded['authored:teachers']"
+                  v-for="teacher in profile._embedded['authored:teachers'][0]._embedded.teachers"
                   :key="teacher.id"
                   clickable
                   @click="viewTeacher(teacher.id)"
@@ -274,9 +277,9 @@
                 <q-icon name="music_note" color="accent" />
                 DJs ({{ profile.content_counts.dj.published }})
               </div>
-              <q-list v-if="profile._embedded?.['authored:djs']" dense>
+              <q-list v-if="profile._embedded?.['authored:djs']?.[0]?._embedded?.djs" dense>
                 <q-item
-                  v-for="dj in profile._embedded['authored:djs']"
+                  v-for="dj in profile._embedded['authored:djs'][0]._embedded.djs"
                   :key="dj.id"
                   clickable
                   @click="viewDJ(dj.id)"
@@ -300,9 +303,16 @@
                 <q-icon name="repeat" color="positive" />
                 Event Series ({{ profile.content_counts.event_series.published }})
               </div>
-              <q-list v-if="profile._embedded?.['authored:event-series']" dense>
+              <q-list
+                v-if="
+                  profile._embedded?.['authored:event-series']?.[0]?._embedded?.['event-series']
+                "
+                dense
+              >
                 <q-item
-                  v-for="series in profile._embedded['authored:event-series']"
+                  v-for="series in profile._embedded['authored:event-series'][0]._embedded[
+                    'event-series'
+                  ]"
                   :key="series.id"
                   clickable
                   @click="viewEventSeries(series.id)"

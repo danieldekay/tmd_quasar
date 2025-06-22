@@ -1,6 +1,7 @@
 import { boot } from 'quasar/wrappers';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
+import { getJWTToken } from '../utils/cookies';
 
 // Extend axios config to include metadata
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -25,6 +26,9 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
+// Track if we're currently attempting a re-login to avoid infinite loops
+let isAttemptingRelogin = false;
+
 // Request interceptor to add request metadata and auth token
 api.interceptors.request.use(
   (config: ExtendedAxiosRequestConfig) => {
@@ -32,7 +36,7 @@ api.interceptors.request.use(
     config.metadata = { startTime: Date.now() };
 
     // Add authentication token if available
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    const token = getJWTToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -53,7 +57,7 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     // Create enhanced error with additional context
     const enhancedError: APIError = new Error() as APIError;
     enhancedError.name = 'APIError';
@@ -71,29 +75,74 @@ api.interceptors.response.use(
       enhancedError.isOffline = true;
       enhancedError.originalError = error;
     } else if (error.response.status === 401) {
-      // Unauthorized - clear auth and redirect to login
+      // Unauthorized - try automatic re-login first
       enhancedError.message = 'Authentication required';
       enhancedError.name = 'UnauthorizedError';
       enhancedError.status = error.response.status;
       enhancedError.originalError = error;
 
-      // Clear stored authentication
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      sessionStorage.removeItem('auth_token');
-      sessionStorage.removeItem('auth_user');
+      // Try automatic re-login if not already attempting
+      if (!isAttemptingRelogin) {
+        isAttemptingRelogin = true;
 
-      // Redirect to login page
+        try {
+          // Note: Removed notification calls - useAuthNotifications can't be called from axios interceptor
+          // The UI can show re-login state through other means (like auth store state changes)
+
+          // Dynamically import auth store to avoid circular dependency
+          const { useAuthStore } = await import('../stores/authStore');
+          const authStore = useAuthStore();
+
+          const reloginSuccess = await authStore.attemptAutoRelogin();
+
+          if (reloginSuccess) {
+            // Re-login successful, retry the original request
+            console.log('Auto-relogin successful, retrying original request');
+            // Note: Success notification removed - UI can show success through auth state
+
+            // Update the authorization header with the new token
+            const newToken = getJWTToken();
+            if (newToken && error.config) {
+              error.config.headers.Authorization = `Bearer ${newToken}`;
+
+              // Retry the original request
+              const response = await api.request(error.config);
+              isAttemptingRelogin = false;
+              return response;
+            }
+          } else {
+            // Re-login failed
+            console.log('Auto-relogin failed');
+            // Note: Failure notification removed - UI can show failure through auth state
+          }
+        } catch (reloginError) {
+          console.warn('Auto-relogin failed:', reloginError);
+          // Note: Error notification removed - UI can show error through auth state
+        } finally {
+          isAttemptingRelogin = false;
+        }
+      }
+
+      // Auto-relogin failed or not attempted, redirect to login
       if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
         const currentPath = window.location.pathname + window.location.search;
         window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
       }
     } else if (error.response.status >= 500) {
-      // Server errors
-      enhancedError.message = 'API server error - please try again later';
-      enhancedError.name = 'ServerError';
-      enhancedError.status = error.response.status;
-      enhancedError.originalError = error;
+      // Check for specific business logic errors that return 500 status
+      const responseData = error.response.data as { code?: string; message?: string } | undefined;
+      if (responseData?.code === 'interaction_exists') {
+        enhancedError.message = 'You have already performed this interaction';
+        enhancedError.name = 'InteractionExistsError';
+        enhancedError.status = error.response.status;
+        enhancedError.originalError = error;
+      } else {
+        // General server errors
+        enhancedError.message = 'API server error - please try again later';
+        enhancedError.name = 'ServerError';
+        enhancedError.status = error.response.status;
+        enhancedError.originalError = error;
+      }
     } else if (error.response.status === 404) {
       // Not found errors
       enhancedError.message = 'Requested resource not found';

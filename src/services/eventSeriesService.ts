@@ -46,7 +46,11 @@ class EventSeriesService extends BaseService<EventSeries> {
       // Transform and enhance the data
       const eventSeries = this.transformEventSeries(response.data);
 
-      return eventSeries;
+      return {
+        eventSeries,
+        totalPages: response.totalPages,
+        total: response.totalCount,
+      };
     } catch (error) {
       throw new Error(
         `Failed to fetch event series: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -283,8 +287,8 @@ class EventSeriesService extends BaseService<EventSeries> {
   async getEventSeriesStats(
     signal?: AbortSignal,
   ): Promise<ReturnType<typeof this.analyzeEventSeriesData>> {
-    const eventSeries = await this.getEventSeries({ per_page: 1000 }, signal);
-    return this.analyzeEventSeriesData(eventSeries);
+    const response = await this.getEventSeries({ per_page: 1000 }, signal);
+    return this.analyzeEventSeriesData(response.eventSeries);
   }
 }
 
