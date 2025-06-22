@@ -502,17 +502,17 @@ const viewEventSeries = (id: number) => {
 };
 
 const editProfile = () => {
-  $q.notify({
-    type: 'info',
-    message: 'Edit profile functionality coming soon!',
-  });
+  // Redirect to WordPress admin profile page
+  const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+  const profileUrl = `${wordpressUrl}/wp-admin/profile.php`;
+  window.open(profileUrl, '_blank');
 };
 
 const changePassword = () => {
-  $q.notify({
-    type: 'info',
-    message: 'Change password functionality coming soon!',
-  });
+  // Redirect to WordPress admin password change page
+  const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+  const passwordUrl = `${wordpressUrl}/wp-admin/profile.php#password`;
+  window.open(passwordUrl, '_blank');
 };
 
 const logout = () => {
