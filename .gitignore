@@ -75,3 +75,4 @@ coverage/
 
 # local .env files
 .env.local*
+credentials.local.json
