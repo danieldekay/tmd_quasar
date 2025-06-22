@@ -1,6 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
-import { useAuthNotifications } from './useAuthNotifications';
 import { getJWTToken } from '../utils/cookies';
 
 interface JWTPayload {
@@ -11,14 +10,12 @@ interface JWTPayload {
 
 export function useSessionMonitor() {
   const authStore = useAuthStore();
-  const authNotifications = useAuthNotifications();
 
   const isMonitoring = ref(false);
   const timeUntilExpiry = ref<number | null>(null);
-  const warningShown = ref(false);
 
   let checkInterval: NodeJS.Timeout | null = null;
-  let warningTimeout: NodeJS.Timeout | null = null;
+  let refreshTimeout: NodeJS.Timeout | null = null;
 
   // Decode JWT token to get expiration time
   const decodeJWT = (token: string): JWTPayload | null => {
@@ -74,30 +71,14 @@ export function useSessionMonitor() {
       return;
     }
 
-    // Token will expire in less than 5 minutes (300000 ms)
-    const fiveMinutes = 5 * 60 * 1000;
-    if (timeLeft <= fiveMinutes && !warningShown.value) {
-      const minutesLeft = Math.ceil(timeLeft / (60 * 1000));
-      authNotifications.showSessionWarning(minutesLeft);
-      warningShown.value = true;
-
-      // Set timeout to attempt refresh when there's 2 minutes left
-      const twoMinutes = 2 * 60 * 1000;
-      if (timeLeft > twoMinutes) {
-        warningTimeout = setTimeout(() => {
-          console.log('Attempting proactive token refresh (2 minutes before expiry)');
-          void authStore.attemptAutoRelogin();
-        }, timeLeft - twoMinutes);
-      }
-    }
-
-    // Reset warning if token was refreshed and we have more than 5 minutes
-    if (timeLeft > fiveMinutes && warningShown.value) {
-      warningShown.value = false;
-      if (warningTimeout) {
-        clearTimeout(warningTimeout);
-        warningTimeout = null;
-      }
+    // Set timeout to attempt refresh when there's 10 minutes left
+    const tenMinutes = 10 * 60 * 1000;
+    if (timeLeft > tenMinutes && !refreshTimeout) {
+      refreshTimeout = setTimeout(() => {
+        console.log('Attempting proactive token refresh (10 minutes before expiry)');
+        void authStore.attemptAutoRelogin();
+        refreshTimeout = null;
+      }, timeLeft - tenMinutes);
     }
   };
 
@@ -119,16 +100,15 @@ export function useSessionMonitor() {
   const stopMonitoring = () => {
     console.log('Stopping session monitoring');
     isMonitoring.value = false;
-    warningShown.value = false;
 
     if (checkInterval) {
       clearInterval(checkInterval);
       checkInterval = null;
     }
 
-    if (warningTimeout) {
-      clearTimeout(warningTimeout);
-      warningTimeout = null;
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+      refreshTimeout = null;
     }
   };
 
@@ -168,7 +148,6 @@ export function useSessionMonitor() {
   return {
     isMonitoring,
     timeUntilExpiry,
-    warningShown,
     startMonitoring,
     stopMonitoring,
     refreshSession,

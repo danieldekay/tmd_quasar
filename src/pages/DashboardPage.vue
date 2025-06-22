@@ -4,7 +4,6 @@
     <ListPageHeader
       title="My Dashboard"
       subtitle="Manage your content and view your published, scheduled, and draft posts"
-      show-stats
       :total-count="totalContentCount"
       stats-label="Total Content"
     >

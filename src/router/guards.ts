@@ -12,7 +12,12 @@ export const requireAuth = async (
   const authStore = useAuthStore();
 
   // Load stored authentication if not already loaded and not currently loading
-  if (!authStore.isAuthenticated && !authStore.isLoadingStoredAuth) {
+  // and we haven't already attempted to load stored auth and failed
+  if (
+    !authStore.isAuthenticated &&
+    !authStore.isLoadingStoredAuth &&
+    !authStore.hasAttemptedStoredAuth
+  ) {
     await authStore.loadStoredAuth();
   }
 
@@ -38,7 +43,12 @@ export const requireRole = (requiredRole: string) => {
     const authStore = useAuthStore();
 
     // Load stored authentication if not already loaded and not currently loading
-    if (!authStore.isAuthenticated && !authStore.isLoadingStoredAuth) {
+    // and we haven't already attempted to load stored auth and failed
+    if (
+      !authStore.isAuthenticated &&
+      !authStore.isLoadingStoredAuth &&
+      !authStore.hasAttemptedStoredAuth
+    ) {
       await authStore.loadStoredAuth();
     }
 
@@ -68,7 +78,12 @@ export const requireAdmin = async (
   const authStore = useAuthStore();
 
   // Load stored authentication if not already loaded and not currently loading
-  if (!authStore.isAuthenticated && !authStore.isLoadingStoredAuth) {
+  // and we haven't already attempted to load stored auth and failed
+  if (
+    !authStore.isAuthenticated &&
+    !authStore.isLoadingStoredAuth &&
+    !authStore.hasAttemptedStoredAuth
+  ) {
     await authStore.loadStoredAuth();
   }
 
@@ -97,7 +112,12 @@ export const requireManageOptions = async (
   const authStore = useAuthStore();
 
   // Load stored authentication if not already loaded and not currently loading
-  if (!authStore.isAuthenticated && !authStore.isLoadingStoredAuth) {
+  // and we haven't already attempted to load stored auth and failed
+  if (
+    !authStore.isAuthenticated &&
+    !authStore.isLoadingStoredAuth &&
+    !authStore.hasAttemptedStoredAuth
+  ) {
     await authStore.loadStoredAuth();
   }
 

@@ -17,7 +17,7 @@ const DEFAULT_OPTIONS: CookieOptions = {
   path: '/',
   secure: window.location.protocol === 'https:', // Only secure on HTTPS
   sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
-  maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+  maxAge: 60 * 60, // 60 minutes in seconds
 };
 
 /**
@@ -95,7 +95,7 @@ export const JWT_COOKIE_NAME = 'tmd_jwt_token';
 export const JWT_REFRESH_COOKIE_NAME = 'tmd_refresh_token';
 
 export const setJWTToken = (token: string, rememberMe = false): void => {
-  const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days vs 1 day
+  const maxAge = rememberMe ? 7 * 24 * 60 * 60 : 60 * 60; // 7 days vs 60 minutes
   setCookie(JWT_COOKIE_NAME, token, { maxAge });
 };
 
@@ -104,7 +104,7 @@ export const getJWTToken = (): string | null => {
 };
 
 export const setRefreshToken = (token: string, rememberMe = false): void => {
-  const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days vs 1 day
+  const maxAge = rememberMe ? 7 * 24 * 60 * 60 : 60 * 60; // 7 days vs 60 minutes
   setCookie(JWT_REFRESH_COOKIE_NAME, token, { maxAge });
 };
 

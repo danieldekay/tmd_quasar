@@ -1,27 +1,66 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { requireManageOptions } from './guards';
+import { requireManageOptions, requireAuth, redirectIfAuthenticated } from './guards';
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'events', component: () => import('pages/EventList.vue') },
-      { path: 'events-q', component: () => import('pages/EventListQ.vue') },
-      { path: 'events/:id', component: () => import('pages/EventDetails.vue') },
-      { path: 'djs', component: () => import('pages/DJsPage.vue') },
-      { path: 'djs/:id', component: () => import('pages/DJDetails.vue') },
-      { path: 'teachers', component: () => import('pages/TeachersPage.vue') },
-      { path: 'teachers/:id', component: () => import('pages/TeacherDetails.vue') },
-      { path: 'couples', component: () => import('pages/CouplesPage.vue') },
-      { path: 'couples/:id', component: () => import('pages/CoupleDetails.vue') },
-      { path: 'event-series', component: () => import('pages/EventSeriesPage.vue') },
-      { path: 'event-series/:id', component: () => import('pages/EventSeriesDetails.vue') },
-      { path: 'about', component: () => import('pages/AboutPage.vue') },
-      { path: 'profile', component: () => import('pages/ProfilePage.vue') },
-      { path: 'dashboard', component: () => import('pages/DashboardPage.vue') },
-      { path: 'favorites', component: () => import('pages/FavoritesPage.vue') },
+      { path: '', component: () => import('pages/IndexPage.vue'), beforeEnter: requireAuth },
+      { path: 'events', component: () => import('pages/EventList.vue'), beforeEnter: requireAuth },
+      {
+        path: 'events/:id',
+        component: () => import('pages/EventDetails.vue'),
+        beforeEnter: requireAuth,
+      },
+      { path: 'djs', component: () => import('pages/DJsPage.vue'), beforeEnter: requireAuth },
+      { path: 'djs/:id', component: () => import('pages/DJDetails.vue'), beforeEnter: requireAuth },
+      {
+        path: 'teachers',
+        component: () => import('pages/TeachersPage.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'teachers/:id',
+        component: () => import('pages/TeacherDetails.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'couples',
+        component: () => import('pages/CouplesPage.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'couples/:id',
+        component: () => import('pages/CoupleDetails.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'event-series',
+        component: () => import('pages/EventSeriesPage.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'event-series/:id',
+        component: () => import('pages/EventSeriesDetails.vue'),
+        beforeEnter: requireAuth,
+      },
+      { path: 'about', component: () => import('pages/AboutPage.vue'), beforeEnter: requireAuth },
+      {
+        path: 'profile',
+        component: () => import('pages/ProfilePage.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'dashboard',
+        component: () => import('pages/DashboardPage.vue'),
+        beforeEnter: requireAuth,
+      },
+      {
+        path: 'favorites',
+        component: () => import('pages/FavoritesPage.vue'),
+        beforeEnter: requireAuth,
+      },
       {
         path: 'debug',
         component: () => import('pages/DebugPage.vue'),
@@ -35,7 +74,11 @@ const routes: RouteRecordRaw[] = [
     path: '/auth',
     component: () => import('layouts/AuthLayout.vue'),
     children: [
-      { path: 'login', component: () => import('pages/LoginPage.vue') },
+      {
+        path: 'login',
+        component: () => import('pages/LoginPage.vue'),
+        beforeEnter: redirectIfAuthenticated,
+      },
       { path: 'unauthorized', component: () => import('pages/UnauthorizedPage.vue') },
     ],
   },

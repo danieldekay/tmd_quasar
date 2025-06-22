@@ -42,6 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(null);
   const isLoading = ref(false);
   const isLoadingStoredAuth = ref(false);
+  const hasAttemptedStoredAuth = ref(false);
   const error = ref<string | null>(null);
 
   // Computed
@@ -108,6 +109,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null;
       error.value = null;
       isLoadingStoredAuth.value = false;
+      hasAttemptedStoredAuth.value = false;
 
       // Clear stored tokens
       clearJWTTokens();
@@ -225,9 +227,15 @@ export const useAuthStore = defineStore('auth', () => {
       return isAuthenticated.value;
     }
 
+    // If we've already attempted to load stored auth and failed, don't try again
+    if (hasAttemptedStoredAuth.value && !isAuthenticated.value) {
+      return false;
+    }
+
     const storedToken = getJWTToken();
 
     if (!storedToken) {
+      hasAttemptedStoredAuth.value = true;
       return false;
     }
 
@@ -245,12 +253,14 @@ export const useAuthStore = defineStore('auth', () => {
           // Since we don't have refresh tokens, we'll just clear the invalid token
           // and let the user log in again
           logout();
+          hasAttemptedStoredAuth.value = true;
           return false;
         }
       } catch (validationError) {
         console.warn('Token validation error:', validationError);
         // Clear invalid token and let user log in again
         logout();
+        hasAttemptedStoredAuth.value = true;
         return false;
       }
 
@@ -288,10 +298,12 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
+      hasAttemptedStoredAuth.value = true;
       return true;
     } catch (err) {
       console.warn('Failed to load stored auth:', err);
       logout();
+      hasAttemptedStoredAuth.value = true;
       return false;
     } finally {
       isLoadingStoredAuth.value = false;
@@ -308,6 +320,7 @@ export const useAuthStore = defineStore('auth', () => {
     token: readonly(token),
     isLoading: readonly(isLoading),
     isLoadingStoredAuth: readonly(isLoadingStoredAuth),
+    hasAttemptedStoredAuth: readonly(hasAttemptedStoredAuth),
     error: readonly(error),
 
     // Computed

@@ -1,464 +1,463 @@
 <template>
-  <q-page class="couples-directory">
-    <!-- Header Section -->
-    <ListPageHeader
-      title="Couples Directory"
-      subtitle="Discover tango couples from around the world"
-      :show-stats="true"
-      :total-count="totalCouples"
-      stats-label="Total Couples"
-    />
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-section q-px-lg">
-      <q-card flat bordered>
-        <q-card-section class="text-center q-py-xl">
-          <q-spinner-dots color="primary" size="3em" />
-          <p class="text-subtitle1 q-mt-md text-grey-6">Loading couples...</p>
-        </q-card-section>
-      </q-card>
+  <q-page class="couples-list-page">
+    <!-- Header -->
+    <div class="page-header q-pa-lg">
+      <div class="row items-center justify-between">
+        <div class="col">
+          <h1 class="text-h4 text-weight-bold q-mb-xs">Couples Directory</h1>
+          <p class="text-subtitle1 text-grey-6 q-ma-none">
+            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} couples
+            found based on filters
+          </p>
+        </div>
+        <div class="col-auto">
+          <q-btn round color="primary" icon="refresh" @click="refreshData" :loading="loading">
+            <q-tooltip>Refresh Couples</q-tooltip>
+          </q-btn>
+        </div>
+      </div>
     </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="error-section q-px-lg">
-      <q-card flat bordered>
-        <q-card-section class="text-center q-py-xl">
-          <q-icon name="error_outline" color="negative" size="3em" />
-          <p class="text-subtitle1 q-mt-md">{{ error }}</p>
-          <q-btn color="primary" @click="retryLoad" label="Retry" class="q-mt-md" />
-        </q-card-section>
-      </q-card>
-    </div>
-
-    <!-- Results Section -->
-    <div v-else class="results-section q-px-lg q-pb-lg">
-      <q-card flat bordered class="content-card">
-        <!-- Search and Filter Controls -->
-        <div class="q-pa-md border-bottom">
-          <div class="row q-gutter-md items-center">
-            <div class="col-12 col-md-6">
-              <q-input v-model="searchQuery" filled placeholder="Search couples..." clearable dense>
+    <!-- Filters -->
+    <div class="filters-section q-px-lg q-pb-md">
+      <q-card flat bordered class="filters-card">
+        <q-card-section>
+          <div class="row q-gutter-md">
+            <!-- Search -->
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="searchQuery"
+                placeholder="Search couples, cities, or countries..."
+                dense
+                outlined
+                clearable
+                @update:model-value="onSearchChange"
+                @clear="onSearchChange"
+              >
                 <template v-slot:prepend>
                   <q-icon name="search" />
                 </template>
               </q-input>
             </div>
-            <div class="col-12 col-md-auto">
-              <q-btn
-                flat
-                color="primary"
-                icon="refresh"
-                label="Reload"
-                @click="() => fetchCouples(true)"
-                :loading="loading"
-              />
+
+            <!-- Country Filter -->
+            <div class="col-12 col-md-3">
+              <q-select
+                v-model="selectedCountry"
+                :options="countryOptions"
+                label="Filter by Country"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                :option-label="getCountryName"
+                :option-value="(opt) => opt"
+                @update:model-value="onFilterChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="flag" />
+                </template>
+              </q-select>
             </div>
-            <div class="col-12 col-md-auto">
+
+            <!-- Couple Type Filter -->
+            <div class="col-12 col-md-4">
+              <q-select
+                v-model="selectedCoupleType"
+                :options="coupleTypeOptions"
+                label="Filter by Couple Type"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                @update:model-value="onFilterChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="favorite" />
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Clear Filters -->
+            <div class="col-12 col-md-1">
               <q-btn
-                v-if="searchQuery.trim()"
                 flat
-                color="secondary"
-                icon="clear"
-                label="Clear Search"
-                @click="searchQuery = ''"
+                color="grey-7"
+                icon="clear_all"
+                label="Clear Filters"
+                @click="clearFilters"
+                :disable="!hasActiveFilters"
               />
             </div>
           </div>
-        </div>
 
-        <!-- Quasar Table -->
+          <!-- Active Filters Display -->
+          <div v-if="hasActiveFilters" class="q-mt-md">
+            <q-chip
+              v-if="selectedCountry"
+              removable
+              @remove="clearCountryFilter"
+              size="sm"
+              icon="flag"
+            >
+              {{ getCountryName(selectedCountry) }}
+            </q-chip>
+            <q-chip
+              v-if="selectedCoupleType"
+              removable
+              @remove="clearCoupleTypeFilter"
+              size="sm"
+              icon="favorite"
+            >
+              {{ getCoupleTypeLabel(selectedCoupleType) }}
+            </q-chip>
+            <q-chip v-if="searchQuery" removable @remove="clearSearch" size="sm" icon="search">
+              Search: "{{ searchQuery }}"
+            </q-chip>
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Couples Table -->
+    <div class="table-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="table-card">
         <q-table
           :rows="couples"
           :columns="columns"
           :loading="loading"
-          :pagination="pagination"
-          :rows-per-page-options="[10, 20, 50, 100]"
-          :filter="searchQuery"
+          v-model:pagination="pagination"
           row-key="id"
-          flat
-          @row-click="handleRowClick"
           @request="onRequest"
-          class="couples-table"
+          @row-click="handleRowClick"
+          :rows-per-page-options="[10, 20, 50, 100]"
           binary-state-sort
+          flat
+          bordered
+          class="couples-table"
         >
-          <template #body-cell-names="props">
-            <q-td :props="props" class="cursor-pointer">
-              <q-btn
-                :label="getCoupleNames(props.row)"
-                flat
-                no-caps
-                color="primary"
-                class="text-weight-medium q-pa-none"
-                style="text-align: left; justify-content: flex-start"
-                :to="`/couples/${props.row.id}`"
-                @click.stop
-              />
-            </q-td>
-          </template>
-
-          <template #body-cell-follower="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="getFollowerName(props.row)">
-                <q-btn
-                  :label="getFollowerName(props.row)"
-                  flat
-                  dense
-                  color="secondary"
-                  size="sm"
-                  :to="`/teachers/${getFollowerId(props.row)}`"
-                  v-if="getFollowerId(props.row)"
-                  @click.stop
+          <!-- Custom Cell Templates -->
+          <template #body-cell-name="props">
+            <q-td :props="props" class="couple-name-cell cursor-pointer">
+              <div class="couple-name-content">
+                <div class="couple-name text-weight-medium">
+                  {{ formatText(props.row.title) }}
+                </div>
+                <div
+                  v-if="
+                    props.row.meta_box?.nickname && props.row.meta_box.nickname !== props.row.title
+                  "
+                  class="couple-real-name text-caption text-grey-6"
                 >
-                  <q-tooltip>View follower profile</q-tooltip>
-                </q-btn>
-                <span v-else>{{ getFollowerName(props.row) }}</span>
+                  {{ formatText(props.row.meta_box.nickname) }}
+                </div>
               </div>
-              <span v-else class="text-grey-5">-</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-leader="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="getLeaderName(props.row)">
-                <q-btn
-                  :label="getLeaderName(props.row)"
-                  flat
-                  dense
-                  color="primary"
-                  size="sm"
-                  :to="`/teachers/${getLeaderId(props.row)}`"
-                  v-if="getLeaderId(props.row)"
-                  @click.stop
-                >
-                  <q-tooltip>View leader profile</q-tooltip>
-                </q-btn>
-                <span v-else>{{ getLeaderName(props.row) }}</span>
-              </div>
-              <span v-else class="text-grey-5">-</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-both_roles="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="getBothRolesName(props.row)">
-                <q-btn
-                  :label="getBothRolesName(props.row)"
-                  flat
-                  dense
-                  color="purple"
-                  size="sm"
-                  :to="`/teachers/${getBothRolesId(props.row)}`"
-                  v-if="getBothRolesId(props.row)"
-                  @click.stop
-                >
-                  <q-tooltip>View teacher profile (both roles)</q-tooltip>
-                </q-btn>
-                <span v-else>{{ getBothRolesName(props.row) }}</span>
-              </div>
-              <span v-else class="text-grey-5">-</span>
             </q-td>
           </template>
 
           <template #body-cell-city="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.meta_box?.city" class="location-content">
-                <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-                {{ props.row.meta_box.city }}
+            <q-td :props="props" class="city-cell cursor-pointer">
+              <div class="city-content">
+                <q-icon name="place" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{
+                  formatText(capitalizeCity(props.row.city))
+                }}</span>
               </div>
-              <span v-else class="text-grey-5">—</span>
             </q-td>
           </template>
 
           <template #body-cell-country="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.meta_box?.country" class="location-content">
-                <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-                {{ getCountryName(props.row.meta_box.country) }}
+            <q-td :props="props" class="country-cell cursor-pointer">
+              <div class="country-content">
+                <q-icon name="flag" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
               </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-couple_type="props">
+            <q-td :props="props" class="couple-type-cell cursor-pointer">
+              <q-chip
+                v-if="props.row.couple_type"
+                size="sm"
+                :color="getCoupleTypeColor(props.row.couple_type)"
+                text-color="white"
+                :icon="getCoupleTypeIcon(props.row.couple_type)"
+              >
+                {{ getCoupleTypeLabel(props.row.couple_type) }}
+              </q-chip>
               <span v-else class="text-grey-5">—</span>
             </q-td>
           </template>
 
-          <template #body-cell-partnership_style="props">
+          <template #body-cell-status="props">
             <q-td :props="props" class="cursor-pointer">
-              <q-chip
-                v-if="props.row.meta_box?.partnership_style"
-                :label="props.row.meta_box.partnership_style"
-                color="purple"
-                text-color="white"
-                size="sm"
-                dense
-              />
-              <span v-else class="text-grey-5">-</span>
+              <span>{{ getStatusLabel(props.row.status) }}</span>
             </q-td>
           </template>
 
-          <template #body-cell-partnership_started="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div v-if="props.row.meta_box?.partnership_started" class="text-caption">
-                {{ props.row.meta_box.partnership_started }}
-              </div>
-              <span v-else class="text-grey-5">-</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-events_count="props">
-            <q-td :props="props" class="cursor-pointer">
-              <q-badge
-                v-if="getEventsCount(props.row) > 0"
-                :label="getEventsCount(props.row)"
+          <!-- No Data State -->
+          <template #no-data>
+            <div class="text-center q-py-xl">
+              <q-icon name="favorite_border" size="4em" color="grey-4" />
+              <p class="text-h6 q-mt-md text-grey-6">No couples found</p>
+              <p class="text-body2 text-grey-5 q-mb-md">
+                Try adjusting your search criteria or filters
+              </p>
+              <q-btn
+                v-if="hasActiveFilters"
+                flat
                 color="primary"
-                rounded
+                label="Clear All Filters"
+                @click="clearFilters"
               />
-              <span v-else class="text-grey-5">0</span>
-            </q-td>
+            </div>
           </template>
 
-          <template #body-cell-date="props">
-            <q-td :props="props" class="cursor-pointer">
-              <div class="text-caption">{{ formatDate(props.row.date) }}</div>
-            </q-td>
+          <!-- Loading State -->
+          <template #loading>
+            <q-inner-loading showing color="primary" />
           </template>
         </q-table>
       </q-card>
+    </div>
+
+    <!-- Error State -->
+    <div v-if="error" class="error-section q-px-lg">
+      <q-banner class="bg-negative" icon="error">
+        <template v-slot:avatar>
+          <q-icon name="error" color="white" />
+        </template>
+        Failed to load couples
+        <template v-slot:action>
+          <q-btn flat color="white" label="Retry" @click="refreshData" />
+        </template>
+      </q-banner>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { coupleService } from '../services';
-import type { Couple } from '../services/types';
+import { coupleService, type Couple } from '../services';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
-import ListPageHeader from '../components/ListPageHeader.vue';
 
 const router = useRouter();
 const $q = useQuasar();
-const { formatDate } = useFormatters();
-const { getCountryName } = useCountries();
+
+// Composables
+const { getCountryName, getCountryOptionsFromCodes } = useCountries();
+const { formatText } = useFormatters();
 
 // State
 const couples = ref<Couple[]>([]);
-const loading = ref(true);
+const loading = ref(false);
 const error = ref<string | null>(null);
-const totalCouples = ref(0);
 const searchQuery = ref('');
+const selectedCountry = ref<string | null>(null);
+const selectedCoupleType = ref<string | null>(null);
+const allCountries = ref<Set<string>>(new Set());
+const totalCount = ref(0);
 
-// Quasar table pagination
+// Computed
+const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
+
+const coupleTypeOptions = computed(() => [
+  { label: 'Leader', value: 'leader' },
+  { label: 'Follower', value: 'follower' },
+  { label: 'Both', value: 'both' },
+  { label: 'Double Role', value: 'double-role' },
+]);
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value || selectedCountry.value || selectedCoupleType.value;
+});
+
+// Table columns
+const columns = [
+  {
+    name: 'name',
+    label: 'Couple Name',
+    field: 'title',
+    align: 'left' as const,
+    sortable: true,
+    style: 'min-width: 250px',
+  },
+  {
+    name: 'city',
+    label: 'City',
+    field: 'city',
+    align: 'left' as const,
+    sortable: true,
+    style: 'min-width: 120px',
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    field: 'country',
+    align: 'left' as const,
+    sortable: true,
+    style: 'min-width: 120px',
+  },
+  {
+    name: 'couple_type',
+    label: 'Couple Type',
+    field: 'couple_type',
+    align: 'center' as const,
+    sortable: true,
+    style: 'min-width: 120px',
+  },
+  {
+    name: 'status',
+    label: 'Status',
+    field: 'status',
+    align: 'center' as const,
+    sortable: true,
+    style: 'min-width: 100px',
+  },
+];
+
+// Pagination state
 const pagination = ref({
-  sortBy: 'date',
-  descending: true,
+  sortBy: 'name',
+  descending: false,
   page: 1,
   rowsPerPage: 20,
   rowsNumber: 0,
 });
 
-// Table columns (using Quasar's built-in sorting)
-const columns = [
-  {
-    name: 'names',
-    label: 'Partnership Name',
-    field: (row: Record<string, unknown>) => getCoupleNames(row as unknown as Couple),
-    align: 'left' as const,
-    sortable: true,
-    style: 'width: 25%;',
-  },
-  {
-    name: 'follower',
-    label: 'Follower',
-    field: (row: Record<string, unknown>) => getFollowerName(row as unknown as Couple),
-    align: 'left' as const,
-    sortable: true,
-    style: 'width: 15%;',
-  },
-  {
-    name: 'leader',
-    label: 'Leader',
-    field: (row: Record<string, unknown>) => getLeaderName(row as unknown as Couple),
-    align: 'left' as const,
-    sortable: true,
-    style: 'width: 15%;',
-  },
-  {
-    name: 'both_roles',
-    label: 'Both Roles',
-    field: (row: Record<string, unknown>) => getBothRolesName(row as unknown as Couple),
-    align: 'left' as const,
-    sortable: true,
-    style: 'width: 15%;',
-  },
-  {
-    name: 'city',
-    label: 'City',
-    field: (row: Record<string, unknown>) => (row as unknown as Couple).meta_box?.city || '',
-    align: 'left' as const,
-    sortable: true,
-    style: 'width: 10%;',
-  },
-  {
-    name: 'country',
-    label: 'Country',
-    field: (row: Record<string, unknown>) => (row as unknown as Couple).meta_box?.country || '',
-    align: 'left' as const,
-    sortable: true,
-    style: 'width: 10%;',
-  },
-  {
-    name: 'partnership_style',
-    label: 'Style',
-    field: (row: Record<string, unknown>) =>
-      (row as unknown as Couple).meta_box?.partnership_style || '',
-    align: 'center' as const,
-    sortable: true,
-    style: 'width: 10%;',
-  },
-  {
-    name: 'partnership_started',
-    label: 'Started',
-    field: (row: Record<string, unknown>) =>
-      (row as unknown as Couple).meta_box?.partnership_started || '',
-    align: 'center' as const,
-    sortable: true,
-    style: 'width: 8%;',
-  },
-  {
-    name: 'events_count',
-    label: 'Events',
-    field: (row: Record<string, unknown>) => getEventsCount(row as unknown as Couple),
-    align: 'center' as const,
-    sortable: true,
-    style: 'width: 8%;',
-  },
-  {
-    name: 'date',
-    label: 'Added',
-    field: 'date',
-    align: 'center' as const,
-    sortable: true,
-    style: 'width: 10%;',
-  },
-];
-
 // Helper functions
-const getCoupleNames = (couple: Couple): string => {
-  return couple.title || 'Unknown Partnership';
+const capitalizeCity = (city: string): string => {
+  if (!city) return '';
+  return city
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
-const getFollowerName = (couple: Couple): string => {
-  // Check embedded teachers first
-  if (couple._embedded?.teachers) {
-    const follower = couple._embedded.teachers.find((t) => t.role === 'follower');
-    if (follower) return follower.title;
+const getStatusLabel = (status: string): string => {
+  switch (status?.toLowerCase()) {
+    case 'publish':
+      return 'Published';
+    case 'draft':
+      return 'Draft';
+    case 'private':
+      return 'Private';
+    default:
+      return 'Unknown';
   }
-
-  // Fallback to direct property
-  return couple.follower_name || '';
 };
 
-const getLeaderName = (couple: Couple): string => {
-  // Check embedded teachers first
-  if (couple._embedded?.teachers) {
-    const leader = couple._embedded.teachers.find((t) => t.role === 'leader');
-    if (leader) return leader.title;
+const getCoupleTypeLabel = (coupleType: string): string => {
+  switch (coupleType) {
+    case 'leader':
+      return 'Leader';
+    case 'follower':
+      return 'Follower';
+    case 'both':
+      return 'Both';
+    case 'double-role':
+      return 'Double Role';
+    default:
+      return coupleType;
   }
-
-  // Fallback to direct property
-  return couple.leader_name || '';
 };
 
-const getBothRolesName = (couple: Couple): string => {
-  // Check embedded teachers for both roles
-  if (couple._embedded?.teachers) {
-    const bothRoles = couple._embedded.teachers.find(
-      (t) => t.role === 'both' || t.role === 'double-role',
-    );
-    if (bothRoles) return bothRoles.title;
+const getCoupleTypeColor = (coupleType: string): string => {
+  switch (coupleType) {
+    case 'leader':
+      return 'blue-6';
+    case 'follower':
+      return 'pink-6';
+    case 'both':
+      return 'purple-6';
+    case 'double-role':
+      return 'orange-6';
+    default:
+      return 'grey-6';
   }
-
-  return '';
 };
 
-const getFollowerId = (couple: Couple): string | null => {
-  // Check embedded teachers first
-  if (couple._embedded?.teachers) {
-    const follower = couple._embedded.teachers.find((t) => t.role === 'follower');
-    if (follower) return follower.id.toString();
+const getCoupleTypeIcon = (coupleType: string): string => {
+  switch (coupleType) {
+    case 'leader':
+      return 'person';
+    case 'follower':
+      return 'person_outline';
+    case 'both':
+      return 'group';
+    case 'double-role':
+      return 'swap_horiz';
+    default:
+      return 'favorite';
   }
-
-  // Fallback to direct property
-  return couple.follower_id?.toString() || null;
 };
 
-const getLeaderId = (couple: Couple): string | null => {
-  // Check embedded teachers first
-  if (couple._embedded?.teachers) {
-    const leader = couple._embedded.teachers.find((t) => t.role === 'leader');
-    if (leader) return leader.id.toString();
-  }
-
-  // Fallback to direct property
-  return couple.leader_id?.toString() || null;
+const updateCountrySet = (couples: Couple[]) => {
+  couples.forEach((couple) => {
+    if (couple.country) allCountries.value.add(couple.country);
+  });
 };
 
-const getBothRolesId = (couple: Couple): string | null => {
-  // Check embedded teachers for both roles
-  if (couple._embedded?.teachers) {
-    const bothRoles = couple._embedded.teachers.find(
-      (t) => t.role === 'both' || t.role === 'double-role',
-    );
-    if (bothRoles) return bothRoles.id.toString();
-  }
+// API functions
+const loadCouples = async (forceReload = false) => {
+  loading.value = true;
+  error.value = null;
 
-  return null;
-};
-
-const getEventsCount = (couple: Couple): number => {
-  // Check embedded events
-  if (couple._embedded?.events) {
-    return couple._embedded.events.length;
-  }
-
-  return 0;
-};
-
-// Quasar table request handler
-const onRequest = (props: {
-  pagination: { sortBy?: string; descending: boolean; page: number; rowsPerPage: number };
-}) => {
-  const { page, rowsPerPage, sortBy, descending } = props.pagination;
-
-  pagination.value.page = page;
-  pagination.value.rowsPerPage = rowsPerPage;
-  pagination.value.sortBy = sortBy || 'date';
-  pagination.value.descending = descending;
-  pagination.value.rowsNumber = couples.value.length;
-};
-
-// Methods
-const fetchCouples = async (showNotification = false) => {
   try {
-    loading.value = true;
-    error.value = null;
+    const params: Record<string, unknown> = {
+      page: pagination.value.page,
+      perPage: pagination.value.rowsPerPage,
+      orderby: pagination.value.sortBy === 'name' ? 'title' : pagination.value.sortBy,
+      order: pagination.value.descending ? 'desc' : 'asc',
+      meta_fields: 'country,city,couple_type',
+    };
 
-    // Get the first page to retrieve total count, then fetch all if needed
-    const response = await coupleService.getCouples();
-
-    // If we have more than 10 items, fetch all of them
-    if (response.total > 10) {
-      const allResponse = await coupleService.getCouples({ per_page: response.total });
-      couples.value = allResponse.couples;
-    } else {
-      couples.value = response.couples;
+    if (selectedCountry.value) {
+      params.country = selectedCountry.value;
+    }
+    if (selectedCoupleType.value) {
+      params.couple_type = selectedCoupleType.value;
+    }
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
+    }
+    if (forceReload) {
+      params._t = Date.now();
     }
 
-    totalCouples.value = couples.value.length;
-    pagination.value.rowsNumber = couples.value.length;
+    const response = await coupleService.getCouples(params);
 
-    if (showNotification) {
-      $q?.notify?.({
+    couples.value = response.couples;
+    pagination.value.rowsNumber = response.total;
+
+    // Load total count without filters if we don't have it yet or if it's a fresh load
+    if (totalCount.value === 0 || forceReload) {
+      try {
+        const totalParams = {
+          page: 1,
+          perPage: 1,
+          orderby: 'title' as const,
+          order: 'asc' as const,
+          meta_fields: 'country,city,couple_type',
+        };
+        const totalResponse = await coupleService.getCouples(totalParams);
+        totalCount.value = totalResponse.total;
+      } catch (totalErr) {
+        console.warn('Failed to load total count:', totalErr);
+        totalCount.value = response.total;
+      }
+    }
+
+    updateCountrySet(response.couples);
+
+    if (forceReload) {
+      $q.notify({
         type: 'positive',
         message: 'Couples refreshed successfully',
         position: 'top',
@@ -473,68 +472,242 @@ const fetchCouples = async (showNotification = false) => {
   }
 };
 
+// Event handlers
+const onRequest = async (requestProp: {
+  pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
+}) => {
+  const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
+
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy || 'name';
+  pagination.value.descending = descending;
+
+  await loadCouples();
+};
+
 const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
-  const couple = row as unknown as Couple;
-  void router.push(`/couples/${couple.id}`);
+  const coupleId = row.id as number;
+  void router.push(`/couples/${coupleId}`);
 };
 
-const retryLoad = () => {
-  error.value = null;
-  void fetchCouples();
+const refreshData = () => {
+  void loadCouples(true);
 };
 
+const onSearchChange = () => {
+  pagination.value.page = 1;
+  void loadCouples();
+};
+
+const onFilterChange = () => {
+  pagination.value.page = 1;
+  void loadCouples();
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedCountry.value = null;
+  selectedCoupleType.value = null;
+  pagination.value.page = 1;
+  void loadCouples();
+};
+
+const clearCountryFilter = () => {
+  selectedCountry.value = null;
+  onFilterChange();
+};
+
+const clearCoupleTypeFilter = () => {
+  selectedCoupleType.value = null;
+  onFilterChange();
+};
+
+const clearSearch = () => {
+  searchQuery.value = '';
+  onSearchChange();
+};
+
+// Watchers
+watch(
+  [selectedCountry, selectedCoupleType],
+  () => {
+    pagination.value.page = 1;
+    void loadCouples();
+  },
+  { deep: true },
+);
+
+// Lifecycle
 onMounted(() => {
-  void fetchCouples();
+  void loadCouples();
 });
 </script>
 
 <style lang="scss" scoped>
-.couples-directory {
+.couples-list-page {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
 
-.loading-section,
-.error-section {
-  margin-bottom: 16px;
-}
-
-.content-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.98);
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.border-bottom {
-  border-bottom: 1px solid #e0e0e0;
+.filters-section {
+  .filters-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin-top: 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
 }
 
-.couples-table {
-  :deep(.q-table tbody tr) {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+.table-section {
+  .table-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+  }
 
-    &:hover {
-      background-color: rgba(25, 118, 210, 0.04);
+  .couples-table {
+    :deep(.q-table__top) {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 20px;
+    }
+
+    :deep(.q-table__bottom) {
+      background-color: #fafafa;
+      border-top: 1px solid #e0e0e0;
+      padding: 12px 20px;
+    }
+
+    :deep(.q-table thead th) {
+      background: white;
+      color: black !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 12px !important;
+      border-bottom: none !important;
+
+      .q-icon {
+        color: rgba(0, 0, 0, 0.7);
+        transition: all 0.2s ease;
+
+        &.q-table__sort-icon--active {
+          color: black;
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    :deep(.q-table tbody tr) {
+      transition: all 0.2s ease;
+      border-bottom: 1px solid #f0f0f0;
+
+      &:nth-child(even) {
+        background-color: #fafafa;
+      }
+
+      &:hover {
+        background-color: rgba(25, 118, 210, 0.08) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .q-td {
+        padding: 14px 12px !important;
+        vertical-align: top;
+        border-bottom: none !important;
+      }
+    }
+  }
+}
+
+.couple-name-cell {
+  .couple-name-content {
+    .couple-name {
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: none;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+    }
+
+    .couple-real-name {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+  }
+}
+
+.city-cell,
+.country-cell {
+  .city-content,
+  .country-content {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+
+    .q-icon {
+      opacity: 0.8;
+    }
+  }
+}
+
+.couple-type-cell {
+  text-align: center;
+}
+
+.error-section {
+  .q-banner {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .page-header {
+    .text-h4 {
+      font-size: 1.5rem;
     }
   }
 
-  :deep(.q-table th) {
-    font-weight: 600;
-    color: #424242;
+  .filters-section {
+    .filters-card {
+      .row {
+        .col-12 {
+          margin-bottom: 8px;
+        }
+      }
+    }
   }
-}
 
-.location-content {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
+  .table-section {
+    .couples-table {
+      :deep(.q-table thead th) {
+        padding: 10px 8px !important;
+        font-size: 11px !important;
+      }
 
-  .q-icon {
-    opacity: 0.8;
+      :deep(.q-table tbody tr .q-td) {
+        padding: 10px 8px !important;
+        font-size: 12px;
+      }
+    }
   }
 }
 </style>

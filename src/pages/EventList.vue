@@ -1,245 +1,265 @@
 <template>
-  <q-pull-to-refresh @refresh="handlePullToRefresh">
-    <q-page class="events-directory">
-      <!-- Header Section -->
-      <ListPageHeader
-        title="Events"
-        v-bind="!filters.showPastEvents ? { subtitle: '(Future Events Only)' } : {}"
-        :show-stats="true"
-        :total-count="pagination.rowsNumber"
-        :stats-label="formatEventsText(pagination.rowsNumber)"
-      />
+  <q-page class="event-list-page">
+    <!-- Header -->
+    <div class="page-header q-pa-lg">
+      <div class="row items-center justify-between">
+        <div class="col">
+          <h1 class="text-h4 text-weight-bold q-mb-xs">Events Directory</h1>
+          <p class="text-subtitle1 text-grey-6 q-ma-none">
+            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} events
+            found based on filters
+          </p>
+        </div>
+        <div class="col-auto">
+          <q-btn round color="primary" icon="refresh" @click="refreshData" :loading="loading">
+            <q-tooltip>Refresh Events</q-tooltip>
+          </q-btn>
+        </div>
+      </div>
+    </div>
 
-      <!-- Filters Section -->
-      <div class="q-px-lg q-pb-lg">
-        <q-card flat bordered class="filters-card">
-          <q-card-section>
-            <div class="row q-gutter-md">
-              <div class="col-xs-12 col-sm-6 col-md-3">
-                <q-select
-                  v-model="filters.selectedCountry"
-                  :options="countryOptions"
-                  label="Filter by Country"
-                  clearable
-                  dense
-                  outlined
-                  emit-value
-                  map-options
-                  :option-label="getCountryName"
-                  :option-value="(opt) => opt"
-                  @update:model-value="onFilterChange"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="flag" />
-                  </template>
-                </q-select>
-              </div>
-
-              <div class="col-xs-12 col-sm-6 col-md-2">
-                <div class="q-mt-sm">
-                  <q-checkbox
-                    v-model="filters.showPastEvents"
-                    label="Include past events"
-                    color="primary"
-                    @update:model-value="onFilterChange"
-                  />
-                </div>
-              </div>
-
-              <div class="col-xs-12 col-sm-6 col-md-2">
-                <q-btn
-                  flat
-                  color="primary"
-                  icon="refresh"
-                  label="Clear Filters"
-                  @click="clearFilters"
-                  :disable="!hasActiveFilters()"
-                />
-              </div>
+    <!-- Filters -->
+    <div class="filters-section q-px-lg q-pb-md">
+      <q-card flat bordered class="filters-card">
+        <q-card-section>
+          <div class="row q-gutter-md">
+            <!-- Search -->
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="searchQuery"
+                placeholder="Search events, cities, or countries..."
+                dense
+                outlined
+                clearable
+                @update:model-value="onSearchChange"
+                @clear="onSearchChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
             </div>
 
-            <!-- Active Filters Display -->
-            <div v-if="hasActiveFilters()" class="q-mt-md">
-              <q-chip
-                v-if="filters.selectedCountry"
-                removable
-                @remove="clearCountryFilter"
-                color="secondary"
-                text-color="white"
-                size="sm"
-                icon="flag"
+            <!-- Country Filter -->
+            <div class="col-12 col-md-3">
+              <q-select
+                v-model="selectedCountry"
+                :options="countryOptions"
+                label="Filter by Country"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                :option-label="getCountryName"
+                :option-value="(opt) => opt"
+                @update:model-value="onFilterChange"
               >
-                {{ getCountryName(filters.selectedCountry) }}
-              </q-chip>
-              <q-chip
-                v-if="filters.showPastEvents"
-                removable
-                @remove="clearPastEventsFilter"
+                <template v-slot:prepend>
+                  <q-icon name="flag" />
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="col-12 col-md-4">
+              <q-select
+                v-model="selectedCategory"
+                :options="categoryOptions"
+                label="Filter by Category"
+                dense
+                outlined
+                clearable
+                emit-value
+                map-options
+                @update:model-value="onFilterChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="category" />
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Past Events Toggle -->
+            <div class="col-12 col-md-2">
+              <q-toggle
+                v-model="showPastEvents"
+                label="Include Past Events"
                 color="primary"
-                text-color="white"
-                size="sm"
-                icon="event"
-              >
-                Include Past Events
-              </q-chip>
+                @update:model-value="onFilterChange"
+              />
             </div>
-          </q-card-section>
-        </q-card>
-      </div>
 
-      <!-- Events Table -->
-      <div class="q-px-lg q-pb-lg">
-        <q-card flat bordered class="content-card">
-          <q-table
-            :rows="events"
-            :columns="columns"
-            :loading="loading"
-            :pagination="pagination"
-            row-key="id"
-            @request="onRequest"
-            @row-click="handleRowClick"
-            :rows-per-page-options="[10, 20, 50, 100]"
-            binary-state-sort
-            flat
-            bordered
-            class="events-table"
-          >
-            <!-- Search Input -->
-            <template #top>
-              <div class="row full-width items-center q-gutter-md">
-                <div class="col">
-                  <q-input
-                    v-model="searchQuery"
-                    placeholder="Search events, cities, or countries"
-                    dense
-                    outlined
-                    clearable
-                    @update:model-value="onSearchChange"
-                    @clear="onSearchChange"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="search" />
-                    </template>
-                  </q-input>
+            <!-- Clear Filters -->
+            <div class="col-12 col-md-2">
+              <q-btn
+                flat
+                color="grey-7"
+                icon="clear_all"
+                label="Clear Filters"
+                @click="clearFilters"
+                :disable="!hasActiveFilters"
+              />
+            </div>
+          </div>
+
+          <!-- Active Filters Display -->
+          <div v-if="hasActiveFilters" class="q-mt-md">
+            <q-chip
+              v-if="selectedCountry"
+              removable
+              @remove="clearCountryFilter"
+              size="sm"
+              icon="flag"
+            >
+              {{ getCountryName(selectedCountry) }}
+            </q-chip>
+            <q-chip
+              v-if="selectedCategory"
+              removable
+              @remove="clearCategoryFilter"
+              size="sm"
+              icon="category"
+            >
+              {{ getCategoryLabel(selectedCategory) }}
+            </q-chip>
+            <q-chip
+              v-if="showPastEvents"
+              removable
+              @remove="clearPastEventsFilter"
+              size="sm"
+              icon="event"
+            >
+              Include Past Events
+            </q-chip>
+            <q-chip v-if="searchQuery" removable @remove="clearSearch" size="sm" icon="search">
+              Search: "{{ searchQuery }}"
+            </q-chip>
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Events Table -->
+    <div class="table-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="table-card">
+        <q-table
+          :rows="events"
+          :columns="columns"
+          :loading="loading"
+          v-model:pagination="pagination"
+          row-key="id"
+          @request="onRequest"
+          @row-click="handleRowClick"
+          :rows-per-page-options="[10, 20, 50, 100]"
+          binary-state-sort
+          flat
+          bordered
+          class="events-table"
+        >
+          <!-- Custom Cell Templates -->
+          <template #body-cell-title="props">
+            <q-td :props="props" class="event-title-cell cursor-pointer">
+              <div class="event-title-content">
+                <div class="event-title text-weight-medium">
+                  {{ formatText(props.row.title) }}
                 </div>
-                <div class="col-auto">
-                  <q-btn
-                    flat
-                    round
-                    color="primary"
-                    icon="refresh"
-                    @click="handleRefresh"
-                    :loading="loading"
-                  >
-                    <q-tooltip>Refresh Events</q-tooltip>
-                  </q-btn>
+                <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
+                  {{ formatText(props.row.subtitle) }}
                 </div>
               </div>
-            </template>
+            </q-td>
+          </template>
 
-            <!-- Custom Cell Templates -->
-            <template #body-cell-title="props">
-              <q-td :props="props" class="event-title-cell cursor-pointer">
-                <div class="event-title-content">
-                  <div class="event-title text-weight-medium">
-                    {{ formatText(props.row.title) }}
-                  </div>
-                  <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
-                    {{ formatText(props.row.subtitle) }}
-                  </div>
-                </div>
-              </q-td>
-            </template>
-
-            <template #body-cell-start_date="props">
-              <q-td :props="props" class="date-cell cursor-pointer">
-                <div class="date-content">
-                  <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
-                  <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
-                </div>
-              </q-td>
-            </template>
-
-            <template #body-cell-city="props">
-              <q-td :props="props" class="city-cell cursor-pointer">
-                <div class="city-content">
-                  <q-icon name="place" size="xs" class="q-mr-xs text-accent" />
-                  <div>
-                    <div class="text-weight-medium">
-                      {{ formatText(capitalizeCity(props.row.city)) }}
-                    </div>
-                  </div>
-                </div>
-              </q-td>
-            </template>
-
-            <template #body-cell-country="props">
-              <q-td :props="props" class="country-cell cursor-pointer">
-                <div class="country-content">
-                  <q-icon name="flag" size="xs" class="q-mr-xs text-accent" />
-                  <div>
-                    <div class="text-weight-medium">{{ getCountryName(props.row.country) }}</div>
-                  </div>
-                </div>
-              </q-td>
-            </template>
-
-            <template #body-cell-category="props">
-              <q-td :props="props" class="category-cell cursor-pointer">
-                <q-chip
-                  v-if="getEventCategory(props.row.taxonomies)"
-                  :label="getEventCategory(props.row.taxonomies)"
-                  :color="getEventCategoryColor(props.row.taxonomies).color"
-                  :text-color="getEventCategoryColor(props.row.taxonomies).textColor"
-                  size="sm"
-                  dense
-                  class="category-chip"
-                />
-                <span v-else class="text-grey-5">—</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-teachers="props">
-              <q-td :props="props" class="cursor-pointer">
-                <span class="text-grey-5">TBD</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-status="props">
-              <q-td :props="props" class="cursor-pointer">
-                <span class="text-grey-5">—</span>
-              </q-td>
-            </template>
-
-            <!-- No Data State -->
-            <template #no-data>
-              <div class="text-center q-py-xl">
-                <q-icon name="event_busy" size="3em" color="grey-4" />
-                <p class="text-subtitle1 q-mt-md text-grey-6">No events found</p>
-                <q-btn
-                  v-if="hasActiveFilters()"
-                  flat
-                  color="primary"
-                  label="Clear Filters"
-                  @click="clearFilters"
-                />
+          <template #body-cell-start_date="props">
+            <q-td :props="props" class="date-cell cursor-pointer">
+              <div class="date-content">
+                <q-icon name="event" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
               </div>
-            </template>
+            </q-td>
+          </template>
 
-            <!-- Loading State -->
-            <template #loading>
-              <q-inner-loading showing color="primary" />
-            </template>
-          </q-table>
-        </q-card>
-      </div>
+          <template #body-cell-city="props">
+            <q-td :props="props" class="city-cell cursor-pointer">
+              <div class="city-content">
+                <q-icon name="place" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{
+                  formatText(capitalizeCity(props.row.city))
+                }}</span>
+              </div>
+            </q-td>
+          </template>
 
-      <!-- Error State -->
-      <div v-if="error" class="error-section q-px-lg">
-        <OfflineMessage :error="error" title="Failed to Load Events" @retry="handleRefresh" />
-      </div>
-    </q-page>
-  </q-pull-to-refresh>
+          <template #body-cell-country="props">
+            <q-td :props="props" class="country-cell cursor-pointer">
+              <div class="country-content">
+                <q-icon name="flag" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-category="props">
+            <q-td :props="props" class="category-cell cursor-pointer">
+              <span v-if="getEventCategory(props.row.taxonomies)">
+                {{ getEventCategory(props.row.taxonomies) }}
+              </span>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-teachers="props">
+            <q-td :props="props" class="cursor-pointer">
+              <span class="text-grey-5">TBD</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-status="props">
+            <q-td :props="props" class="cursor-pointer">
+              <span>{{ getStatusLabel(props.row.status) }}</span>
+            </q-td>
+          </template>
+
+          <!-- No Data State -->
+          <template #no-data>
+            <div class="text-center q-py-xl">
+              <q-icon name="event_busy" size="4em" color="grey-4" />
+              <p class="text-h6 q-mt-md text-grey-6">No events found</p>
+              <p class="text-body2 text-grey-5 q-mb-md">
+                Try adjusting your search criteria or filters
+              </p>
+              <q-btn
+                v-if="hasActiveFilters"
+                flat
+                color="primary"
+                label="Clear All Filters"
+                @click="clearFilters"
+              />
+            </div>
+          </template>
+
+          <!-- Loading State -->
+          <template #loading>
+            <q-inner-loading showing color="primary" />
+          </template>
+        </q-table>
+      </q-card>
+    </div>
+
+    <!-- Error State -->
+    <div v-if="error" class="error-section q-px-lg">
+      <q-banner class="bg-negative" icon="error">
+        <template v-slot:avatar>
+          <q-icon name="error" color="white" />
+        </template>
+        Failed to load events
+        <template v-slot:action>
+          <q-btn flat color="white" label="Retry" @click="refreshData" />
+        </template>
+      </q-banner>
+    </div>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -248,50 +268,49 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { eventListService, type EventListItem } from '../services';
 import { useFormatters } from '../composables/useFormatters';
-import { useEventFilters } from '../composables/useEventFilters';
 import { useCountries } from '../composables/useCountries';
-import OfflineMessage from '../components/OfflineMessage.vue';
-import ListPageHeader from '../components/ListPageHeader.vue';
 
 const router = useRouter();
 const $q = useQuasar();
 
-// Use composables
-const {
-  filters,
-  clearAllFilters: clearFilters,
-  hasActiveFilters,
-  initializeFilters,
-} = useEventFilters();
-
+// Composables
 const { getCountryName, getCountryOptionsFromCodes } = useCountries();
+const { formatDate, getEventCategory, formatText } = useFormatters();
 
 // State
 const events = ref<EventListItem[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
-
+const selectedCountry = ref<string | null>(null);
+const showPastEvents = ref(false);
 const allCountries = ref<Set<string>>(new Set());
+const selectedCategory = ref<string | null>(null);
+const totalCount = ref(0);
 
-const updateCountrySet = (events: EventListItem[]) => {
-  events.forEach((e) => {
-    if (e.country) allCountries.value.add(e.country);
-  });
-};
-
+// Computed
 const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const { formatDate, getEventCategory, getEventCategoryColor, formatText } = useFormatters();
+const categoryOptions = computed(() => [
+  { label: 'Conference', value: 'conference' },
+  { label: 'Encuentro', value: 'encuentro' },
+  { label: 'Festival', value: 'festival' },
+  { label: 'Festivalito', value: 'festivalito' },
+  { label: 'Learning', value: 'learning' },
+  { label: 'Learning Weekend', value: 'learning-weekend' },
+  { label: 'Marathon', value: 'marathon' },
+  { label: 'Milonga Weekend', value: 'milonga-weekend' },
+  { label: 'Other', value: 'other' },
+  { label: 'Seminars', value: 'seminars' },
+  { label: 'Tango Camp', value: 'tango-camp' },
+  { label: 'Tango Holiday', value: 'tango-holiday' },
+]);
 
-// Helper function to capitalize city names
-const capitalizeCity = (city: string): string => {
-  if (!city) return '';
-  return city
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
+const hasActiveFilters = computed(() => {
+  return (
+    searchQuery.value || selectedCountry.value || showPastEvents.value || selectedCategory.value
+  );
+});
 
 // Table columns
 const columns = [
@@ -301,6 +320,7 @@ const columns = [
     field: 'title',
     align: 'left' as const,
     sortable: true,
+    style: 'min-width: 300px',
   },
   {
     name: 'start_date',
@@ -308,22 +328,23 @@ const columns = [
     field: 'start_date',
     align: 'left' as const,
     sortable: true,
+    style: 'min-width: 120px',
   },
   {
     name: 'city',
     label: 'City',
     field: 'city',
     align: 'left' as const,
-    style: 'width: 120px;',
     sortable: true,
+    style: 'min-width: 120px',
   },
   {
     name: 'country',
     label: 'Country',
     field: 'country',
     align: 'left' as const,
-    style: 'width: 120px;',
     sortable: true,
+    style: 'min-width: 120px',
   },
   {
     name: 'category',
@@ -331,6 +352,7 @@ const columns = [
     field: 'category_name',
     align: 'center' as const,
     sortable: true,
+    style: 'min-width: 100px',
   },
   {
     name: 'teachers',
@@ -338,6 +360,7 @@ const columns = [
     field: 'teachers',
     align: 'left' as const,
     sortable: false,
+    style: 'min-width: 100px',
   },
   {
     name: 'status',
@@ -345,6 +368,7 @@ const columns = [
     field: 'status',
     align: 'center' as const,
     sortable: true,
+    style: 'min-width: 100px',
   },
 ];
 
@@ -357,28 +381,66 @@ const pagination = ref({
   rowsNumber: 0,
 });
 
-const formatEventsText = (count: number): string => {
-  if (count === 1) {
-    return '1 event';
+// Helper functions
+const capitalizeCity = (city: string): string => {
+  if (!city) return '';
+  return city
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const getStatusLabel = (status: string): string => {
+  switch (status?.toLowerCase()) {
+    case 'publish':
+      return 'Published';
+    case 'draft':
+      return 'Draft';
+    case 'private':
+      return 'Private';
+    default:
+      return 'Unknown';
   }
-  return `${count.toLocaleString()} events`;
 };
 
-// Handle q-table request
-const onRequest = async (requestProp: {
-  pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
-}) => {
-  const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
-
-  pagination.value.page = page;
-  pagination.value.rowsPerPage = rowsPerPage;
-  pagination.value.sortBy = sortBy || 'start_date';
-  pagination.value.descending = descending;
-
-  await loadEvents();
+const getCategoryLabel = (category: string): string => {
+  switch (category) {
+    case 'conference':
+      return 'Conference';
+    case 'encuentro':
+      return 'Encuentro';
+    case 'festival':
+      return 'Festival';
+    case 'festivalito':
+      return 'Festivalito';
+    case 'learning':
+      return 'Learning';
+    case 'learning-weekend':
+      return 'Learning Weekend';
+    case 'marathon':
+      return 'Marathon';
+    case 'milonga-weekend':
+      return 'Milonga Weekend';
+    case 'other':
+      return 'Other';
+    case 'seminars':
+      return 'Seminars';
+    case 'tango-camp':
+      return 'Tango Camp';
+    case 'tango-holiday':
+      return 'Tango Holiday';
+    default:
+      return category;
+  }
 };
 
-// Load events from API
+const updateCountrySet = (events: EventListItem[]) => {
+  events.forEach((e) => {
+    if (e.country) allCountries.value.add(e.country);
+  });
+};
+
+// API functions
 const loadEvents = async (forceReload = false) => {
   loading.value = true;
   error.value = null;
@@ -394,20 +456,25 @@ const loadEvents = async (forceReload = false) => {
     };
 
     // Filter for future events at API level when not showing past events
-    if (!filters.value.showPastEvents) {
-      const today = new Date().toISOString().split('T')[0];
+    if (!showPastEvents.value) {
+      const today = new Date();
+      today.setDate(today.getDate() - 4);
+      const minDate = today.toISOString().split('T')[0];
       params.meta_query = JSON.stringify([
         {
           key: 'start_date',
-          value: today,
+          value: minDate,
           compare: '>=',
           type: 'DATE',
         },
       ]);
     }
 
-    if (filters.value.selectedCountry) {
-      params.country = filters.value.selectedCountry;
+    if (selectedCountry.value) {
+      params.country = selectedCountry.value;
+    }
+    if (selectedCategory.value) {
+      params.category = selectedCategory.value;
     }
     if (searchQuery.value) {
       params.search = searchQuery.value;
@@ -421,10 +488,30 @@ const loadEvents = async (forceReload = false) => {
     events.value = response.events;
     pagination.value.rowsNumber = response.totalCount;
 
+    // Load total count without filters if we don't have it yet or if it's a fresh load
+    if (totalCount.value === 0 || forceReload) {
+      try {
+        const totalParams = {
+          page: 1,
+          perPage: 1,
+          orderby: 'start_date' as const,
+          order: 'desc' as const,
+          meta_key: 'start_date',
+          taxonomies: true,
+        };
+        const totalResponse = await eventListService.getEvents(totalParams);
+        totalCount.value = totalResponse.totalCount;
+      } catch (totalErr) {
+        console.warn('Failed to load total count:', totalErr);
+        // If we can't get the total, use the current count as fallback
+        totalCount.value = response.totalCount;
+      }
+    }
+
     updateCountrySet(response.events);
 
     if (forceReload) {
-      $q?.notify?.({
+      $q.notify({
         type: 'positive',
         message: 'Events refreshed successfully',
         position: 'top',
@@ -439,508 +526,248 @@ const loadEvents = async (forceReload = false) => {
   }
 };
 
-// Navigation
-const navigateToEvent = (event: EventListItem) => {
-  void router.push(`/events/${event.id}`);
+// Event handlers
+const onRequest = async (requestProp: {
+  pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
+}) => {
+  const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
+
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy || 'start_date';
+  pagination.value.descending = descending;
+
+  await loadEvents();
 };
 
 const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
-  navigateToEvent(row as unknown as EventListItem);
+  const eventId = row.id as number;
+  void router.push(`/events/${eventId}`);
 };
 
-// Refresh and filter handlers
-const handleRefresh = () => {
+const refreshData = () => {
   void loadEvents(true);
 };
 
-const handlePullToRefresh = (done: () => void) => {
-  void loadEvents(true).finally(() => {
-    done();
-  });
-};
-
-// Filter change handlers
-const onFilterChange = () => {
-  pagination.value.page = 1; // Reset to first page
+const onSearchChange = () => {
+  pagination.value.page = 1;
   void loadEvents();
 };
 
-const onSearchChange = () => {
-  pagination.value.page = 1; // Reset to first page
+const onFilterChange = () => {
+  pagination.value.page = 1;
+  void loadEvents();
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedCountry.value = null;
+  showPastEvents.value = false;
+  selectedCategory.value = null;
+  pagination.value.page = 1;
   void loadEvents();
 };
 
 const clearCountryFilter = () => {
-  filters.value.selectedCountry = null;
+  selectedCountry.value = null;
   onFilterChange();
 };
 
 const clearPastEventsFilter = () => {
-  filters.value.showPastEvents = false;
+  showPastEvents.value = false;
   onFilterChange();
 };
 
-// Watch for filter changes
+const clearSearch = () => {
+  searchQuery.value = '';
+  onSearchChange();
+};
+
+const clearCategoryFilter = () => {
+  selectedCategory.value = null;
+  onFilterChange();
+};
+
+// Watchers
 watch(
-  [() => filters.value.selectedCountry, () => filters.value.showPastEvents],
+  [selectedCountry, showPastEvents, selectedCategory],
   () => {
-    pagination.value.page = 1; // Reset to first page
+    pagination.value.page = 1;
     void loadEvents();
   },
   { deep: true },
 );
 
+// Lifecycle
 onMounted(() => {
-  initializeFilters();
   void loadEvents();
 });
 </script>
 
 <style lang="scss" scoped>
-// Page layout
-.events-directory {
+.event-list-page {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
 
-.page-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-.header-section {
-  margin-bottom: 16px;
-
-  :deep(.list-page-header) {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .filters-section {
-  margin-bottom: 16px;
-
-  .country-select {
-    :deep(.q-field__control) {
-      border-radius: 6px;
-    }
-  }
-
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    height: 56px;
-    padding-left: 12px;
-
-    .past-events-checkbox {
-      :deep(.q-checkbox__label) {
-        font-weight: 500;
-        color: #495057;
-      }
-    }
-  }
-}
-
-.loading-section,
-.error-section {
-  margin-bottom: 16px;
-
-  .loading-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  .filters-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-  }
-}
-
-.content-section {
-  .content-card {
-    border-radius: 8px;
+    border-radius: 12px;
+    margin-top: 1rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.3);
   }
+}
 
-  .results-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 16px 20px;
+.table-section {
+  .table-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+  }
 
-    .results-info {
-      .text-h6 {
-        color: white;
-        font-weight: 600;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        font-size: 1.1rem;
-      }
+  .events-table {
+    :deep(.q-table__top) {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 20px;
+    }
 
-      .text-caption {
-        color: rgba(255, 255, 255, 0.9);
-        font-weight: 500;
-      }
+    :deep(.q-table__bottom) {
+      background-color: #fafafa;
+      border-top: 1px solid #e0e0e0;
+      padding: 12px 20px;
+    }
 
-      .text-grey-6 {
-        color: rgba(255, 255, 255, 0.7) !important;
+    :deep(.q-table thead th) {
+      background: white;
+      color: black !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 12px !important;
+      border-bottom: none !important;
+
+      .q-icon {
+        color: rgba(255, 255, 255, 0.7);
+        transition: all 0.2s ease;
+
+        &.q-table__sort-icon--active {
+          color: white;
+          transform: scale(1.1);
+        }
       }
     }
 
-    .results-actions {
-      .refresh-btn-small {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    :deep(.q-table tbody tr) {
+      transition: all 0.2s ease;
+      border-bottom: 1px solid #f0f0f0;
 
-        &:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-1px);
-        }
+      &:nth-child(even) {
+        background-color: #fafafa;
       }
 
-      .pagination-controls {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-
-        .q-btn {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-
-          &:hover:not(.disabled) {
-            background: rgba(255, 255, 255, 0.2);
-          }
-
-          &.disabled {
-            opacity: 0.4;
-          }
-        }
-
-        .page-info {
-          color: rgba(255, 255, 255, 0.9);
-          font-weight: 500;
-          min-width: 60px;
-          text-align: center;
-        }
+      &:hover {
+        background-color: rgba(25, 118, 210, 0.08) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       }
 
-      .rows-per-page-select {
-        min-width: 80px;
-
-        :deep(.q-field__control) {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-          color: white;
-
-          &:hover {
-            background: rgba(255, 255, 255, 0.15);
-          }
-        }
-
-        :deep(.q-field__native) {
-          color: white;
-          font-size: 12px;
-        }
-
-        :deep(.q-field__append) {
-          color: rgba(255, 255, 255, 0.8);
-        }
+      .q-td {
+        padding: 14px 12px !important;
+        vertical-align: top;
+        border-bottom: none !important;
       }
     }
   }
-}
-
-.border-bottom {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.hover-highlight:hover {
-  background-color: rgba(25, 118, 210, 0.08) !important;
-  transition: background-color 0.2s ease;
-}
-
-.event-title {
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .event-title-cell {
-  max-width: 250px !important;
-  padding: 16px 12px !important;
-}
+  .event-title-content {
+    .event-title {
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: none;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+    }
 
-.event-title-content {
-  .event-title {
-    color: #1976d2;
-    font-size: 14px;
-    line-height: 1.4;
-    max-width: none;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: initial;
-  }
-
-  .event-subtitle {
-    margin-top: 2px;
-    font-size: 11px;
-  }
-}
-
-.events-table {
-  min-width: 800px;
-}
-
-.modern-table {
-  border-radius: 6px !important;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  :deep(.q-table__top) {
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  }
-
-  :deep(.q-table__bottom) {
-    padding: 10px 16px;
-    background-color: #fafafa;
-    border-top: 1px solid #e0e0e0;
-  }
-}
-
-.table-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-
-  .table-header-cell {
-    color: white !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 14px 12px !important;
-    border-bottom: none !important;
-
-    .sort-icon {
-      color: rgba(255, 255, 255, 0.7);
-      transition: all 0.2s ease;
-
-      &.active-sort {
-        color: white;
-        transform: scale(1.1);
-      }
+    .event-subtitle {
+      margin-top: 2px;
+      font-size: 11px;
     }
   }
 }
 
-.table-row {
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:nth-child(even) {
-    background-color: #fafafa;
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  :deep(.q-td) {
-    padding: 14px 12px !important;
-    vertical-align: top;
-    border-bottom: none !important;
-  }
-}
-
-.date-cell {
-  .date-content {
+.date-cell,
+.city-cell,
+.country-cell {
+  .date-content,
+  .city-content,
+  .country-content {
     display: flex;
     align-items: center;
     font-size: 13px;
 
     .q-icon {
       opacity: 0.8;
-    }
-  }
-}
-
-.city-cell {
-  .city-content {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-
-    .q-icon {
-      margin-top: 2px;
-      opacity: 0.8;
-    }
-
-    div {
-      line-height: 1.3;
-    }
-  }
-}
-
-.country-cell {
-  .country-content {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-
-    .q-icon {
-      margin-top: 2px;
-      opacity: 0.8;
-    }
-
-    div {
-      line-height: 1.3;
     }
   }
 }
 
 .category-cell {
   text-align: center;
+}
 
-  .category-chip {
-    font-weight: 500;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    }
+.error-section {
+  .q-banner {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
-.edition-cell {
-  .edition-content {
-    display: flex;
-    align-items: center;
-    font-size: 13px;
-
-    .text-weight-medium {
-      font-weight: 500;
-    }
-  }
-}
-
-// Enhanced responsive design
-@media (max-width: 1024px) {
-  .page-container {
-    padding: 12px;
-  }
-
-  .results-header {
-    .results-actions {
-      .pagination-controls {
-        .page-info {
-          min-width: 50px;
-          font-size: 11px;
-        }
-
-        .q-btn {
-          min-width: 32px;
-          min-height: 32px;
-        }
-      }
-
-      .rows-per-page-select {
-        min-width: 70px;
-
-        :deep(.q-field__native) {
-          font-size: 11px;
-        }
-      }
-    }
-  }
-}
-
+// Responsive design
 @media (max-width: 768px) {
-  .page-container {
-    padding: 8px;
-  }
-
-  .header-section,
-  .filters-section,
-  .content-section {
-    margin-bottom: 12px;
-  }
-
-  .event-title-cell {
-    max-width: 150px !important;
-  }
-
-  .events-table {
-    min-width: 600px;
-  }
-
-  .table-row {
-    :deep(.q-td) {
-      padding: 10px 8px !important;
-      font-size: 12px;
+  .page-header {
+    .text-h4 {
+      font-size: 1.5rem;
     }
   }
 
-  .table-header-cell {
-    padding: 10px 8px !important;
-    font-size: 11px !important;
-  }
-
-  .results-header {
-    padding: 12px 16px !important;
-    .row {
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .results-info {
-      text-align: center;
-    }
-
-    .results-actions {
-      justify-content: center;
-
-      .row {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-      }
-
-      .pagination-controls {
-        order: 1;
-      }
-
-      .rows-per-page-select {
-        order: 2;
-      }
-
-      .refresh-btn-small {
-        order: 3;
-      }
-    }
-  }
-}
-
-// Filter section enhancements
-:deep(.filters-section) {
-  .list-filters {
+  .filters-section {
     .filters-card {
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
+      .row {
+        .col-12 {
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
 
-      .q-card-section {
-        background: transparent;
+  .table-section {
+    .events-table {
+      :deep(.q-table thead th) {
+        padding: 10px 8px !important;
+        font-size: 11px !important;
+      }
+
+      :deep(.q-table tbody tr .q-td) {
+        padding: 10px 8px !important;
+        font-size: 12px;
       }
     }
   }
