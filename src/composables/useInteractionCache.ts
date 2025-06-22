@@ -63,10 +63,13 @@ export function useInteractionCache() {
 
   // Load cache from localStorage
   const loadCache = () => {
-    if (!authStore.isAuthenticated) return;
+    if (!authStore.isAuthenticated || !authStore.user?.id) {
+      console.log('Not loading cache: user not properly authenticated');
+      return;
+    }
 
     try {
-      const stored = localStorage.getItem(`${CACHE_KEY}_${authStore.user?.id || 'anonymous'}`);
+      const stored = localStorage.getItem(`${CACHE_KEY}_${authStore.user.id}`);
       if (stored) {
         const parsed = JSON.parse(stored);
         const now = Date.now();
@@ -83,7 +86,9 @@ export function useInteractionCache() {
           ]),
         );
 
-        console.log(`Loaded ${cache.value.size} interactions from cache`);
+        console.log(
+          `Loaded ${cache.value.size} interactions from cache for user ${authStore.user.id}`,
+        );
       }
     } catch (error) {
       console.error('Failed to load interaction cache:', error);
@@ -92,14 +97,14 @@ export function useInteractionCache() {
 
   // Save cache to localStorage
   const saveCache = () => {
-    if (!authStore.isAuthenticated) return;
+    if (!authStore.isAuthenticated || !authStore.user?.id) {
+      console.log('Not saving cache: user not properly authenticated');
+      return;
+    }
 
     try {
       const cacheArray = Array.from(cache.value.values());
-      localStorage.setItem(
-        `${CACHE_KEY}_${authStore.user?.id || 'anonymous'}`,
-        JSON.stringify(cacheArray),
-      );
+      localStorage.setItem(`${CACHE_KEY}_${authStore.user.id}`, JSON.stringify(cacheArray));
     } catch (error) {
       console.error('Failed to save interaction cache:', error);
     }
@@ -156,7 +161,12 @@ export function useInteractionCache() {
 
   // Sync cache with server
   const syncWithServer = async (): Promise<void> => {
-    if (!authStore.isAuthenticated || isSyncing.value) return;
+    if (!authStore.isAuthenticated || !authStore.user?.id || isSyncing.value) {
+      if (!authStore.isAuthenticated || !authStore.user?.id) {
+        console.log('Not syncing interactions: user not properly authenticated');
+      }
+      return;
+    }
 
     isSyncing.value = true;
     syncError.value = null;
@@ -196,8 +206,29 @@ export function useInteractionCache() {
       lastSyncTime.value = Date.now();
       console.log(`Synced ${cache.value.size} interactions with server`);
     } catch (error) {
-      syncError.value = error instanceof Error ? error.message : 'Sync failed';
-      console.error('Failed to sync interactions:', error);
+      // Handle different types of errors more gracefully
+      if (error instanceof Error) {
+        if (error.message.includes('403') || error.message.includes('Forbidden')) {
+          // Token might be expired or insufficient permissions - this is expected
+          console.log('Interaction sync skipped: authentication required (using cached data)');
+          syncError.value = null; // Don't show this as an error to the user
+        } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          // Authentication error - user needs to log in
+          console.log('Interaction sync failed: user not authenticated');
+          syncError.value = 'Authentication required';
+        } else if (error.message.includes('Network') || error.message.includes('connection')) {
+          // Network error - use cached data
+          console.log('Interaction sync failed: network error (using cached data)');
+          syncError.value = null;
+        } else {
+          // Other errors
+          syncError.value = error.message;
+          console.error('Failed to sync interactions:', error);
+        }
+      } else {
+        syncError.value = 'Sync failed';
+        console.error('Failed to sync interactions:', error);
+      }
     } finally {
       isSyncing.value = false;
     }
@@ -227,20 +258,24 @@ export function useInteractionCache() {
   watch(
     () => authStore.isAuthenticated,
     (isAuthenticated) => {
-      if (isAuthenticated) {
+      if (isAuthenticated && authStore.user?.id) {
         loadCache();
         void syncWithServer();
         startBackgroundSync();
       } else {
+        // Clear cache when user logs out or is not properly authenticated
         cache.value.clear();
+        lastSyncTime.value = 0;
+        syncError.value = null;
         stopBackgroundSync();
+        console.log('Cleared interaction cache: user logged out or not authenticated');
       }
     },
     { immediate: true },
   );
 
   // Initial sync when composable is created
-  if (authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && authStore.user?.id) {
     loadCache();
     void syncWithServer();
     startBackgroundSync();

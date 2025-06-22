@@ -6,7 +6,7 @@ import { getJWTToken } from '../utils/cookies';
 
 // Create the http link
 const httpLink = createHttpLink({
-  uri: `${process.env.WORDPRESS_API_URL || 'http://localhost:10014'}/graphql`,
+  uri: process.env.GRAPHQL_ENDPOINT || 'http://localhost:10014/graphql',
 });
 
 // Create the auth link

@@ -11,6 +11,7 @@ import type { EventCategory, EventFeature, EventSortOption, SortOrder } from './
  */
 export interface BaseV3Entity {
   id: number;
+  author: number;
   title: string;
   slug: string;
   date: string;

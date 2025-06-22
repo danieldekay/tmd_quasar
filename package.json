@@ -16,6 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
     "dev": "quasar dev",
+    "dev:prod-api": "cross-env APP_ENV=prod-api quasar dev",
     "build": "quasar build",
     "serve": "quasar serve dist/spa",
     "postinstall": "quasar prepare"
@@ -41,6 +42,8 @@
     "@vue/eslint-config-typescript": "^14.4.0",
     "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.2",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.5.0",
     "eslint": "^9.14.0",
     "eslint-plugin-vue": "^9.30.0",
     "globals": "^15.12.0",

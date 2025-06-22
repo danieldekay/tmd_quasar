@@ -96,6 +96,12 @@ export interface EventDetails extends BaseEvent {
     'wp:featuredmedia'?: unknown[];
     'wp:term'?: unknown[][];
   };
+  content: Content;
+  excerpt: Excerpt;
+  author: number;
+  featured_media: number;
+  comment_status: string;
+  ping_status: string;
 }
 
 export interface DJ extends BaseEntity {
@@ -364,4 +370,14 @@ export interface ApiResponse<T> {
   data: T;
   success: boolean;
   message?: string;
+}
+
+export interface Content {
+  rendered: string;
+  protected: boolean;
+}
+
+export interface Excerpt {
+  rendered: string;
+  protected: boolean;
 }

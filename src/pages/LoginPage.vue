@@ -78,6 +78,55 @@
             />
           </div>
         </q-card-section>
+
+        <!-- Debug Information (only shown on localhost) -->
+        <q-card-section v-if="isLocalhost" class="q-pt-none">
+          <q-separator class="q-my-md" />
+          <q-expansion-item
+            icon="bug_report"
+            label="Debug Information"
+            header-class="text-caption text-grey-6"
+            class="debug-section"
+          >
+            <q-card-section class="q-pt-none">
+              <div class="text-caption text-grey-7 q-mb-sm">Environment Variables:</div>
+              <div class="debug-grid">
+                <div class="debug-item">
+                  <span class="debug-label">API_BASE_URL:</span>
+                  <span class="debug-value">{{ envInfo.apiBaseUrl }}</span>
+                </div>
+                <div class="debug-item">
+                  <span class="debug-label">GRAPHQL_ENDPOINT:</span>
+                  <span class="debug-value">{{ envInfo.graphqlEndpoint }}</span>
+                </div>
+                <div class="debug-item">
+                  <span class="debug-label">WORDPRESS_API_URL:</span>
+                  <span class="debug-value">{{ envInfo.wordpressUrl }}</span>
+                </div>
+                <div class="debug-item">
+                  <span class="debug-label">NODE_ENV:</span>
+                  <span class="debug-value">{{ envInfo.nodeEnv }}</span>
+                </div>
+                <div class="debug-item">
+                  <span class="debug-label">VUE_ROUTER_MODE:</span>
+                  <span class="debug-value">{{ envInfo.routerMode }}</span>
+                </div>
+              </div>
+
+              <div class="text-caption text-grey-7 q-mt-md q-mb-sm">App Info:</div>
+              <div class="debug-grid">
+                <div class="debug-item">
+                  <span class="debug-label">Current URL:</span>
+                  <span class="debug-value">{{ currentUrl }}</span>
+                </div>
+                <div class="debug-item">
+                  <span class="debug-label">User Agent:</span>
+                  <span class="debug-value">{{ userAgent }}</span>
+                </div>
+              </div>
+            </q-card-section>
+          </q-expansion-item>
+        </q-card-section>
       </q-card>
     </div>
 
@@ -167,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
@@ -206,6 +255,34 @@ const isRegistering = ref(false);
 // Debug flag
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const debug = ref(true);
+
+// Debug information
+const isLocalhost = computed(() => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.includes('192.168.')
+  );
+});
+
+const envInfo = computed(() => ({
+  apiBaseUrl: process.env.API_BASE_URL || 'Not set',
+  graphqlEndpoint: process.env.GRAPHQL_ENDPOINT || 'Not set',
+  wordpressUrl: process.env.WORDPRESS_API_URL || 'Not set',
+  nodeEnv: process.env.NODE_ENV || 'development',
+  routerMode: process.env.VUE_ROUTER_MODE || 'hash',
+}));
+
+const currentUrl = computed(() => {
+  if (typeof window === 'undefined') return 'Server-side rendering';
+  return window.location.href;
+});
+
+const userAgent = computed(() => {
+  if (typeof window === 'undefined') return 'Server-side rendering';
+  return `${window.navigator.userAgent.substring(0, 50)}...`;
+});
 
 // Handle login
 const handleLogin = async (): Promise<void> => {
@@ -337,5 +414,35 @@ onMounted(() => {
 
 .login-card {
   width: 100%;
+}
+
+.debug-section {
+  .debug-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .debug-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .debug-label {
+    font-weight: 500;
+    color: #666;
+    min-width: 120px;
+    margin-right: 8px;
+  }
+
+  .debug-value {
+    color: #333;
+    word-break: break-all;
+    text-align: right;
+    flex: 1;
+  }
 }
 </style>

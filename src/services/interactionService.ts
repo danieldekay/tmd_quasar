@@ -70,6 +70,16 @@ class InteractionService {
       });
       return response.data;
     } catch (error) {
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('403') || error.message.includes('Forbidden')) {
+          throw new Error('Access denied: insufficient permissions for user interactions');
+        } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          throw new Error('Authentication required for user interactions');
+        } else if (error.message.includes('Network') || error.message.includes('connection')) {
+          throw new Error('Network error: unable to fetch user interactions');
+        }
+      }
       console.error('Failed to fetch user interactions:', error);
       throw error;
     }
