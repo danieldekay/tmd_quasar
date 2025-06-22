@@ -199,12 +199,6 @@
             </q-td>
           </template>
 
-          <template #body-cell-status="props">
-            <q-td :props="props" class="cursor-pointer">
-              <span>{{ getStatusLabel(props.row.status) }}</span>
-            </q-td>
-          </template>
-
           <!-- No Data State -->
           <template #no-data>
             <div class="text-center q-py-xl">
@@ -327,14 +321,6 @@ const columns = [
     sortable: true,
     style: 'min-width: 120px',
   },
-  {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
-    align: 'center' as const,
-    sortable: true,
-    style: 'min-width: 100px',
-  },
 ];
 
 // Pagination state
@@ -353,19 +339,6 @@ const capitalizeCity = (city: string): string => {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-};
-
-const getStatusLabel = (status: string): string => {
-  switch (status?.toLowerCase()) {
-    case 'publish':
-      return 'Published';
-    case 'draft':
-      return 'Draft';
-    case 'private':
-      return 'Private';
-    default:
-      return 'Unknown';
-  }
 };
 
 const getSeriesTypeLabel = (seriesType: string): string => {

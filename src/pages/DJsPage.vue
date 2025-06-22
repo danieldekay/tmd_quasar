@@ -180,56 +180,43 @@
             </q-td>
           </template>
 
-          <template #body-cell-activity_types="props">
-            <q-td :props="props" class="activity-cell cursor-pointer">
-              <div class="activity-content">
-                <q-chip
-                  v-if="props.row.tmd_dj_activity_marathons === '1'"
-                  size="sm"
-                  color="red-7"
-                  text-color="white"
-                  icon="directions_run"
-                  class="q-mr-xs"
-                >
-                  Marathon
-                </q-chip>
-                <q-chip
-                  v-if="props.row.tmd_dj_activity_festivals === '1'"
-                  size="sm"
-                  color="purple-6"
-                  text-color="white"
-                  icon="celebration"
-                  class="q-mr-xs"
-                >
-                  Festival
-                </q-chip>
-                <q-chip
-                  v-if="props.row.tmd_dj_activity_encuentros === '1'"
-                  size="sm"
-                  color="blue-6"
-                  text-color="white"
-                  icon="groups"
-                  class="q-mr-xs"
-                >
-                  Encuentro
-                </q-chip>
-                <q-chip
-                  v-if="props.row.tmd_dj_activity_milongas === '1'"
-                  size="sm"
-                  color="teal-6"
-                  text-color="white"
-                  icon="music_note"
-                  class="q-mr-xs"
-                >
-                  Milonga
-                </q-chip>
-              </div>
+          <template #body-cell-tmd_dj_activity_marathons="props">
+            <q-td :props="props" class="marathon-cell cursor-pointer">
+              <q-checkbox
+                :model-value="props.row.tmd_dj_activity_marathons === '1'"
+                disable
+                color="red-7"
+              />
             </q-td>
           </template>
 
-          <template #body-cell-status="props">
-            <q-td :props="props" class="cursor-pointer">
-              <span>{{ getStatusLabel(props.row.status) }}</span>
+          <template #body-cell-tmd_dj_activity_festivals="props">
+            <q-td :props="props" class="festival-cell cursor-pointer">
+              <q-checkbox
+                :model-value="props.row.tmd_dj_activity_festivals === '1'"
+                disable
+                color="purple-6"
+              />
+            </q-td>
+          </template>
+
+          <template #body-cell-tmd_dj_activity_encuentros="props">
+            <q-td :props="props" class="encuentro-cell cursor-pointer">
+              <q-checkbox
+                :model-value="props.row.tmd_dj_activity_encuentros === '1'"
+                disable
+                color="blue-6"
+              />
+            </q-td>
+          </template>
+
+          <template #body-cell-tmd_dj_activity_milongas="props">
+            <q-td :props="props" class="milonga-cell cursor-pointer">
+              <q-checkbox
+                :model-value="props.row.tmd_dj_activity_milongas === '1'"
+                disable
+                color="teal-6"
+              />
             </q-td>
           </template>
 
@@ -340,19 +327,35 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'activity_types',
-    label: 'Activity Types',
-    field: 'activity_types',
-    align: 'left' as const,
+    name: 'tmd_dj_activity_marathons',
+    label: 'Marathon',
+    field: 'tmd_dj_activity_marathons',
+    align: 'center' as const,
     sortable: false,
-    style: 'min-width: 200px',
+    style: 'min-width: 100px',
   },
   {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
+    name: 'tmd_dj_activity_festivals',
+    label: 'Festival',
+    field: 'tmd_dj_activity_festivals',
     align: 'center' as const,
-    sortable: true,
+    sortable: false,
+    style: 'min-width: 100px',
+  },
+  {
+    name: 'tmd_dj_activity_encuentros',
+    label: 'Encuentro',
+    field: 'tmd_dj_activity_encuentros',
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
+  },
+  {
+    name: 'tmd_dj_activity_milongas',
+    label: 'Milonga',
+    field: 'tmd_dj_activity_milongas',
+    align: 'center' as const,
+    sortable: false,
     style: 'min-width: 100px',
   },
 ];
@@ -373,19 +376,6 @@ const capitalizeCity = (city: string): string => {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-};
-
-const getStatusLabel = (status: string): string => {
-  switch (status?.toLowerCase()) {
-    case 'publish':
-      return 'Published';
-    case 'draft':
-      return 'Draft';
-    case 'private':
-      return 'Private';
-    default:
-      return 'Unknown';
-  }
 };
 
 const getActivityTypeLabel = (activityType: string): string => {
@@ -421,7 +411,7 @@ const loadDJs = async (forceReload = false) => {
       orderby: pagination.value.sortBy === 'name' ? 'title' : pagination.value.sortBy,
       order: pagination.value.descending ? 'desc' : 'asc',
       meta_fields:
-        'tmd_dj_name,tmd_dj_country,tmd_dj_city,tmd_dj_real_name,activity_marathons,activity_festivals,activity_encuentros,activity_milongas',
+        'tmd_dj_name,tmd_dj_country,tmd_dj_city,tmd_dj_real_name,tmd_dj_activity_marathons,tmd_dj_activity_festivals,tmd_dj_activity_encuentros,tmd_dj_activity_milongas',
     };
 
     if (selectedCountry.value) {
@@ -451,7 +441,7 @@ const loadDJs = async (forceReload = false) => {
           orderby: 'title' as const,
           order: 'asc' as const,
           meta_fields:
-            'tmd_dj_name,tmd_dj_country,tmd_dj_city,tmd_dj_real_name,activity_marathons,activity_festivals,activity_encuentros,activity_milongas',
+            'tmd_dj_name,tmd_dj_country,tmd_dj_city,tmd_dj_real_name,tmd_dj_activity_marathons,tmd_dj_activity_festivals,tmd_dj_activity_encuentros,tmd_dj_activity_milongas',
         };
         const totalResponse = await djService.getDJs(totalParams);
         totalCount.value = totalResponse.total;
@@ -674,11 +664,12 @@ onMounted(() => {
   }
 }
 
-.activity-cell {
-  .activity-content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+.marathon-cell,
+.festival-cell,
+.encuentro-cell,
+.milonga-cell {
+  .q-checkbox {
+    margin-left: 16px;
   }
 }
 
