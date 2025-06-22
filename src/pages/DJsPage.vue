@@ -162,19 +162,27 @@
               <q-td :props="props" class="cursor-pointer">
                 <div class="dj-name-cell">
                   <div class="text-weight-medium text-primary">{{ props.value }}</div>
-                  <div v-if="props.row.tmd_dj_city" class="text-caption text-grey-6">
-                    {{ props.row.tmd_dj_city }}
-                  </div>
                 </div>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-city="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div v-if="props.value" class="location-content">
+                  <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+                  {{ props.value }}
+                </div>
+                <span v-else class="text-grey-5">—</span>
               </q-td>
             </template>
 
             <template v-slot:body-cell-country="props">
               <q-td :props="props" class="cursor-pointer">
-                <div v-if="props.value" class="country-cell">
-                  <q-badge :label="props.value" color="grey-6" class="q-mr-xs" />
-                  <span class="text-body2">{{ getCountryName(props.value) }}</span>
+                <div v-if="props.value" class="location-content">
+                  <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+                  {{ getCountryName(props.value) }}
                 </div>
+                <span v-else class="text-grey-5">—</span>
               </q-td>
             </template>
 
@@ -387,12 +395,20 @@ const columns = computed(() => [
     style: 'width: 200px',
   },
   {
+    name: 'city',
+    label: 'City',
+    field: 'tmd_dj_city',
+    sortable: true,
+    align: 'left' as const,
+    style: 'width: 120px',
+  },
+  {
     name: 'country',
     label: 'Country',
     field: 'tmd_dj_country',
     sortable: true,
     align: 'left' as const,
-    style: 'width: 160px',
+    style: 'width: 120px',
   },
   {
     name: 'marathons',
@@ -691,9 +707,19 @@ onUnmounted(() => {
   }
 }
 
-.country-cell {
+.location-content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 6px;
+
+  .q-icon {
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+
+  div {
+    line-height: 1.3;
+  }
 }
 
 .links-cell {

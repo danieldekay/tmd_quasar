@@ -104,20 +104,10 @@
           <BaseTable
             :rows="filteredEvents"
             :columns="columns"
-            :current-page="tablePagination.page"
-            :rows-per-page="tablePagination.rowsPerPage"
-            :total-items="state.totalCount"
             :loading="state.loading"
-            :error="state.error"
-            :clickable-rows="true"
-            :show-top-pagination="false"
-            :hide-bottom-pagination="true"
-            loading-message="Loading events..."
-            empty-icon="event"
-            empty-title="No events found"
-            empty-message="No events match your current search and filter criteria."
-            @update:current-page="goToPage"
-            @update:rows-per-page="handleRowsPerPageChange"
+            :pagination="tablePagination"
+            row-key="id"
+            @request="onRequest"
             @row-click="handleRowClick"
           >
             <template #navbar>
@@ -135,8 +125,8 @@
                 @update:current-page="goToPage"
               />
             </template>
-            <template #body-cell="props">
-              <q-td key="title" :props="props" class="event-title-cell">
+            <template #body-cell-title="props">
+              <q-td :props="props" class="event-title-cell cursor-pointer">
                 <div class="event-title-content">
                   <div class="event-title text-weight-medium">{{ props.row.title }}</div>
                   <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
@@ -144,50 +134,37 @@
                   </div>
                 </div>
               </q-td>
-
-              <q-td key="edition" :props="props" class="edition-cell">
-                <div class="edition-content">
-                  <span class="text-weight-medium">{{ props.row.edition }}</span>
-                </div>
-              </q-td>
-
-              <q-td key="start_date" :props="props" class="date-cell">
+            </template>
+            <template #body-cell-dates="props">
+              <q-td :props="props" class="date-cell cursor-pointer">
                 <div class="date-content">
                   <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
                   <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
                 </div>
               </q-td>
-
-              <q-td key="registration_start_date" :props="props" class="date-cell">
-                <div class="date-content">
-                  <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
-                  <span
-                    :class="
-                      props.row.registration_start_date ? 'text-weight-medium' : 'text-grey-6'
-                    "
-                  >
-                    {{
-                      props.row.registration_start_date
-                        ? formatDate(props.row.registration_start_date)
-                        : 'TBD'
-                    }}
-                  </span>
-                </div>
-              </q-td>
-
-              <q-td key="location" :props="props" class="location-cell">
-                <div class="location-content">
+            </template>
+            <template #body-cell-city="props">
+              <q-td :props="props" class="city-cell cursor-pointer">
+                <div class="city-content">
                   <q-icon name="place" size="xs" class="q-mr-xs text-accent" />
                   <div>
                     <div class="text-weight-medium">{{ capitalizeCity(props.row.city) }}</div>
-                    <div class="text-caption text-grey-6">
-                      {{ getCountryName(props.row.country) }}
-                    </div>
                   </div>
                 </div>
               </q-td>
-
-              <q-td key="category" :props="props" class="category-cell">
+            </template>
+            <template #body-cell-country="props">
+              <q-td :props="props" class="country-cell cursor-pointer">
+                <div class="country-content">
+                  <q-icon name="flag" size="xs" class="q-mr-xs text-accent" />
+                  <div>
+                    <div class="text-weight-medium">{{ getCountryName(props.row.country) }}</div>
+                  </div>
+                </div>
+              </q-td>
+            </template>
+            <template #body-cell-category="props">
+              <q-td :props="props" class="category-cell cursor-pointer">
                 <q-chip
                   v-if="getEventCategory(props.row.taxonomies)"
                   :label="getEventCategory(props.row.taxonomies)"
@@ -198,6 +175,16 @@
                   class="category-chip"
                 />
                 <span v-else class="text-grey-5">—</span>
+              </q-td>
+            </template>
+            <template #body-cell-teachers="props">
+              <q-td :props="props" class="cursor-pointer">
+                <span class="text-grey-5">TBD</span>
+              </q-td>
+            </template>
+            <template #body-cell-status="props">
+              <q-td :props="props" class="cursor-pointer">
+                <span class="text-grey-5">—</span>
               </q-td>
             </template>
           </BaseTable>
@@ -286,13 +273,19 @@ const columns = [
     sortable: true,
   },
   {
-    name: 'location',
-    label: 'Location',
-    field: (row: Record<string, unknown>) => {
-      const event = row as unknown as EventListItem;
-      return [event.city, event.country].filter(Boolean).join(', ');
-    },
+    name: 'city',
+    label: 'City',
+    field: 'city',
     align: 'left' as const,
+    style: 'width: 120px;',
+    sortable: true,
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    field: 'country',
+    align: 'left' as const,
+    style: 'width: 120px;',
     sortable: true,
   },
   {
@@ -331,19 +324,12 @@ const filteredEvents = computed(() => {
   return events;
 });
 
-const tablePagination = computed({
-  get: () => ({
-    sortBy: filters.value.sortBy,
-    descending: filters.value.descending,
-    page: state.value.currentPage,
-    rowsPerPage: filters.value.rowsPerPage,
-    rowsNumber: state.value.totalCount,
-  }),
-  set: (val) => {
-    updateFilter('sortBy', val.sortBy);
-    updateFilter('descending', val.descending);
-    updateFilter('rowsPerPage', val.rowsPerPage);
-  },
+const tablePagination = ref({
+  sortBy: 'start_date',
+  descending: false,
+  page: 1,
+  rowsPerPage: 20,
+  rowsNumber: 0,
 });
 
 const formatEventsText = (count: number): string => {
@@ -351,6 +337,20 @@ const formatEventsText = (count: number): string => {
     return '1 event';
   }
   return `${count.toLocaleString()} events`;
+};
+
+const onRequest = (requestProp: Record<string, unknown>) => {
+  const requestProps = requestProp as {
+    pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
+  };
+  const { page, rowsPerPage, sortBy, descending } = requestProps.pagination;
+
+  tablePagination.value.page = page;
+  tablePagination.value.rowsPerPage = rowsPerPage;
+  tablePagination.value.sortBy = sortBy || 'start_date';
+  tablePagination.value.descending = descending;
+
+  void loadEvents(page);
 };
 
 const loadEvents = async (page?: number, forceReload = false) => {
@@ -398,6 +398,10 @@ const loadEvents = async (page?: number, forceReload = false) => {
     state.value.currentPage = response.currentPage;
     state.value.hasNextPage = response.hasNextPage;
     state.value.hasPrevPage = response.hasPrevPage;
+
+    // Update pagination object
+    tablePagination.value.rowsNumber = response.totalCount;
+    tablePagination.value.page = response.currentPage;
 
     updateCountrySet(response.events);
 
@@ -739,8 +743,25 @@ onMounted(() => {
   }
 }
 
-.location-cell {
-  .location-content {
+.city-cell {
+  .city-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+
+    .q-icon {
+      margin-top: 2px;
+      opacity: 0.8;
+    }
+
+    div {
+      line-height: 1.3;
+    }
+  }
+}
+
+.country-cell {
+  .country-content {
     display: flex;
     align-items: flex-start;
     gap: 6px;

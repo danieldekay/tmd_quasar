@@ -100,13 +100,22 @@
             <span v-else class="text-grey-5">-</span>
           </q-td>
         </template>
-        <template #body-cell-location="props">
+        <template #body-cell-city="props">
           <q-td :props="props" class="cursor-pointer">
-            <div v-if="props.row.city || props.row.country">
-              <q-icon name="place" size="xs" class="q-mr-xs" />
-              {{ getLocationText(props.row) }}
+            <div v-if="props.row.meta_box?.city" class="location-content">
+              <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+              {{ props.row.meta_box.city }}
             </div>
-            <span v-else class="text-grey-5">-</span>
+            <span v-else class="text-grey-5">—</span>
+          </q-td>
+        </template>
+        <template #body-cell-country="props">
+          <q-td :props="props" class="cursor-pointer">
+            <div v-if="props.row.meta_box?.country" class="location-content">
+              <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+              {{ getCountryName(props.row.meta_box.country) }}
+            </div>
+            <span v-else class="text-grey-5">—</span>
           </q-td>
         </template>
         <template #body-cell-partnership_style="props">
@@ -214,12 +223,20 @@ const columns = [
     style: 'width: 180px',
   },
   {
-    name: 'location',
-    label: 'Location',
-    field: (row: Record<string, unknown>) => getLocationText(row as unknown as Couple),
+    name: 'city',
+    label: 'City',
+    field: (row: Record<string, unknown>) => (row as unknown as Couple).meta_box?.city || '',
     align: 'left' as const,
+    style: 'width: 120px',
     sortable: true,
-    style: 'width: 150px',
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    field: (row: Record<string, unknown>) => (row as unknown as Couple).meta_box?.country || '',
+    align: 'left' as const,
+    style: 'width: 120px',
+    sortable: true,
   },
   {
     name: 'partnership_style',
@@ -363,13 +380,6 @@ const getBothRolesId = (couple: Couple): number | null => {
 
   // For now, return null as this is a special case
   return null;
-};
-
-const getLocationText = (couple: Couple): string => {
-  const city = couple.city || '';
-  const country = couple.country || '';
-  const countryName = country ? getCountryName(country) : '';
-  return [city, countryName].filter(Boolean).join(', ');
 };
 
 // Event handlers - removed since we're using clickable names instead

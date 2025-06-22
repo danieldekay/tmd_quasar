@@ -1,145 +1,165 @@
 <template>
-  <BaseListPage
-    title="Event Series"
-    :loading="loading"
-    loading-message="Loading event series..."
-    :error="error"
-    error-title="Failed to Load Event Series"
-    :show-empty-state="!loading && !error && eventSeries.length === 0"
-    empty-state-icon="event_repeat"
-    empty-state-title="No event series found"
-    empty-state-message="No event series match your current search criteria."
-    :enable-search="true"
-    :search-query="searchQuery"
-    search-placeholder="Search event series..."
-    :has-active-filters="hasActiveFilters"
-    :active-filter-count="activeFilterCount"
-    :show-stats="true"
-    :total-count="filteredEventSeries.length"
-    :stats-label="formatSeriesText(filteredEventSeries.length)"
-    :display-count="filteredEventSeries.length"
-    :show-results-header="false"
-    enable-pull-to-refresh
-    @update:search-query="searchQuery = $event"
-    @clear-filters="clearFilters"
-    @retry="loadEventSeries"
-    @pull-to-refresh="handlePullToRefresh"
-  >
-    <template #content>
-      <BaseTable
-        :rows="paginatedEventSeries"
-        :columns="columns"
-        :current-page="pagination.currentPage.value"
-        :rows-per-page="pagination.rowsPerPage.value"
-        :total-items="filteredEventSeries.length"
-        :loading="loading"
-        :error="error"
-        :clickable-rows="true"
-        :show-top-pagination="false"
-        :hide-bottom-pagination="true"
-        loading-message="Loading event series..."
-        empty-icon="event_repeat"
-        empty-title="No event series found"
-        empty-message="No event series match your current search criteria."
-        @update:current-page="pagination.goToPage"
-        @update:rows-per-page="pagination.setRowsPerPage"
-        @row-click="handleRowClick"
-      >
-        <template #navbar>
-          <TableNavbar
-            :filtered-count="filteredEventSeries.length"
-            :total-count="eventSeries.length"
-            :has-active-filters="hasActiveFilters"
-            :current-page="pagination.currentPage.value"
-            :total-pages="pagination.totalPages.value"
-            :rows-per-page="pagination.rowsPerPage.value"
-            :loading="loading"
-            item-name="event series"
-            item-name-plural="event series"
-            @reload="loadEventSeries"
-            @update:rows-per-page="pagination.setRowsPerPage"
-            @update:current-page="pagination.goToPage"
-          />
-        </template>
-        <template #body-cell="props">
-          <q-td key="logo" :props="props">
-            <q-avatar size="40px" rounded>
-              <img
-                :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
-                :alt="`Logo of ${props.row.title}`"
-              />
-            </q-avatar>
-          </q-td>
+  <q-page class="event-series-directory">
+    <!-- Header Section -->
+    <ListPageHeader
+      title="Event Series"
+      :show-stats="true"
+      :total-count="eventSeries.length"
+      :stats-label="formatSeriesText(eventSeries.length)"
+    />
 
-          <q-td key="title" :props="props">
-            <div class="series-title">{{ props.row.title }}</div>
-            <div
-              v-if="props.row.acf?.description"
-              class="series-description text-caption text-grey-6"
-            >
-              {{ truncateDescription(props.row.acf.description) }}
-            </div>
-          </q-td>
+    <!-- Filters Section -->
+    <div class="q-px-lg q-pb-lg">
+      <ListFilters
+        :enable-search="true"
+        :search-query="searchQuery"
+        search-placeholder="Search event series..."
+        :search-debounce="300"
+        :has-active-filters="hasActiveFilters"
+        :active-filter-count="activeFilterCount"
+        @update:search-query="searchQuery = $event"
+        @clear-filters="clearFilters"
+      />
+    </div>
 
-          <q-td key="start_date" :props="props">
-            <div v-if="props.row.start_date" class="date-content">
-              <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
-              {{ formatDate(props.row.start_date) }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-section q-px-lg">
+      <q-card flat bordered>
+        <q-card-section class="text-center q-py-xl">
+          <q-spinner-dots color="primary" size="3em" />
+          <p class="text-subtitle1 q-mt-md text-grey-6">Loading event series...</p>
+        </q-card-section>
+      </q-card>
+    </div>
 
-          <q-td key="registration_start_date" :props="props">
-            <div v-if="props.row.registration_start_date" class="date-content">
-              <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
-              {{ formatDate(props.row.registration_start_date) }}
-            </div>
-            <span v-else class="text-grey-5">TBD</span>
-          </q-td>
+    <!-- Error State -->
+    <div v-else-if="error" class="error-section q-px-lg">
+      <OfflineMessage :error="error" title="Failed to Load Event Series" @retry="loadEventSeries" />
+    </div>
 
-          <q-td key="date_added" :props="props">
-            <div class="date-content">
-              <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
-              {{ formatDate(props.row.date) }}
-            </div>
-          </q-td>
+    <!-- Results Section -->
+    <div v-else class="results-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="content-card">
+        <!-- Event Series Table -->
+        <BaseTable
+          :rows="paginatedEventSeries"
+          :columns="columns"
+          :loading="loading"
+          :pagination="tablePagination"
+          row-key="id"
+          @request="onRequest"
+          @row-click="handleRowClick"
+        >
+          <template #navbar>
+            <TableNavbar
+              :filtered-count="filteredEventSeries.length"
+              :total-count="eventSeries.length"
+              :has-active-filters="hasActiveFilters"
+              :current-page="tablePagination.page"
+              :total-pages="Math.ceil(filteredEventSeries.length / tablePagination.rowsPerPage)"
+              :rows-per-page="tablePagination.rowsPerPage"
+              :loading="loading"
+              item-name="event series"
+              item-name-plural="event series"
+              @reload="loadEventSeries"
+              @update:rows-per-page="handleRowsPerPageChange"
+              @update:current-page="goToPage"
+            />
+          </template>
+          <template #body-cell-logo="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-avatar size="40px" rounded>
+                <img
+                  :src="props.row.acf?.logo || 'https://cdn.quasar.dev/img/mountains.jpg'"
+                  :alt="`Logo of ${props.row.title}`"
+                />
+              </q-avatar>
+            </q-td>
+          </template>
 
-          <q-td key="city" :props="props">
-            <div v-if="props.row.city" class="location-content">
-              <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-              {{ props.row.city }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
+          <template #body-cell-title="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div class="series-title">{{ props.row.title }}</div>
+              <div
+                v-if="props.row.acf?.description"
+                class="series-description text-caption text-grey-6"
+              >
+                {{ truncateDescription(props.row.acf.description) }}
+              </div>
+            </q-td>
+          </template>
 
-          <q-td key="country" :props="props">
-            <div v-if="props.row.country" class="location-content">
-              <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-              {{ props.row.country }}
-            </div>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
+          <template #body-cell-start_date="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.start_date" class="date-content">
+                <q-icon name="event" size="xs" class="q-mr-xs text-primary" />
+                {{ formatDate(props.row.start_date) }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
 
-          <q-td key="website" :props="props">
-            <q-btn
-              v-if="props.row.acf?.website"
-              flat
-              round
-              color="secondary"
-              icon="launch"
-              size="sm"
-              :href="props.row.acf.website"
-              target="_blank"
-              @click.stop
-            >
-              <q-tooltip>Visit Website</q-tooltip>
-            </q-btn>
-            <span v-else class="text-grey-5">—</span>
-          </q-td>
-        </template>
-      </BaseTable>
-    </template>
-  </BaseListPage>
+          <template #body-cell-registration_start_date="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.registration_start_date" class="date-content">
+                <q-icon name="how_to_reg" size="xs" class="q-mr-xs text-secondary" />
+                {{ formatDate(props.row.registration_start_date) }}
+              </div>
+              <span v-else class="text-grey-5">TBD</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-date_added="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div class="date-content">
+                <q-icon name="calendar_today" size="xs" class="q-mr-xs text-accent" />
+                {{ formatDate(props.row.date) }}
+              </div>
+            </q-td>
+          </template>
+
+          <template #body-cell-city="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.city" class="location-content">
+                <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+                {{ props.row.city }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-country="props">
+            <q-td :props="props" class="cursor-pointer">
+              <div v-if="props.row.country" class="location-content">
+                <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+                {{ props.row.country }}
+              </div>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-website="props">
+            <q-td :props="props" class="cursor-pointer">
+              <q-btn
+                v-if="props.row.acf?.website"
+                flat
+                round
+                color="secondary"
+                icon="launch"
+                size="sm"
+                :href="props.row.acf.website"
+                target="_blank"
+                @click.stop
+              >
+                <q-tooltip>Visit Website</q-tooltip>
+              </q-btn>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+        </BaseTable>
+      </q-card>
+    </div>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -149,26 +169,29 @@ import { useQuasar } from 'quasar';
 import { eventSeriesService } from '../services';
 import type { EventSeries } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
-import { useTablePagination } from '../composables/useTablePagination';
-import BaseListPage from '../components/BaseListPage.vue';
 import BaseTable from '../components/BaseTable.vue';
 import TableNavbar from '../components/TableNavbar.vue';
+import ListPageHeader from '../components/ListPageHeader.vue';
+import ListFilters from '../components/ListFilters.vue';
+import OfflineMessage from '../components/OfflineMessage.vue';
 
 const router = useRouter();
 const $q = useQuasar();
 const { formatDate } = useFormatters();
-
-// Pagination
-const pagination = useTablePagination({
-  initialRowsPerPage: 20,
-  rowsPerPageOptions: [10, 20, 50, 100],
-});
 
 // State
 const eventSeries = ref<EventSeries[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
+
+const tablePagination = ref({
+  sortBy: 'date',
+  descending: true,
+  page: 1,
+  rowsPerPage: 20,
+  rowsNumber: 0,
+});
 
 // Helper function for date sorting
 const sortByDate = (a: unknown, b: unknown): number => {
@@ -271,8 +294,8 @@ const filteredEventSeries = computed(() => {
 });
 
 const paginatedEventSeries = computed(() => {
-  const start = (pagination.currentPage.value - 1) * pagination.rowsPerPage.value;
-  const end = start + pagination.rowsPerPage.value;
+  const start = (tablePagination.value.page - 1) * tablePagination.value.rowsPerPage;
+  const end = start + tablePagination.value.rowsPerPage;
   return filteredEventSeries.value.slice(start, end);
 });
 
@@ -286,7 +309,10 @@ const activeFilterCount = computed(() => {
 
 // Methods
 const formatSeriesText = (count: number): string => {
-  return pagination.formatItemsText(count, 'event series', 'event series');
+  if (count === 1) {
+    return '1 event series';
+  }
+  return `${count.toLocaleString()} event series`;
 };
 
 const truncateDescription = (description: string): string => {
@@ -304,6 +330,7 @@ const loadEventSeries = async (showNotification = false) => {
     loading.value = true;
     error.value = null;
     eventSeries.value = await eventSeriesService.getEventSeries();
+    tablePagination.value.rowsNumber = eventSeries.value.length;
 
     if (showNotification) {
       $q?.notify?.({
@@ -323,13 +350,30 @@ const loadEventSeries = async (showNotification = false) => {
 
 const clearFilters = () => {
   searchQuery.value = '';
-  pagination.goToFirstPage();
+  tablePagination.value.page = 1;
 };
 
-const handlePullToRefresh = (done: () => void) => {
-  void loadEventSeries(true).finally(() => {
-    done();
-  });
+const onRequest = (requestProp: Record<string, unknown>) => {
+  const requestProps = requestProp as {
+    pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
+  };
+  const { page, rowsPerPage, sortBy, descending } = requestProps.pagination;
+
+  tablePagination.value.page = page;
+  tablePagination.value.rowsPerPage = rowsPerPage;
+  tablePagination.value.sortBy = sortBy || 'date';
+  tablePagination.value.descending = descending;
+
+  // For client-side pagination, we don't need to reload data
+};
+
+const handleRowsPerPageChange = (newRowsPerPage: number) => {
+  tablePagination.value.rowsPerPage = newRowsPerPage;
+  tablePagination.value.page = 1;
+};
+
+const goToPage = (page: number) => {
+  tablePagination.value.page = page;
 };
 
 const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
@@ -338,7 +382,12 @@ const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
 
 // Watch for changes in filtered results to update pagination
 watch(filteredEventSeries, (newResults) => {
-  pagination.setTotalItems(newResults.length);
+  tablePagination.value.rowsNumber = newResults.length;
+  if (
+    tablePagination.value.page > Math.ceil(newResults.length / tablePagination.value.rowsPerPage)
+  ) {
+    tablePagination.value.page = 1;
+  }
 });
 
 onMounted(() => {
@@ -347,6 +396,25 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.event-series-directory {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+}
+
+.loading-section,
+.error-section {
+  margin-bottom: 16px;
+}
+
+.content-card {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .series-title {
   color: #1976d2;
   font-size: 14px;
@@ -367,6 +435,21 @@ onMounted(() => {
 
   .q-icon {
     opacity: 0.8;
+  }
+}
+
+.location-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+
+  .q-icon {
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+
+  div {
+    line-height: 1.3;
   }
 }
 </style>

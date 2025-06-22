@@ -26,7 +26,7 @@
             @update:current-page="goToPage"
           />
         </template>
-        <template #body-cell-photo="props">
+        <template #body-cell-image="props">
           <q-td :props="props">
             <q-avatar size="40px">
               <img
@@ -42,13 +42,22 @@
             <div class="text-weight-medium">{{ getTeacherName(props.row) }}</div>
           </q-td>
         </template>
-        <template #body-cell-location="props">
+        <template #body-cell-city="props">
           <q-td :props="props" class="cursor-pointer">
-            <div v-if="props.row.meta_box?.city || props.row.meta_box?.country">
-              <q-icon name="place" size="xs" class="q-mr-xs" />
-              {{ getLocationText(props.row) }}
+            <div v-if="props.row.meta_box?.city" class="location-content">
+              <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
+              {{ props.row.meta_box.city }}
             </div>
-            <span v-else class="text-grey-5">-</span>
+            <span v-else class="text-grey-5">—</span>
+          </q-td>
+        </template>
+        <template #body-cell-country="props">
+          <q-td :props="props" class="cursor-pointer">
+            <div v-if="props.row.meta_box?.country" class="location-content">
+              <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
+              {{ getCountryName(props.row.meta_box.country) }}
+            </div>
+            <span v-else class="text-grey-5">—</span>
           </q-td>
         </template>
         <template #body-cell-role="props">
@@ -187,39 +196,49 @@ const pagination = ref({
 // Table columns
 const columns = [
   {
-    name: 'photo',
-    label: 'Photo',
-    field: 'photo',
+    name: 'image',
+    label: '',
+    field: 'image',
     align: 'center' as const,
     sortable: false,
     style: 'width: 60px',
   },
   {
     name: 'name',
-    label: 'Name',
-    field: (row: Teacher) => getTeacherName(row),
+    label: 'Teacher',
+    field: (row: Record<string, unknown>) => getTeacherName(row as unknown as Teacher),
     align: 'left' as const,
+    sortable: true,
+    style: 'width: 200px',
+  },
+  {
+    name: 'city',
+    label: 'City',
+    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.city || '',
+    align: 'left' as const,
+    style: 'width: 120px',
     sortable: true,
   },
   {
-    name: 'location',
-    label: 'Location',
-    field: (row: Teacher) => getLocationText(row),
+    name: 'country',
+    label: 'Country',
+    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.country || '',
     align: 'left' as const,
+    style: 'width: 120px',
     sortable: true,
   },
   {
     name: 'role',
     label: 'Role',
-    field: (row: Teacher) => row.meta_box?.role || '',
+    field: (row: Record<string, unknown>) => (row as unknown as Teacher).meta_box?.role || '',
     align: 'center' as const,
     sortable: true,
     style: 'width: 100px',
   },
   {
-    name: 'gender',
-    label: 'Gender',
-    field: (row: Teacher) => row.meta_box?.gender || '',
+    name: 'couples_count',
+    label: 'Couples',
+    field: (row: Record<string, unknown>) => getCouplesCount(row as unknown as Teacher),
     align: 'center' as const,
     sortable: true,
     style: 'width: 80px',
@@ -227,25 +246,9 @@ const columns = [
   {
     name: 'events_count',
     label: 'Events',
-    field: (row: Teacher) => getEventsCount(row),
+    field: (row: Record<string, unknown>) => getEventsCount(row as unknown as Teacher),
     align: 'center' as const,
     sortable: true,
-    style: 'width: 80px',
-  },
-  {
-    name: 'couples_count',
-    label: 'Couples',
-    field: (row: Teacher) => getCouplesCount(row),
-    align: 'center' as const,
-    sortable: true,
-    style: 'width: 80px',
-  },
-  {
-    name: 'website',
-    label: 'Website',
-    field: 'website',
-    align: 'center' as const,
-    sortable: false,
     style: 'width: 80px',
   },
   {
@@ -255,14 +258,6 @@ const columns = [
     align: 'left' as const,
     sortable: true,
     style: 'width: 100px',
-  },
-  {
-    name: 'actions',
-    label: 'Actions',
-    field: 'actions',
-    align: 'center' as const,
-    sortable: false,
-    style: 'width: 120px',
   },
 ];
 
@@ -340,13 +335,6 @@ const getTeacherName = (teacher: Teacher): string => {
   const firstName = teacher.meta_box?.first_name || '';
   const lastName = teacher.meta_box?.last_name || '';
   return `${firstName} ${lastName}`.trim() || teacher.title || 'Unknown';
-};
-
-const getLocationText = (teacher: Teacher): string => {
-  const city = teacher.meta_box?.city || '';
-  const country = teacher.meta_box?.country || '';
-  const countryName = country ? getCountryName(country) : '';
-  return [city, countryName].filter(Boolean).join(', ');
 };
 
 const getTeacherPhoto = (): string => {
