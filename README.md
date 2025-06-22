@@ -83,7 +83,8 @@ npm run dev
 
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
-- `pnpm preview` - Preview production build
+- `pnpm build:ci` - Build for CI/CD (same as build)
+- `pnpm preview` - Preview production build locally
 - `pnpm lint` - Run ESLint with strict rules
 - `pnpm lint:fix` - Fix ESLint issues automatically
 
@@ -153,6 +154,24 @@ The API provides bidirectional relationships:
 - **Smart Caching**: Reduced API payloads with essential fields only
 - **Loading States**: Visual feedback with Quasar spinners and skeletons
 
+## CI/CD Pipeline
+
+This project includes a minimal GitHub Actions CI/CD pipeline that automatically:
+
+- **Lints and builds** the application on every push and pull request
+- **Deploys to GitHub Pages** automatically from the main branch
+- **Caches dependencies** for faster build times
+- **Retains build artifacts** for 30 days
+
+### Workflow Features
+
+- Runs on Node.js 20 with pnpm package manager
+- Automated deployment to GitHub Pages for production builds
+- Continues on linting errors during development (configurable)
+- Efficient dependency caching for faster CI runs
+
+See [CI/CD Documentation](.github/CI-CD.md) for detailed configuration information.
+
 ## Todo
 
 ### Completed ✅
@@ -177,7 +196,7 @@ The API provides bidirectional relationships:
 - [ ] PWA support with service workers
 - [ ] Internationalization (i18n) support
 - [ ] Analytics and performance monitoring
-- [ ] CI/CD pipeline setup
+- [x] CI/CD pipeline setup
 - [ ] Comprehensive testing suite
 - [ ] SEO optimization and meta tags
 

@@ -12,6 +12,8 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "build": "quasar build",
+    "build:ci": "quasar build",
+    "preview": "quasar build && quasar serve dist/spa --port 8080 --history",
     "postinstall": "quasar prepare"
   },
   "dependencies": {

@@ -1,0 +1,17 @@
+# Global code owners for the TMD Quasar project
+* @danieldekay
+
+# CI/CD workflow and configuration
+/.github/ @danieldekay
+/package.json @danieldekay
+/pnpm-lock.yaml @danieldekay
+
+# Core application configuration
+/quasar.config.ts @danieldekay
+/tsconfig.json @danieldekay
+/eslint.config.js @danieldekay
+
+# Documentation
+/README.md @danieldekay
+/DESIGN.md @danieldekay
+/CONTRIBUTING.md @danieldekay
