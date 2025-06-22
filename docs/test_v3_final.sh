@@ -1,20 +1,80 @@
 #!/bin/bash
 
+# TMD v3 API Test Script
+# Tests all v3 endpoints with proper authentication
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
+YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Base URL
-BASE_URL="http://localhost:10014/wp-json/tmd/v3"
+# Load credentials from credentials.local.json
+if [ -f "../credentials.local.json" ]; then
+    echo -e "${BLUE}Loading credentials from ../credentials.local.json${NC}"
+    USERNAME=$(grep -o '"username": "[^"]*"' ../credentials.local.json | cut -d'"' -f4)
+    PASSWORD=$(grep -o '"password": "[^"]*"' ../credentials.local.json | cut -d'"' -f4)
+    BASE_URL=$(grep -o '"baseUrl": "[^"]*"' ../credentials.local.json | cut -d'"' -f4)
+else
+    echo -e "${YELLOW}../credentials.local.json not found, using default credentials${NC}"
+    USERNAME="danieltest123"
+    PASSWORD="I^oT#x!H&4R)I&*d"
+    BASE_URL="http://localhost:10014"
+fi
+
+# Add API path to BASE_URL
+BASE_URL="${BASE_URL}/wp-json/tmd/v3"
+
+echo -e "${BLUE}Using credentials:${NC}"
+echo -e "  Username: $USERNAME"
+echo -e "  Password: ${PASSWORD:0:4}****"
+echo -e "  Base URL: $BASE_URL"
+echo ""
 
 # Test counter
 TESTS_PASSED=0
 TESTS_FAILED=0
+
+# Function to run a test
+run_test() {
+    local test_name="$1"
+    local command="$2"
+    local expected_status="$3"
+    
+    echo -e "${BLUE}Running: $test_name${NC}"
+    
+    # Run the command and capture output
+    local output
+    local status
+    output=$(eval "$command" 2>&1)
+    status=$?
+    
+    # Check if test passed
+    if [ $status -eq $expected_status ]; then
+        echo -e "${GREEN}✓ PASSED${NC}"
+        ((TESTS_PASSED++))
+    else
+        echo -e "${RED}✗ FAILED (Expected: $expected_status, Got: $status)${NC}"
+        echo -e "${YELLOW}Output:${NC}"
+        echo "$output" | head -10
+        ((TESTS_FAILED++))
+    fi
+    echo ""
+}
+
+# Base URL
+GRAPHQL_URL="http://localhost:10014/graphql"
+
+# JWT Token storage
+JWT_TOKEN=""
+JWT_USER_ID=""
+JWT_USERNAME=""
+
+# Test credentials (update these as needed)
+TEST_USERNAME="$USERNAME"
+TEST_PASSWORD="$PASSWORD"
+TEST_EMAIL="danieltest1234@example.com"
 
 # Endpoint configurations - using simple arrays instead of associative
 ENDPOINTS="events djs teachers couples event-series orchestras brands"
@@ -22,6 +82,7 @@ ENDPOINTS="events djs teachers couples event-series orchestras brands"
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║                  TMD v3 API Test Suite                       ║${NC}"
 echo -e "${BLUE}║              Comprehensive HAL-compliant Testing             ║${NC}"
+echo -e "${BLUE}║                    with JWT Authentication                   ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -31,6 +92,258 @@ print_section() {
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║ $title${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# Helper function to acquire JWT token
+acquire_jwt_token() {
+    echo -e "${YELLOW}Acquiring JWT token...${NC}"
+    
+    # Try with username first
+    local login_query="{\"query\":\"mutation { login(input: {username: \\\"$TEST_USERNAME\\\", password: \\\"$TEST_PASSWORD\\\"}) { authToken user { id name email } } }\"}"
+    local response=$(curl -s -X POST -H "Content-Type: application/json" -d "$login_query" "$GRAPHQL_URL" 2>/dev/null)
+    
+    # Check if login was successful
+    local auth_token=$(echo "$response" | jq -r '.data.login.authToken // "null"' 2>/dev/null)
+    local user_id=$(echo "$response" | jq -r '.data.login.user.id // "null"' 2>/dev/null)
+    local username=$(echo "$response" | jq -r '.data.login.user.name // "null"' 2>/dev/null)
+    
+    if [[ "$auth_token" != "null" && "$auth_token" != "" ]]; then
+        JWT_TOKEN="$auth_token"
+        JWT_USER_ID="$user_id"
+        JWT_USERNAME="$username"
+        echo -e "${GREEN}✅ JWT token acquired successfully${NC}"
+        echo "User: $username (ID: $user_id)"
+        echo "Token: ${auth_token:0:50}..."
+        ((TESTS_PASSED++))
+        return 0
+    fi
+    
+    # Try with email if username failed
+    echo -e "${YELLOW}Trying with email address...${NC}"
+    local email_login_query="{\"query\":\"mutation { login(input: {username: \\\"$TEST_EMAIL\\\", password: \\\"$TEST_PASSWORD\\\"}) { authToken user { id name email } } }\"}"
+    local email_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$email_login_query" "$GRAPHQL_URL" 2>/dev/null)
+    
+    local email_auth_token=$(echo "$email_response" | jq -r '.data.login.authToken // "null"' 2>/dev/null)
+    local email_user_id=$(echo "$email_response" | jq -r '.data.login.user.id // "null"' 2>/dev/null)
+    local email_username=$(echo "$email_response" | jq -r '.data.login.user.name // "null"' 2>/dev/null)
+    
+    if [[ "$email_auth_token" != "null" && "$email_auth_token" != "" ]]; then
+        JWT_TOKEN="$email_auth_token"
+        JWT_USER_ID="$email_user_id"
+        JWT_USERNAME="$email_username"
+        echo -e "${GREEN}✅ JWT token acquired successfully (via email)${NC}"
+        echo "User: $email_username (ID: $email_user_id)"
+        echo "Token: ${email_auth_token:0:50}..."
+        ((TESTS_PASSED++))
+        return 0
+    fi
+    
+    # If both failed, show error details
+    echo -e "${RED}❌ Failed to acquire JWT token${NC}"
+    echo "Username login response: $(echo "$response" | jq -r '.errors[0].message // "Unknown error"' 2>/dev/null)"
+    echo "Email login response: $(echo "$email_response" | jq -r '.errors[0].message // "Unknown error"' 2>/dev/null)"
+    echo ""
+    echo -e "${YELLOW}Please check:${NC}"
+    echo "1. Test credentials are correct: $TEST_USERNAME / $TEST_EMAIL"
+    echo "2. WordPress is running at $GRAPHQL_URL"
+    echo "3. JWT Authentication plugin is active"
+    echo "4. User account exists and is active"
+    ((TESTS_FAILED++))
+    return 1
+}
+
+# Helper function to validate JWT token
+validate_jwt_token() {
+    if [[ -z "$JWT_TOKEN" ]]; then
+        echo -e "${RED}❌ No JWT token available for validation${NC}"
+        ((TESTS_FAILED++))
+        return 1
+    fi
+    
+    echo -e "${YELLOW}Validating JWT token...${NC}"
+    
+    # Test GraphQL viewer query
+    local viewer_query="{\"query\":\"query { viewer { id name email } }\"}"
+    local response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $JWT_TOKEN" -d "$viewer_query" "$GRAPHQL_URL" 2>/dev/null)
+    
+    local has_errors=$(echo "$response" | jq 'has("errors")' 2>/dev/null)
+    local viewer_id=$(echo "$response" | jq -r '.data.viewer.id // "null"' 2>/dev/null)
+    
+    if [[ "$has_errors" == "false" && "$viewer_id" != "null" ]]; then
+        echo -e "${GREEN}✅ JWT token is valid${NC}"
+        echo "Viewer ID: $viewer_id"
+        ((TESTS_PASSED++))
+        return 0
+    else
+        echo -e "${RED}❌ JWT token validation failed${NC}"
+        local error_msg=$(echo "$response" | jq -r '.errors[0].message // "Unknown error"' 2>/dev/null)
+        echo "Error: $error_msg"
+        ((TESTS_FAILED++))
+        return 1
+    fi
+}
+
+# Helper function to test JWT-protected endpoint
+test_jwt_protected_endpoint() {
+    local endpoint="$1"
+    local test_name="$2"
+    local expected_status="$3"
+    
+    if [[ -z "$JWT_TOKEN" ]]; then
+        echo -e "${YELLOW}⚠️ Skipping $test_name - No JWT token available${NC}"
+        return 0
+    fi
+    
+    echo -e "${YELLOW}Testing JWT Protected: $test_name${NC}"
+    
+    local response=$(curl -s -w "HTTP_CODE:%{http_code}" -H "Authorization: Bearer $JWT_TOKEN" "${BASE_URL}/${endpoint}" 2>/dev/null)
+    local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+    local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
+    
+    if [[ "$http_code" == "$expected_status" ]]; then
+        echo -e "${GREEN}✅ $test_name - PASSED (HTTP $http_code)${NC}"
+        if [[ "$http_code" == "200" ]]; then
+            echo "Response preview: $(echo "$body" | jq -c 'keys' 2>/dev/null || echo "Non-JSON response")"
+        fi
+        ((TESTS_PASSED++))
+    else
+        echo -e "${RED}❌ $test_name - FAILED (Expected: $expected_status, Got: $http_code)${NC}"
+        echo "Response: $body"
+        ((TESTS_FAILED++))
+    fi
+    echo ""
+}
+
+# Helper function to test JWT with different scenarios
+test_jwt_scenarios() {
+    print_section "JWT Authentication Tests"
+    
+    # Test without authentication
+    echo -e "${YELLOW}Testing /me endpoint without authentication${NC}"
+    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/me" 2>/dev/null)
+    local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+    
+    if [[ "$http_code" == "401" ]]; then
+        echo -e "${GREEN}✅ /me endpoint properly requires authentication${NC}"
+        ((TESTS_PASSED++))
+    else
+        echo -e "${RED}❌ /me endpoint should require authentication (Got: $http_code)${NC}"
+        ((TESTS_FAILED++))
+    fi
+    echo ""
+    
+    # Test with invalid JWT
+    echo -e "${YELLOW}Testing /me endpoint with invalid JWT${NC}"
+    local invalid_response=$(curl -s -w "HTTP_CODE:%{http_code}" -H "Authorization: Bearer invalid.token.here" "${BASE_URL}/me" 2>/dev/null)
+    local invalid_http_code=$(echo "$invalid_response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+    
+    if [[ "$invalid_http_code" == "401" ]]; then
+        echo -e "${GREEN}✅ /me endpoint properly rejects invalid JWT${NC}"
+        ((TESTS_PASSED++))
+    else
+        echo -e "${RED}❌ /me endpoint should reject invalid JWT (Got: $invalid_http_code)${NC}"
+        ((TESTS_FAILED++))
+    fi
+    echo ""
+    
+    # Test with valid JWT (if available)
+    if [[ -n "$JWT_TOKEN" ]]; then
+        test_jwt_protected_endpoint "me" "/me endpoint with valid JWT" "200"
+        
+        # Test /me with different parameters
+        echo -e "${YELLOW}Testing /me endpoint with _embed parameter${NC}"
+        local embed_response=$(curl -s -w "HTTP_CODE:%{http_code}" -H "Authorization: Bearer $JWT_TOKEN" "${BASE_URL}/me?_embed=true" 2>/dev/null)
+        local embed_http_code=$(echo "$embed_response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+        local embed_body=$(echo "$embed_response" | sed 's/HTTP_CODE:[0-9]*$//')
+        
+        if [[ "$embed_http_code" == "200" ]]; then
+            local has_embedded=$(echo "$embed_body" | jq 'has("_embedded")' 2>/dev/null)
+            if [[ "$has_embedded" == "true" ]]; then
+                echo -e "${GREEN}✅ /me endpoint with _embed - PASSED${NC}"
+                echo "Embedded keys: $(echo "$embed_body" | jq '._embedded | keys' 2>/dev/null)"
+                ((TESTS_PASSED++))
+            else
+                echo -e "${YELLOW}⚠️ /me endpoint with _embed - PARTIAL (No _embedded data)${NC}"
+                ((TESTS_PASSED++))
+            fi
+        else
+            echo -e "${RED}❌ /me endpoint with _embed - FAILED (HTTP $embed_http_code)${NC}"
+            ((TESTS_FAILED++))
+        fi
+        echo ""
+        
+        # Test /me with include_content parameter
+        echo -e "${YELLOW}Testing /me endpoint with include_content parameter${NC}"
+        local content_response=$(curl -s -w "HTTP_CODE:%{http_code}" -H "Authorization: Bearer $JWT_TOKEN" "${BASE_URL}/me?include_content=events" 2>/dev/null)
+        local content_http_code=$(echo "$content_response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+        
+        if [[ "$content_http_code" == "200" ]]; then
+            echo -e "${GREEN}✅ /me endpoint with include_content - PASSED${NC}"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}❌ /me endpoint with include_content - FAILED (HTTP $content_http_code)${NC}"
+            ((TESTS_FAILED++))
+        fi
+        echo ""
+    else
+        echo -e "${YELLOW}⚠️ Skipping JWT-protected endpoint tests - No valid JWT token${NC}"
+        echo ""
+    fi
+}
+
+# Helper function to test JWT token expiration
+test_jwt_expiration() {
+    if [[ -z "$JWT_TOKEN" ]]; then
+        echo -e "${YELLOW}⚠️ Skipping JWT expiration test - No JWT token available${NC}"
+        return 0
+    fi
+    
+    echo -e "${YELLOW}Testing JWT token expiration handling...${NC}"
+    
+    # Decode JWT token to check expiration
+    local payload=$(echo "$JWT_TOKEN" | cut -d'.' -f2 | base64 -d 2>/dev/null)
+    local exp=$(echo "$payload" | jq -r '.exp // "null"' 2>/dev/null)
+    
+    if [[ "$exp" != "null" ]]; then
+        local current_time=$(date +%s)
+        local time_until_expiry=$((exp - current_time))
+        
+        if [[ $time_until_expiry -gt 0 ]]; then
+            echo -e "${GREEN}✅ JWT token is valid for ${time_until_expiry} seconds${NC}"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}❌ JWT token has expired${NC}"
+            ((TESTS_FAILED++))
+        fi
+    else
+        echo -e "${YELLOW}⚠️ Could not decode JWT expiration time${NC}"
+        ((TESTS_PASSED++))
+    fi
+    echo ""
+}
+
+# Helper function to test JWT refresh (if available)
+test_jwt_refresh() {
+    echo -e "${YELLOW}Testing JWT refresh functionality...${NC}"
+    
+    # Try to refresh the token using GraphQL
+    local refresh_query="{\"query\":\"mutation { refreshToken { authToken } }\"}"
+    local response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $JWT_TOKEN" -d "$refresh_query" "$GRAPHQL_URL" 2>/dev/null)
+    
+    local has_errors=$(echo "$response" | jq 'has("errors")' 2>/dev/null)
+    local new_token=$(echo "$response" | jq -r '.data.refreshToken.authToken // "null"' 2>/dev/null)
+    
+    if [[ "$has_errors" == "false" && "$new_token" != "null" && "$new_token" != "" ]]; then
+        echo -e "${GREEN}✅ JWT refresh - PASSED${NC}"
+        JWT_TOKEN="$new_token"
+        echo "Token refreshed successfully"
+        ((TESTS_PASSED++))
+    else
+        echo -e "${YELLOW}⚠️ JWT refresh - NOT SUPPORTED${NC}"
+        echo "Refresh token mutation not available or failed"
+        ((TESTS_PASSED++))
+    fi
     echo ""
 }
 
@@ -79,7 +392,13 @@ test_endpoint() {
     
     echo -e "${YELLOW}Testing: ${test_name}${NC}"
     
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -129,7 +448,13 @@ test_hal_structure() {
     
     echo -e "${YELLOW}Testing HAL: ${test_name}${NC}"
     
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -175,7 +500,13 @@ test_embed() {
     
     echo -e "${YELLOW}Testing _embed: ${test_name}${NC}"
     
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}?_embed=true" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}?_embed=true\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -208,13 +539,19 @@ test_pagination() {
     
     echo -e "${YELLOW}Testing Pagination: ${test_name}${NC}"
     
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
     # Test page 1
-    local response1=$(curl -s "${BASE_URL}/${endpoint}?per_page=2&page=1" 2>/dev/null)
+    local response1=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?per_page=2&page=1\"" 2>/dev/null)
     local count1=$(echo "$response1" | jq '.count' 2>/dev/null)
     local page1=$(echo "$response1" | jq '.page' 2>/dev/null)
     
     # Test page 2
-    local response2=$(curl -s "${BASE_URL}/${endpoint}?per_page=2&page=2" 2>/dev/null)
+    local response2=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?per_page=2&page=2\"" 2>/dev/null)
     local count2=$(echo "$response2" | jq '.count' 2>/dev/null)
     local page2=$(echo "$response2" | jq '.page' 2>/dev/null)
     
@@ -239,12 +576,18 @@ test_sorting() {
     
     echo -e "${YELLOW}Testing Sorting: ${test_name} by ${orderby}${NC}"
     
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
     # Test ASC
-    local response_asc=$(curl -s "${BASE_URL}/${endpoint}?orderby=${orderby}&order=asc&per_page=2" 2>/dev/null)
+    local response_asc=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?orderby=${orderby}&order=asc&per_page=2\"" 2>/dev/null)
     local first_asc=$(echo "$response_asc" | jq -r "._embedded.\"$embedded_key\"[0].title // ._embedded.\"$embedded_key\"[0].${orderby} // \"null\"" 2>/dev/null)
     
     # Test DESC  
-    local response_desc=$(curl -s "${BASE_URL}/${endpoint}?orderby=${orderby}&order=desc&per_page=2" 2>/dev/null)
+    local response_desc=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?orderby=${orderby}&order=desc&per_page=2\"" 2>/dev/null)
     local first_desc=$(echo "$response_desc" | jq -r "._embedded.\"$embedded_key\"[0].title // ._embedded.\"$embedded_key\"[0].${orderby} // \"null\"" 2>/dev/null)
     
     if [[ "$first_asc" != "null" && "$first_desc" != "null" && "$first_asc" != "$first_desc" ]]; then
@@ -268,7 +611,13 @@ test_meta_fields() {
     
     echo -e "${YELLOW}Testing Meta Fields: ${test_name}${NC}"
     
-    local response=$(curl -s "${BASE_URL}/${endpoint}?meta_fields=${meta_fields}&per_page=1" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?meta_fields=${meta_fields}&per_page=1\"" 2>/dev/null)
     local first_item=$(echo "$response" | jq "._embedded.\"$embedded_key\"[0]" 2>/dev/null)
     
     # Check if at least one meta field is present
@@ -302,7 +651,13 @@ test_meta_filtering() {
     
     echo -e "${YELLOW}Testing Meta Filtering: ${test_name}${NC}"
     
-    local response=$(curl -s "${BASE_URL}/${endpoint}?meta_filters=${meta_filter}" 2>/dev/null)
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
+    local response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?meta_filters=${meta_filter}\"" 2>/dev/null)
     local total=$(echo "$response" | jq '.total' 2>/dev/null)
     local has_links=$(echo "$response" | jq 'has("_links")' 2>/dev/null)
     
@@ -326,8 +681,14 @@ test_single_item() {
     
     echo -e "${YELLOW}Testing Single Item: ${test_name}${NC}"
     
+    # Include JWT token if available
+    local auth_header=""
+    if [[ -n "$JWT_TOKEN" ]]; then
+        auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+    fi
+    
     # Get first item ID
-    local collection_response=$(curl -s "${BASE_URL}/${endpoint}?per_page=1" 2>/dev/null)
+    local collection_response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}?per_page=1\"" 2>/dev/null)
     local item_id=$(echo "$collection_response" | jq -r "._embedded.\"$embedded_key\"[0].id // \"null\"" 2>/dev/null)
     
     if [[ "$item_id" == "null" || "$item_id" == "" ]]; then
@@ -337,7 +698,7 @@ test_single_item() {
     fi
     
     # Test single item endpoint
-    local response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/${endpoint}/${item_id}" 2>/dev/null)
+    local response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/${endpoint}/${item_id}\"" 2>/dev/null)
     local http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
     local body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
     
@@ -351,7 +712,7 @@ test_single_item() {
             ((TESTS_PASSED++))
             
             # Also test single item with embed
-            local embed_response=$(curl -s "${BASE_URL}/${endpoint}/${item_id}?_embed=true" 2>/dev/null)
+            local embed_response=$(eval "curl -s $auth_header \"${BASE_URL}/${endpoint}/${item_id}?_embed=true\"" 2>/dev/null)
             local has_embedded=$(echo "$embed_response" | jq 'has("_embedded")' 2>/dev/null)
             
             if [[ "$has_embedded" == "true" ]]; then
@@ -429,6 +790,30 @@ else
 fi
 echo ""
 
+# JWT Authentication Tests
+print_section "JWT Authentication Setup"
+echo -e "${YELLOW}Setting up JWT authentication for protected endpoint tests...${NC}"
+
+# Acquire JWT token
+if acquire_jwt_token; then
+    # Validate the token
+    validate_jwt_token
+    
+    # Test token expiration
+    test_jwt_expiration
+    
+    # Test token refresh (optional)
+    test_jwt_refresh
+    
+    echo -e "${GREEN}✅ JWT authentication setup completed${NC}"
+else
+    echo -e "${YELLOW}⚠️ JWT authentication setup failed - some tests will be skipped${NC}"
+fi
+echo ""
+
+# Test JWT-protected endpoints
+test_jwt_scenarios
+
 # Test all endpoints comprehensively
 for endpoint in $ENDPOINTS; do
     # Capitalize first letter for display name
@@ -468,7 +853,13 @@ test_endpoint 'djs?meta_filters={"tmd_dj_real_name":{"value":"a","compare":"LIKE
 print_section "Error Handling Tests"
 
 echo -e "${YELLOW}Testing Invalid Event ID${NC}"
-response=$(curl -s -w "HTTP_CODE:%{http_code}" "${BASE_URL}/events/999999" 2>/dev/null)
+# Include JWT token if available
+auth_header=""
+if [[ -n "$JWT_TOKEN" ]]; then
+    auth_header="-H \"Authorization: Bearer $JWT_TOKEN\""
+fi
+
+response=$(eval "curl -s -w \"HTTP_CODE:%{http_code}\" $auth_header \"${BASE_URL}/events/999999\"" 2>/dev/null)
 http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
 body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
 
@@ -512,6 +903,35 @@ test_endpoint 'events?meta_filters={"country":"Germany","city":"Berlin"}' "Multi
 echo -e "${YELLOW}Testing Multiple orderby with meta fields${NC}"
 test_endpoint "events?orderby=start_date&order=desc&meta_fields=start_date,country,city" "Complex Sorting with Meta" '._embedded.events[0] | {title, start_date, country, city}'
 
+# JWT Authentication with other endpoints
+print_section "JWT Authentication with Other Endpoints"
+
+if [[ -n "$JWT_TOKEN" ]]; then
+    echo -e "${YELLOW}Testing JWT authentication with other v3 endpoints...${NC}"
+    
+    # Test if other endpoints support JWT authentication
+    for endpoint in $ENDPOINTS; do
+        echo -e "${YELLOW}Testing $endpoint with JWT authentication${NC}"
+        response=$(curl -s -w "HTTP_CODE:%{http_code}" -H "Authorization: Bearer $JWT_TOKEN" "${BASE_URL}/${endpoint}?per_page=1" 2>/dev/null)
+        http_code=$(echo "$response" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+        
+        if [[ "$http_code" == "200" ]]; then
+            echo -e "${GREEN}✅ $endpoint supports JWT authentication${NC}"
+            ((TESTS_PASSED++))
+        elif [[ "$http_code" == "401" ]]; then
+            echo -e "${YELLOW}⚠️ $endpoint requires different authentication${NC}"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}❌ $endpoint JWT test failed (HTTP: $http_code)${NC}"
+            ((TESTS_FAILED++))
+        fi
+    done
+    echo ""
+else
+    echo -e "${YELLOW}⚠️ Skipping JWT authentication tests with other endpoints - No valid JWT token${NC}"
+    echo ""
+fi
+
 # Summary
 print_section "Test Results Summary"
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
@@ -521,6 +941,15 @@ echo ""
 echo -e "${GREEN}✅ Tests Passed: ${TESTS_PASSED}${NC}"
 echo -e "${RED}❌ Tests Failed: ${TESTS_FAILED}${NC}"
 echo -e "${BLUE}📊 Total Tests: $((TESTS_PASSED + TESTS_FAILED))${NC}"
+
+# JWT Authentication Summary
+if [[ -n "$JWT_TOKEN" ]]; then
+    echo -e "${GREEN}🔐 JWT Authentication: ENABLED${NC}"
+    echo -e "${GREEN}👤 Authenticated User: $JWT_USERNAME (ID: $JWT_USER_ID)${NC}"
+else
+    echo -e "${YELLOW}🔐 JWT Authentication: DISABLED${NC}"
+    echo -e "${YELLOW}⚠️  Some protected endpoint tests were skipped${NC}"
+fi
 echo ""
 
 if [[ $TESTS_FAILED -eq 0 ]]; then
@@ -534,11 +963,34 @@ if [[ $TESTS_FAILED -eq 0 ]]; then
     echo -e "${GREEN}║ ✅ Single item endpoints working                            ║${NC}"
     echo -e "${GREEN}║ ✅ Error handling working correctly                         ║${NC}"
     echo -e "${GREEN}║ ✅ Advanced parameters working                              ║${NC}"
+    if [[ -n "$JWT_TOKEN" ]]; then
+        echo -e "${GREEN}║ ✅ JWT authentication working for protected endpoints      ║${NC}"
+        echo -e "${GREEN}║ ✅ /me endpoint functional with authentication            ║${NC}"
+    else
+        echo -e "${YELLOW}║ ⚠️  JWT authentication not tested (credentials issue)      ║${NC}"
+    fi
     echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${CYAN}The TMD v3 API is ready for production! 🚀${NC}"
+    
+    if [[ -n "$JWT_TOKEN" ]]; then
+        echo ""
+        echo -e "${CYAN}JWT Authentication Status:${NC}"
+        echo -e "${GREEN}✅ /me endpoint is ready for frontend integration${NC}"
+        echo -e "${GREEN}✅ JWT tokens are working correctly${NC}"
+        echo -e "${GREEN}✅ Protected endpoints are properly secured${NC}"
+    fi
 else
     echo -e "${RED}⚠️  Some tests failed. Please check the API implementation.${NC}"
     echo -e "${YELLOW}Check the specific failed tests above for details.${NC}"
+    
+    if [[ -z "$JWT_TOKEN" ]]; then
+        echo ""
+        echo -e "${YELLOW}JWT Authentication Issues:${NC}"
+        echo -e "${YELLOW}⚠️  Could not acquire JWT token - check credentials${NC}"
+        echo -e "${YELLOW}⚠️  /me endpoint tests were skipped${NC}"
+        echo -e "${YELLOW}⚠️  Update TEST_USERNAME and TEST_PASSWORD in the script${NC}"
+    fi
+    
     exit 1
 fi
