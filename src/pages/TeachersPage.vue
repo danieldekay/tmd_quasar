@@ -1,199 +1,226 @@
 <template>
-  <q-page padding>
-    <div class="row q-col-gutter-lg">
-      <div class="col-12">
-        <div class="q-mb-lg">
-          <h1 class="text-h4 q-mb-none">Teachers</h1>
-          <p class="text-subtitle2 text-grey-7 q-mb-none">
-            Discover talented tango teachers from around the world
-          </p>
-        </div>
-      </div>
+  <q-page class="teachers-directory">
+    <!-- Header Section -->
+    <ListPageHeader
+      title="Teachers"
+      subtitle="Discover talented tango teachers from around the world"
+      :show-stats="true"
+      :total-count="teachers.length"
+      stats-label="Total Teachers"
+    />
 
-      <!-- Search and Filters -->
-      <div class="col-12">
-        <q-card flat bordered class="q-mb-lg">
-          <q-card-section>
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-input
-                  v-model="searchQuery"
-                  outlined
-                  dense
-                  placeholder="Search teachers by name, city, or country..."
-                  clearable
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="search" />
-                  </template>
-                </q-input>
-              </div>
-              <div class="col-12 col-md-3">
-                <q-select
-                  v-model="selectedTeachingStyle"
-                  :options="teachingStyleOptions"
-                  outlined
-                  dense
-                  placeholder="Filter by teaching style"
-                  clearable
-                  emit-value
-                  map-options
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="school" />
-                  </template>
-                </q-select>
-              </div>
-              <div class="col-12 col-md-3">
-                <q-select
-                  v-model="sortBy"
-                  :options="sortOptions"
-                  outlined
-                  dense
-                  emit-value
-                  map-options
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="sort" />
-                  </template>
-                </q-select>
+    <!-- Filters Section -->
+    <div class="q-px-lg q-pb-lg">
+      <ListFilters
+        :enable-search="true"
+        :search-query="searchQuery"
+        search-placeholder="Search teachers by name, city, or country..."
+        :search-debounce="300"
+        :has-active-filters="hasActiveFilters"
+        :active-filter-count="activeFilterCount"
+        @update:search-query="searchQuery = $event"
+        @clear-filters="clearAllFilters"
+      >
+        <template #filters>
+          <div class="col-12 col-md-3">
+            <q-select
+              v-model="selectedTeachingStyle"
+              :options="teachingStyleOptions"
+              outlined
+              dense
+              placeholder="Filter by teaching style"
+              clearable
+              emit-value
+              map-options
+            >
+              <template v-slot:prepend>
+                <q-icon name="school" />
+              </template>
+            </q-select>
+          </div>
+          <div class="col-12 col-md-3">
+            <q-select v-model="sortBy" :options="sortOptions" outlined dense emit-value map-options>
+              <template v-slot:prepend>
+                <q-icon name="sort" />
+              </template>
+            </q-select>
+          </div>
+        </template>
+
+        <template #active-filters>
+          <q-chip
+            v-if="searchQuery"
+            removable
+            @remove="searchQuery = ''"
+            color="primary"
+            text-color="white"
+            size="sm"
+            icon="search"
+          >
+            Search: "{{ searchQuery }}"
+          </q-chip>
+          <q-chip
+            v-if="selectedTeachingStyle"
+            removable
+            @remove="selectedTeachingStyle = null"
+            color="secondary"
+            text-color="white"
+            size="sm"
+            icon="school"
+          >
+            Style: {{ selectedTeachingStyle }}
+          </q-chip>
+        </template>
+      </ListFilters>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-section q-px-lg">
+      <q-card flat bordered>
+        <q-card-section class="text-center q-py-xl">
+          <q-spinner-dots color="primary" size="3em" />
+          <p class="text-subtitle1 q-mt-md text-grey-6">Loading teachers...</p>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="error-section q-px-lg">
+      <q-banner class="bg-negative text-white">
+        {{ error }}
+      </q-banner>
+    </div>
+
+    <!-- Results Section -->
+    <div v-else class="results-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="results-card">
+        <!-- Results Header -->
+        <q-card-section class="results-header q-pa-lg border-bottom">
+          <div class="row items-center justify-between">
+            <div class="results-info">
+              <div class="text-h6 text-weight-medium">
+                {{ filteredTeachers.length.toLocaleString() }}
+                {{ filteredTeachers.length === 1 ? 'Teacher' : 'Teachers' }}
+                <span v-if="hasActiveFilters" class="text-grey-6">
+                  (filtered from {{ teachers.length.toLocaleString() }})
+                </span>
               </div>
             </div>
-          </q-card-section>
-        </q-card>
-      </div>
+          </div>
+        </q-card-section>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="col-12 text-center">
-        <q-spinner color="primary" size="3em" />
-        <p class="q-mt-md">Loading teachers...</p>
-      </div>
+        <!-- Teachers Table -->
+        <div>
+          <q-table
+            :rows="filteredTeachers"
+            :columns="columns"
+            row-key="id"
+            :pagination="pagination"
+            flat
+            bordered
+            class="teachers-table"
+          >
+            <template v-slot:body-cell-photo="props">
+              <q-td :props="props">
+                <q-avatar size="40px">
+                  <img
+                    :src="props.row.acf?.photo || 'https://cdn.quasar.dev/img/avatar.png'"
+                    :alt="`Photo of ${props.row.title}`"
+                  />
+                </q-avatar>
+              </q-td>
+            </template>
 
-      <!-- Error State -->
-      <div v-else-if="error" class="col-12 text-center">
-        <q-banner class="bg-negative text-white">
-          {{ error }}
-        </q-banner>
-      </div>
+            <template v-slot:body-cell-name="props">
+              <q-td :props="props">
+                <div class="text-weight-medium">{{ props.row.title }}</div>
+              </q-td>
+            </template>
 
-      <!-- Teachers Table -->
-      <div v-else class="col-12">
-        <q-table
-          :rows="filteredTeachers"
-          :columns="columns"
-          row-key="id"
-          :pagination="pagination"
-          flat
-          bordered
-          class="teachers-table"
-        >
-          <template v-slot:body-cell-photo="props">
-            <q-td :props="props">
-              <q-avatar size="40px">
-                <img
-                  :src="props.row.acf?.photo || 'https://cdn.quasar.dev/img/avatar.png'"
-                  :alt="`Photo of ${props.row.title}`"
-                />
-              </q-avatar>
-            </q-td>
-          </template>
+            <template v-slot:body-cell-location="props">
+              <q-td :props="props">
+                <div v-if="props.row.city || props.row.country">
+                  <q-icon name="place" size="xs" class="q-mr-xs" />
+                  {{ [props.row.city, props.row.country].filter(Boolean).join(', ') }}
+                </div>
+                <span v-else class="text-grey-5">-</span>
+              </q-td>
+            </template>
 
-          <template v-slot:body-cell-name="props">
-            <q-td :props="props">
-              <div class="text-weight-medium">{{ props.row.title }}</div>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-location="props">
-            <q-td :props="props">
-              <div v-if="props.row.city || props.row.country">
-                <q-icon name="place" size="xs" class="q-mr-xs" />
-                {{ [props.row.city, props.row.country].filter(Boolean).join(', ') }}
-              </div>
-              <span v-else class="text-grey-5">-</span>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-teaching_style="props">
-            <q-td :props="props">
-              <q-chip
-                v-if="props.row.acf?.teaching_style"
-                :label="props.row.acf.teaching_style"
-                color="primary"
-                text-color="white"
-                size="sm"
-                dense
-              />
-              <span v-else class="text-grey-5">-</span>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-website="props">
-            <q-td :props="props">
-              <q-btn
-                v-if="props.row.acf?.website"
-                flat
-                round
-                color="secondary"
-                icon="launch"
-                size="sm"
-                :href="props.row.acf.website"
-                target="_blank"
-              >
-                <q-tooltip>Visit Website</q-tooltip>
-              </q-btn>
-              <span v-else class="text-grey-5">-</span>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-date="props">
-            <q-td :props="props">
-              <div class="text-caption">{{ formatDate(props.row.date) }}</div>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
-              <div class="row q-gutter-xs">
-                <q-btn
-                  flat
-                  round
+            <template v-slot:body-cell-teaching_style="props">
+              <q-td :props="props">
+                <q-chip
+                  v-if="props.row.acf?.teaching_style"
+                  :label="props.row.acf.teaching_style"
                   color="primary"
-                  icon="visibility"
+                  text-color="white"
                   size="sm"
-                  :to="`/teachers/${props.row.id}`"
-                >
-                  <q-tooltip>View Details</q-tooltip>
-                </q-btn>
+                  dense
+                />
+                <span v-else class="text-grey-5">-</span>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-website="props">
+              <q-td :props="props">
                 <q-btn
+                  v-if="props.row.acf?.website"
                   flat
                   round
                   color="secondary"
-                  icon="edit"
+                  icon="launch"
                   size="sm"
-                  @click="editTeacher(props.row)"
+                  :href="props.row.acf.website"
+                  target="_blank"
                 >
-                  <q-tooltip>Edit Teacher</q-tooltip>
+                  <q-tooltip>Visit Website</q-tooltip>
                 </q-btn>
+                <span v-else class="text-grey-5">-</span>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-date="props">
+              <q-td :props="props">
+                <div class="text-caption">{{ formatDate(props.row.date) }}</div>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-actions="props">
+              <q-td :props="props">
+                <div class="row q-gutter-xs">
+                  <q-btn
+                    flat
+                    round
+                    color="primary"
+                    icon="visibility"
+                    size="sm"
+                    :to="`/teachers/${props.row.id}`"
+                  >
+                    <q-tooltip>View Details</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    round
+                    color="secondary"
+                    icon="edit"
+                    size="sm"
+                    @click="editTeacher(props.row)"
+                  >
+                    <q-tooltip>Edit Teacher</q-tooltip>
+                  </q-btn>
+                </div>
+              </q-td>
+            </template>
+
+            <template v-slot:no-data>
+              <div class="full-width row flex-center text-grey-7 q-gutter-sm">
+                <q-icon size="2em" name="school" />
+                <span>No teachers found</span>
               </div>
-            </q-td>
-          </template>
-
-          <template v-slot:no-data>
-            <div class="full-width row flex-center text-grey-7 q-gutter-sm">
-              <q-icon size="2em" name="school" />
-              <span>No teachers found</span>
-            </div>
-          </template>
-        </q-table>
-      </div>
-
-      <!-- Results Summary -->
-      <div class="col-12 text-center q-mt-md" v-if="!loading && !error">
-        <p class="text-caption text-grey-7">
-          Showing {{ filteredTeachers.length }} of {{ teachers.length }} teachers
-        </p>
-      </div>
+            </template>
+          </q-table>
+        </div>
+      </q-card>
     </div>
   </q-page>
 </template>
@@ -204,6 +231,8 @@ import { teacherService } from '../services';
 import type { Teacher } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useRouter } from 'vue-router';
+import ListPageHeader from '../components/ListPageHeader.vue';
+import ListFilters from '../components/ListFilters.vue';
 
 const { formatDate } = useFormatters();
 const router = useRouter();
@@ -357,6 +386,23 @@ const loadTeachers = async () => {
 
 const editTeacher = (teacher: Teacher) => {
   void router.push(`/teachers/${teacher.id}/edit`);
+};
+
+// Filter helpers
+const hasActiveFilters = computed(() => {
+  return !!(searchQuery.value || selectedTeachingStyle.value);
+});
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (searchQuery.value) count++;
+  if (selectedTeachingStyle.value) count++;
+  return count;
+});
+
+const clearAllFilters = () => {
+  searchQuery.value = '';
+  selectedTeachingStyle.value = null;
 };
 
 onMounted(loadTeachers);

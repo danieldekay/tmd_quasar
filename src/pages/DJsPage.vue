@@ -1,159 +1,113 @@
 <template>
   <q-page class="dj-directory">
     <!-- Header Section -->
-    <div class="page-header q-pa-lg">
-      <div class="row items-center justify-between">
-        <div>
-          <h1 class="text-h3 text-weight-light q-ma-none">DJ Directory</h1>
-          <p class="text-subtitle1 text-grey-7 q-mt-sm q-mb-none">
-            Discover tango DJs from around the world
-          </p>
-        </div>
-        <div class="header-stats">
-          <q-card flat class="stats-card">
-            <q-card-section class="text-center q-pa-md">
-              <div class="text-h4 text-primary text-weight-bold">
-                {{ totalDJs.toLocaleString() }}
-              </div>
-              <div class="text-caption text-grey-6">Total DJs</div>
-            </q-card-section>
-          </q-card>
-        </div>
-      </div>
-    </div>
+    <ListPageHeader
+      title="DJ Directory"
+      subtitle="Discover tango DJs from around the world"
+      :show-stats="true"
+      :total-count="totalDJs"
+      stats-label="Total DJs"
+    />
 
     <!-- Filters Section -->
-    <div class="filters-section q-px-lg q-pb-lg">
-      <q-card flat bordered class="filters-card">
-        <q-card-section class="q-pa-lg">
-          <div class="row q-col-gutter-lg">
-            <!-- Search -->
-            <div class="col-12 col-md-6">
-              <q-input
-                v-model="searchQuery"
-                placeholder="Search by DJ name (min 3 characters)..."
-                outlined
-                dense
-                clearable
-                @update:model-value="onSearchChange"
-                class="search-input"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="search" color="grey-6" />
-                </template>
-                <template v-slot:append v-if="searchQuery">
-                  <q-spinner-hourglass
-                    v-if="loading && searchQuery.length >= 3"
-                    color="primary"
-                    size="16px"
-                    class="q-mr-sm"
-                  />
-                  <q-chip
-                    removable
-                    @remove="clearSearch"
-                    color="primary"
-                    text-color="white"
-                    size="sm"
-                  >
-                    "{{ searchQuery }}"
-                  </q-chip>
-                </template>
-              </q-input>
-            </div>
-
-            <!-- Country Filter -->
-            <div class="col-12 col-md-4">
-              <q-select
-                v-model="selectedCountry"
-                :options="countryOptions"
-                label="Country"
-                outlined
-                dense
-                clearable
-                emit-value
-                map-options
-                @update:model-value="onCountryChange"
-                class="country-select"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="public" color="grey-6" />
-                </template>
-              </q-select>
-            </div>
-
-            <!-- Activity Filters -->
-            <div class="col-12 col-md-2">
-              <q-btn-dropdown
-                outline
-                color="grey-7"
-                label="Activities"
-                icon="filter_list"
-                dense
-                class="full-width"
-              >
-                <q-list>
-                  <q-item
-                    v-for="activity in activityFilters"
-                    :key="activity.key"
-                    clickable
-                    @click="toggleActivityFilter(activity.key)"
-                  >
-                    <q-item-section avatar>
-                      <q-checkbox :model-value="activity.active" :color="activity.color" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>{{ activity.label }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-btn-dropdown>
-            </div>
+    <div class="q-px-lg q-pb-lg">
+      <ListFilters
+        :enable-search="true"
+        :search-query="searchQuery"
+        search-placeholder="Search by DJ name (min 3 characters)..."
+        :search-debounce="300"
+        :has-active-filters="hasActiveFilters"
+        :active-filter-count="activeFilterCount"
+        @update:search-query="onSearchChange"
+        @clear-filters="clearAllFilters"
+      >
+        <template #filters>
+          <!-- Country Filter -->
+          <div class="col-12 col-md-4">
+            <q-select
+              v-model="selectedCountry"
+              :options="countryOptions"
+              label="Country"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              @update:model-value="onCountryChange"
+              class="country-select"
+            >
+              <template v-slot:prepend>
+                <q-icon name="public" color="grey-6" />
+              </template>
+            </q-select>
           </div>
 
-          <!-- Active Filters Display -->
-          <div v-if="hasActiveFilters" class="row q-mt-md">
-            <div class="col-12">
-              <div class="text-caption text-grey-6 q-mb-xs">Active filters:</div>
-              <div class="row q-gutter-xs">
-                <q-chip
-                  v-if="searchQuery"
-                  removable
-                  @remove="clearSearch"
-                  color="primary"
-                  text-color="white"
-                  size="sm"
-                  icon="search"
-                >
-                  Search: "{{ searchQuery }}"
-                </q-chip>
-                <q-chip
-                  v-if="selectedCountry"
-                  removable
-                  @remove="clearCountry"
-                  color="secondary"
-                  text-color="white"
-                  size="sm"
-                  icon="public"
-                >
-                  {{ getCountryName(selectedCountry) }}
-                </q-chip>
-                <q-chip
-                  v-for="activity in activeActivityFilters"
+          <!-- Activity Filters -->
+          <div class="col-12 col-md-3">
+            <q-btn-dropdown
+              outline
+              color="grey-7"
+              label="Activities"
+              icon="filter_list"
+              dense
+              class="full-width"
+            >
+              <q-list>
+                <q-item
+                  v-for="activity in activityFilters"
                   :key="activity.key"
-                  removable
-                  @remove="toggleActivityFilter(activity.key)"
-                  :color="activity.color"
-                  text-color="white"
-                  size="sm"
-                  :icon="activity.icon"
+                  clickable
+                  @click="toggleActivityFilter(activity.key)"
                 >
-                  {{ activity.label }}
-                </q-chip>
-              </div>
-            </div>
+                  <q-item-section avatar>
+                    <q-checkbox :model-value="activity.active" :color="activity.color" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ activity.label }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
           </div>
-        </q-card-section>
-      </q-card>
+        </template>
+
+        <template #active-filters>
+          <q-chip
+            v-if="searchQuery"
+            removable
+            @remove="clearSearch"
+            color="primary"
+            text-color="white"
+            size="sm"
+            icon="search"
+          >
+            Search: "{{ searchQuery }}"
+          </q-chip>
+          <q-chip
+            v-if="selectedCountry"
+            removable
+            @remove="clearCountry"
+            color="secondary"
+            text-color="white"
+            size="sm"
+            icon="public"
+          >
+            {{ getCountryName(selectedCountry) }}
+          </q-chip>
+          <q-chip
+            v-for="activity in activeActivityFilters"
+            :key="activity.key"
+            removable
+            @remove="toggleActivityFilter(activity.key)"
+            :color="activity.color"
+            text-color="white"
+            size="sm"
+            :icon="activity.icon"
+          >
+            {{ activity.label }}
+          </q-chip>
+        </template>
+      </ListFilters>
     </div>
 
     <!-- Loading State -->
@@ -374,6 +328,8 @@ import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
 import OfflineMessage from '../components/OfflineMessage.vue';
 import { DJ_SORT_OPTIONS, type DJSortOption } from 'src/services/eventConstants';
+import ListPageHeader from '../components/ListPageHeader.vue';
+import ListFilters from '../components/ListFilters.vue';
 
 const router = useRouter();
 const { formatDate } = useFormatters();
@@ -655,6 +611,24 @@ const toggleActivityFilter = (key: string) => {
     // TODO: Implement activity filtering logic
   }
 };
+
+const clearAllFilters = () => {
+  clearSearch();
+  clearCountry();
+  // Clear activity filters
+  activityFilters.value.forEach((filter) => {
+    filter.active = false;
+  });
+};
+
+// Computed property for filter count
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (searchQuery.value) count++;
+  if (selectedCountry.value) count++;
+  count += activityFilters.value.filter((f) => f.active).length;
+  return count;
+});
 
 onMounted(() => {
   void onRequest({ pagination: pagination.value });
