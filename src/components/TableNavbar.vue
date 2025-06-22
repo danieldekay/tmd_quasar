@@ -150,9 +150,13 @@ const formatResultsText = () => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .table-navbar {
   background-color: #fafafa;
+
+  .q-field__append {
+    padding-left: 8px;
+  }
 }
 
 .reload-btn {

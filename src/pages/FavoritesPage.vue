@@ -430,12 +430,14 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-.q-tab-panels {
-  background: transparent;
-}
+<style lang="scss" scoped>
+.favorites-page {
+  .q-tab-panels {
+    background: none;
+  }
 
-.q-tab-panel {
-  padding: 0;
+  .q-tab-panel {
+    padding: 0;
+  }
 }
 </style>

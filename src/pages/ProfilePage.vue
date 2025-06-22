@@ -539,7 +539,12 @@ const manageUsers = () => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.profile-page {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
 .profile-header-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

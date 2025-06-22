@@ -285,13 +285,13 @@ const handleInteractionChange = () => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .favorite-card {
   width: 100%;
   max-width: 400px;
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .favorite-card:hover {
