@@ -21,7 +21,6 @@
       indicator-color="primary"
       align="left"
     >
-      <q-tab name="all" label="All" :badge="totalFavorites || undefined" />
       <q-tab name="bookmarks" label="Bookmarks" :badge="bookmarksCount || undefined" />
       <q-tab name="likes" label="Likes" :badge="likesCount || undefined" />
       <q-tab name="reminders" label="Reminders" :badge="remindersCount || undefined" />
@@ -38,26 +37,6 @@
 
     <!-- Content -->
     <q-tab-panels v-else v-model="activeTab" animated>
-      <!-- All Tab -->
-      <q-tab-panel name="all">
-        <div v-if="allFavorites.length === 0" class="text-center q-py-xl">
-          <q-icon name="favorite_border" size="60px" color="grey-4" />
-          <div class="text-h6 q-mt-md text-grey-6">No favorites yet</div>
-          <div class="text-body2 text-grey-5 q-mt-sm">
-            Start exploring and bookmark your favorite events, teachers, and DJs
-          </div>
-        </div>
-        <div v-else class="row q-gutter-md">
-          <FavoriteCard
-            v-for="item in allFavorites"
-            :key="`${item.type}_${item.id}`"
-            :item="item"
-            :interaction-type="item.primaryInteraction"
-            @remove="handleRemove"
-          />
-        </div>
-      </q-tab-panel>
-
       <!-- Bookmarks Tab -->
       <q-tab-panel name="bookmarks">
         <div v-if="bookmarks.length === 0" class="text-center q-py-xl">
@@ -78,7 +57,7 @@
         </div>
       </q-tab-panel>
 
-      <!-- Likes Tab -->
+      <!-- Likes Tab - List Format -->
       <q-tab-panel name="likes">
         <div v-if="likes.length === 0" class="text-center q-py-xl">
           <q-icon name="favorite_border" size="60px" color="grey-4" />
@@ -87,18 +66,66 @@
             Like events and content to show your appreciation
           </div>
         </div>
-        <div v-else class="row q-gutter-md">
-          <FavoriteCard
+        <q-list v-else bordered separator class="rounded-borders">
+          <q-item
             v-for="item in likes"
             :key="`${item.type}_${item.id}`"
-            :item="item"
-            interaction-type="like"
-            @remove="handleRemove"
-          />
-        </div>
+            clickable
+            v-ripple
+            @click="navigateToItem(item)"
+          >
+            <q-item-section avatar>
+              <q-avatar color="red-1" text-color="red-6" icon="favorite" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label class="text-weight-medium">{{ item.title }}</q-item-label>
+              <q-item-label caption>
+                <q-chip
+                  :icon="getTypeIcon(item.type)"
+                  :color="getTypeColor(item.type)"
+                  text-color="white"
+                  size="sm"
+                  class="q-mr-sm"
+                >
+                  {{ getTypeLabel(item.type) }}
+                </q-chip>
+                <span v-if="item.location" class="q-mr-sm">
+                  <q-icon name="place" size="14px" />
+                  {{ item.location }}
+                </span>
+                <span v-if="item.date">
+                  <q-icon name="event" size="14px" />
+                  {{ formatDate(item.date) }}
+                </span>
+              </q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+              <div class="row items-center q-gutter-sm">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="visibility"
+                  color="primary"
+                  @click.stop="navigateToItem(item)"
+                >
+                  <q-tooltip>View Details</q-tooltip>
+                </q-btn>
+                <InteractionButtons
+                  :target-id="item.id"
+                  :target-type="getContentType(item.type)"
+                  :interaction-types="['like']"
+                  layout="compact"
+                />
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-tab-panel>
 
-      <!-- Reminders Tab -->
+      <!-- Reminders Tab - Card Format -->
       <q-tab-panel name="reminders">
         <div v-if="reminders.length === 0" class="text-center q-py-xl">
           <q-icon name="schedule" size="60px" color="grey-4" />
@@ -118,7 +145,7 @@
         </div>
       </q-tab-panel>
 
-      <!-- Following Tab -->
+      <!-- Following Tab - List Format -->
       <q-tab-panel name="following">
         <div v-if="following.length === 0" class="text-center q-py-xl">
           <q-icon name="person_add_alt" size="60px" color="grey-4" />
@@ -127,15 +154,62 @@
             Follow teachers, DJs, and event organizers to stay updated
           </div>
         </div>
-        <div v-else class="row q-gutter-md">
-          <FavoriteCard
+        <q-list v-else bordered separator class="rounded-borders">
+          <q-item
             v-for="item in following"
             :key="`${item.type}_${item.id}`"
-            :item="item"
-            interaction-type="follow"
-            @remove="handleRemove"
-          />
-        </div>
+            clickable
+            v-ripple
+            @click="navigateToItem(item)"
+          >
+            <q-item-section avatar>
+              <q-avatar color="blue-1" text-color="blue-6" icon="person_add" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label class="text-weight-medium">{{ item.title }}</q-item-label>
+              <q-item-label caption>
+                <q-chip
+                  :icon="getTypeIcon(item.type)"
+                  :color="getTypeColor(item.type)"
+                  text-color="white"
+                  size="sm"
+                  class="q-mr-sm"
+                >
+                  {{ getTypeLabel(item.type) }}
+                </q-chip>
+                <span v-if="item.location" class="q-mr-sm">
+                  <q-icon name="place" size="14px" />
+                  {{ item.location }}
+                </span>
+                <span v-if="item.bio" class="text-grey-6">
+                  {{ truncateText(item.bio, 100) }}
+                </span>
+              </q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+              <div class="row items-center q-gutter-sm">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="visibility"
+                  color="primary"
+                  @click.stop="navigateToItem(item)"
+                >
+                  <q-tooltip>View Profile</q-tooltip>
+                </q-btn>
+                <InteractionButtons
+                  :target-id="item.id"
+                  :target-type="getContentType(item.type)"
+                  :interaction-types="['follow']"
+                  layout="compact"
+                />
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -143,14 +217,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useInteractionCache } from '../composables/useInteractionCache';
+import { useFormatters } from '../composables/useFormatters';
 import { contentService, type ContentItem } from '../services/contentService';
-import type { InteractionType } from '../services/types';
+import type { InteractionType, ContentType } from '../services/types';
 import FavoriteCard from '../components/FavoriteCard.vue';
+import InteractionButtons from '../components/InteractionButtons.vue';
 
-const activeTab = ref('all');
+const router = useRouter();
+const activeTab = ref('bookmarks');
 const loading = ref(true);
 const { cache, syncWithServer } = useInteractionCache();
+const { formatDate } = useFormatters();
 
 // Store content items separately
 const contentItems = ref<Map<string, ContentItem>>(new Map());
@@ -167,11 +246,79 @@ interface ConsolidatedFavoriteItem extends ContentItem {
   interactionDate: string; // Most recent interaction date
 }
 
-// Computed properties for each interaction type
-const allFavorites = computed(() => {
+// Helper functions for list layouts
+const getTypeIcon = (type: string): string => {
+  const icons = {
+    event: 'event',
+    teacher: 'school',
+    dj: 'music_note',
+    teacher_couple: 'people',
+    event_series: 'event_repeat',
+  };
+  return icons[type as keyof typeof icons] || 'help';
+};
+
+const getTypeColor = (type: string): string => {
+  const colors = {
+    event: 'primary',
+    teacher: 'secondary',
+    dj: 'accent',
+    teacher_couple: 'info',
+    event_series: 'warning',
+  };
+  return colors[type as keyof typeof colors] || 'grey';
+};
+
+const getTypeLabel = (type: string): string => {
+  const labels = {
+    event: 'Event',
+    teacher: 'Teacher',
+    dj: 'DJ',
+    teacher_couple: 'Couple',
+    event_series: 'Series',
+  };
+  return labels[type as keyof typeof labels] || 'Content';
+};
+
+const getContentType = (type: string): ContentType => {
+  const contentTypeMap: Record<string, ContentType> = {
+    event: 'tmd_event',
+    teacher: 'tmd_teacher',
+    dj: 'tmd_dj',
+    teacher_couple: 'tmd_teacher_couple',
+    event_series: 'tmd_event_series',
+  };
+  return contentTypeMap[type] || 'tmd_event';
+};
+
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+};
+
+const navigateToItem = (item: ConsolidatedFavoriteItem) => {
+  const routes: Record<string, string> = {
+    event: `/events/${item.id}`,
+    teacher: `/teachers/${item.id}`,
+    dj: `/djs/${item.id}`,
+    teacher_couple: `/couples/${item.id}`,
+    event_series: `/event-series/${item.id}`,
+  };
+
+  const route = routes[item.type];
+  if (route) {
+    void router.push(route);
+  }
+};
+
+// Helper function to create consolidated favorites
+const createConsolidatedFavorites = (filterType?: InteractionType) => {
   const itemsMap = new Map<string, ConsolidatedFavoriteItem>();
 
   Array.from(cache.value.values()).forEach((cacheItem) => {
+    // Filter by interaction type if specified
+    if (filterType && cacheItem.interaction_type !== filterType) return;
+
     const contentKey = `${cacheItem.target_post_type}_${cacheItem.target_post_id}`;
     const content = contentItems.value.get(contentKey);
 
@@ -217,34 +364,19 @@ const allFavorites = computed(() => {
   return Array.from(itemsMap.values()).sort(
     (a, b) => new Date(b.interactionDate).getTime() - new Date(a.interactionDate).getTime(),
   );
-});
+};
 
-const bookmarks = computed(() =>
-  allFavorites.value.filter((item) =>
-    item.interactions.some((interaction) => interaction.type === 'bookmark'),
-  ),
-);
-
-const likes = computed(() =>
-  allFavorites.value.filter((item) =>
-    item.interactions.some((interaction) => interaction.type === 'like'),
-  ),
-);
-
-const reminders = computed(() =>
-  allFavorites.value.filter((item) =>
-    item.interactions.some((interaction) => interaction.type === 'reminder'),
-  ),
-);
-
-const following = computed(() =>
-  allFavorites.value.filter((item) =>
-    item.interactions.some((interaction) => interaction.type === 'follow'),
-  ),
-);
+// Computed properties for each interaction type
+const bookmarks = computed(() => createConsolidatedFavorites('bookmark'));
+const likes = computed(() => createConsolidatedFavorites('like'));
+const reminders = computed(() => createConsolidatedFavorites('reminder'));
+const following = computed(() => createConsolidatedFavorites('follow'));
 
 // Counts
-const totalFavorites = computed(() => allFavorites.value.length);
+const totalFavorites = computed(
+  () =>
+    bookmarks.value.length + likes.value.length + reminders.value.length + following.value.length,
+);
 const bookmarksCount = computed(() => bookmarks.value.length);
 const likesCount = computed(() => likes.value.length);
 const remindersCount = computed(() => reminders.value.length);
@@ -259,15 +391,15 @@ const loadFavorites = async () => {
     await syncWithServer();
 
     // Get all content items that need to be fetched
-    const contentToFetch = Array.from(cache.value.values()).map((item) => ({
-      id: item.target_post_id,
-      type: item.target_post_type.replace('tmd_', '') as
-        | 'event'
-        | 'teacher'
-        | 'dj'
-        | 'teacher_couple'
-        | 'event_series',
-    }));
+    const contentToFetch = Array.from(cache.value.values()).map((item) => {
+      const contentType = item.target_post_type.replace('tmd_', '');
+      const validTypes = ['event', 'teacher', 'dj', 'teacher_couple', 'event_series'];
+      const type = validTypes.includes(contentType) ? contentType : 'event';
+      return {
+        id: item.target_post_id,
+        type: type as 'event' | 'teacher' | 'dj' | 'teacher_couple' | 'event_series',
+      };
+    });
 
     if (contentToFetch.length > 0) {
       // Batch fetch content
