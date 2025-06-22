@@ -18,7 +18,7 @@
     :total-count="filteredEventSeries.length"
     :stats-label="formatSeriesText(filteredEventSeries.length)"
     :display-count="filteredEventSeries.length"
-    :show-results-header="!loading && !error && eventSeries.length > 0"
+    :show-results-header="false"
     enable-pull-to-refresh
     @update:search-query="searchQuery = $event"
     @clear-filters="clearFilters"
@@ -35,16 +35,33 @@
         :loading="loading"
         :error="error"
         :clickable-rows="true"
-        :show-top-pagination="true"
+        :show-top-pagination="false"
+        :hide-bottom-pagination="true"
         loading-message="Loading event series..."
         empty-icon="event_repeat"
         empty-title="No event series found"
         empty-message="No event series match your current search criteria."
         @update:current-page="pagination.goToPage"
         @update:rows-per-page="pagination.setRowsPerPage"
-        @row-click="navigateToSeries"
+        @row-click="handleRowClick"
       >
-        <template #body="{ props }">
+        <template #navbar>
+          <TableNavbar
+            :filtered-count="filteredEventSeries.length"
+            :total-count="eventSeries.length"
+            :has-active-filters="hasActiveFilters"
+            :current-page="pagination.currentPage.value"
+            :total-pages="pagination.totalPages.value"
+            :rows-per-page="pagination.rowsPerPage.value"
+            :loading="loading"
+            item-name="event series"
+            item-name-plural="event series"
+            @reload="loadEventSeries"
+            @update:rows-per-page="pagination.setRowsPerPage"
+            @update:current-page="pagination.goToPage"
+          />
+        </template>
+        <template #body-cell="props">
           <q-td key="logo" :props="props">
             <q-avatar size="40px" rounded>
               <img
@@ -135,6 +152,7 @@ import { useFormatters } from '../composables/useFormatters';
 import { useTablePagination } from '../composables/useTablePagination';
 import BaseListPage from '../components/BaseListPage.vue';
 import BaseTable from '../components/BaseTable.vue';
+import TableNavbar from '../components/TableNavbar.vue';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -312,6 +330,10 @@ const handlePullToRefresh = (done: () => void) => {
   void loadEventSeries(true).finally(() => {
     done();
   });
+};
+
+const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
+  navigateToSeries(row as unknown as EventSeries);
 };
 
 // Watch for changes in filtered results to update pagination

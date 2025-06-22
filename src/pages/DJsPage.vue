@@ -128,37 +128,20 @@
     <!-- Results Section -->
     <div v-else class="results-section q-px-lg q-pb-lg">
       <q-card flat bordered class="results-card">
-        <!-- Results Header -->
-        <q-card-section class="results-header q-pa-lg border-bottom">
-          <div class="row items-center justify-between">
-            <div class="results-info">
-              <div class="text-h6 text-weight-medium">
-                {{ filteredCount.toLocaleString() }}
-                {{ filteredCount === 1 ? 'DJ' : 'DJs' }}
-                <span v-if="hasActiveFilters" class="text-grey-6">
-                  (filtered from {{ totalDJs.toLocaleString() }})
-                </span>
-              </div>
-              <div class="text-caption text-grey-6 q-mt-xs">
-                Page {{ pagination.page }} of
-                {{ Math.ceil(filteredCount / pagination.rowsPerPage) }}
-              </div>
-            </div>
-
-            <!-- View Options -->
-            <div class="view-options">
-              <q-select
-                v-model="pagination.rowsPerPage"
-                :options="[10, 20, 50, 100]"
-                label="Per page"
-                dense
-                outlined
-                style="min-width: 100px"
-                @update:model-value="onPerPageChange"
-              />
-            </div>
-          </div>
-        </q-card-section>
+        <!-- Table Navbar -->
+        <TableNavbar
+          :filtered-count="filteredCount"
+          :total-count="totalDJs"
+          :has-active-filters="hasActiveFilters"
+          :current-page="pagination.page"
+          :total-pages="Math.ceil(filteredCount / pagination.rowsPerPage)"
+          :rows-per-page="pagination.rowsPerPage"
+          :loading="loading"
+          item-name="DJ"
+          @reload="retryLoad"
+          @update:rows-per-page="onPerPageChange"
+          @update:current-page="goToPage"
+        />
 
         <!-- Table View -->
         <div>
@@ -330,6 +313,7 @@ import OfflineMessage from '../components/OfflineMessage.vue';
 import { DJ_SORT_OPTIONS, type DJSortOption } from 'src/services/eventConstants';
 import ListPageHeader from '../components/ListPageHeader.vue';
 import ListFilters from '../components/ListFilters.vue';
+import TableNavbar from '../components/TableNavbar.vue';
 
 const router = useRouter();
 const { formatDate } = useFormatters();
@@ -580,6 +564,11 @@ const onRowClick = (evt: Event | null, row: DJ) => {
 
 const retryLoad = () => {
   error.value = null;
+  void onRequest({ pagination: pagination.value });
+};
+
+const goToPage = (page: number) => {
+  pagination.value.page = page;
   void onRequest({ pagination: pagination.value });
 };
 
