@@ -128,9 +128,11 @@
             <template #body-cell-title="props">
               <q-td :props="props" class="event-title-cell cursor-pointer">
                 <div class="event-title-content">
-                  <div class="event-title text-weight-medium">{{ props.row.title }}</div>
+                  <div class="event-title text-weight-medium">
+                    {{ formatText(props.row.title) }}
+                  </div>
                   <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
-                    {{ props.row.subtitle }}
+                    {{ formatText(props.row.subtitle) }}
                   </div>
                 </div>
               </q-td>
@@ -148,7 +150,9 @@
                 <div class="city-content">
                   <q-icon name="place" size="xs" class="q-mr-xs text-accent" />
                   <div>
-                    <div class="text-weight-medium">{{ capitalizeCity(props.row.city) }}</div>
+                    <div class="text-weight-medium">
+                      {{ formatText(capitalizeCity(props.row.city)) }}
+                    </div>
                   </div>
                 </div>
               </q-td>
@@ -245,7 +249,7 @@ const updateCountrySet = (events: EventListItem[]) => {
 
 const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
+const { formatDate, getEventCategory, getEventCategoryColor, formatText } = useFormatters();
 
 // Helper function to capitalize city names
 const capitalizeCity = (city: string): string => {

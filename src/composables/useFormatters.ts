@@ -168,6 +168,27 @@ export const useFormatters = () => {
     return String(value) === '1';
   };
 
+  /**
+   * Decode HTML entities in text
+   * Handles common HTML entities like &amp;, &lt;, &gt;, &quot;, &#39;, etc.
+   */
+  const decodeHtmlEntities = (text: string | null | undefined): string => {
+    if (!text || typeof text !== 'string') return '';
+
+    // Create a temporary element to leverage browser's built-in HTML decoding
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = text;
+    return tempElement.textContent || tempElement.innerText || '';
+  };
+
+  /**
+   * Format text by decoding HTML entities - safe for display
+   * This is the main formatter to use in tables and other UI components
+   */
+  const formatText = (text: string | null | undefined): string => {
+    return decodeHtmlEntities(text);
+  };
+
   return {
     formatDate,
     formatDateTime,
@@ -176,5 +197,7 @@ export const useFormatters = () => {
     getCategoryColor,
     getEventCategoryColor,
     isFeatureAvailable,
+    decodeHtmlEntities,
+    formatText,
   };
 };

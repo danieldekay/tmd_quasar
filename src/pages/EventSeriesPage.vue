@@ -79,12 +79,12 @@
 
           <template #body-cell-title="props">
             <q-td :props="props" class="cursor-pointer">
-              <div class="series-title">{{ props.row.title }}</div>
+              <div class="series-title">{{ formatText(props.row.title) }}</div>
               <div
                 v-if="props.row.acf?.description"
                 class="series-description text-caption text-grey-6"
               >
-                {{ truncateDescription(props.row.acf.description) }}
+                {{ formatText(truncateDescription(props.row.acf.description)) }}
               </div>
             </q-td>
           </template>
@@ -122,7 +122,7 @@
             <q-td :props="props" class="cursor-pointer">
               <div v-if="props.row.city" class="location-content">
                 <q-icon name="location_city" size="xs" class="q-mr-xs text-primary" />
-                {{ props.row.city }}
+                {{ formatText(props.row.city) }}
               </div>
               <span v-else class="text-grey-5">—</span>
             </q-td>
@@ -132,7 +132,7 @@
             <q-td :props="props" class="cursor-pointer">
               <div v-if="props.row.country" class="location-content">
                 <q-icon name="flag" size="xs" class="q-mr-xs text-secondary" />
-                {{ props.row.country }}
+                {{ formatText(props.row.country) }}
               </div>
               <span v-else class="text-grey-5">—</span>
             </q-td>
@@ -177,7 +177,7 @@ import OfflineMessage from '../components/OfflineMessage.vue';
 
 const router = useRouter();
 const $q = useQuasar();
-const { formatDate } = useFormatters();
+const { formatDate, formatText } = useFormatters();
 
 // State
 const eventSeries = ref<EventSeries[]>([]);

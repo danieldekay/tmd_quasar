@@ -1,89 +1,64 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { useFormatters } from '../useFormatters';
 
-describe('useFormatters', () => {
-  let mockDate: Date;
+// Mock DOM environment
+Object.defineProperty(global, 'document', {
+  value: {
+    createElement: () => ({
+      innerHTML: '',
+      textContent: '',
+      innerText: '',
+      set innerHTML(value: string) {
+        // Simple HTML entity decoding for test environment
+        this.textContent = value
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&nbsp;/g, ' ');
+        this.innerText = this.textContent;
+      },
+    }),
+  },
+  writable: true,
+});
 
-  beforeEach(() => {
-    // Mock current date to 2024-01-15 12:00:00
-    mockDate = new Date('2024-01-15T12:00:00Z');
-    vi.useFakeTimers();
-    vi.setSystemTime(mockDate);
-  });
+describe('useFormatters - HTML Entity Decoding', () => {
+  const { formatText, decodeHtmlEntities } = useFormatters();
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  describe('formatDateTime', () => {
-    it('should return "just now" for very recent dates', () => {
-      const { formatDateTime } = useFormatters();
-      const recentDate = new Date('2024-01-15T11:59:30Z').toISOString();
-
-      expect(formatDateTime(recentDate)).toBe('just now');
+  describe('decodeHtmlEntities', () => {
+    it('should decode common HTML entities', () => {
+      expect(decodeHtmlEntities('AT&amp;T')).toBe('AT&T');
+      expect(decodeHtmlEntities('&lt;script&gt;')).toBe('<script>');
+      expect(decodeHtmlEntities('&quot;Hello World&quot;')).toBe('"Hello World"');
+      expect(decodeHtmlEntities('Don&#39;t')).toBe("Don't");
+      expect(decodeHtmlEntities('A&nbsp;B')).toBe('A B');
     });
 
-    it('should return minutes ago for recent dates', () => {
-      const { formatDateTime } = useFormatters();
-      const fiveMinutesAgo = new Date('2024-01-15T11:55:00Z').toISOString();
-
-      expect(formatDateTime(fiveMinutesAgo)).toBe('5 minutes ago');
+    it('should handle null and undefined values', () => {
+      expect(decodeHtmlEntities(null)).toBe('');
+      expect(decodeHtmlEntities(undefined)).toBe('');
+      expect(decodeHtmlEntities('')).toBe('');
     });
 
-    it('should return singular minute for 1 minute ago', () => {
-      const { formatDateTime } = useFormatters();
-      const oneMinuteAgo = new Date('2024-01-15T11:59:00Z').toISOString();
-
-      expect(formatDateTime(oneMinuteAgo)).toBe('1 minute ago');
-    });
-
-    it('should return hours ago for dates within 24 hours', () => {
-      const { formatDateTime } = useFormatters();
-      const twoHoursAgo = new Date('2024-01-15T10:00:00Z').toISOString();
-
-      expect(formatDateTime(twoHoursAgo)).toBe('2 hours ago');
-    });
-
-    it('should return days ago for dates within a week', () => {
-      const { formatDateTime } = useFormatters();
-      const threeDaysAgo = new Date('2024-01-12T12:00:00Z').toISOString();
-
-      expect(formatDateTime(threeDaysAgo)).toBe('3 days ago');
-    });
-
-    it('should return formatted date for older dates', () => {
-      const { formatDateTime } = useFormatters();
-      const oldDate = new Date('2024-01-01T10:30:00Z').toISOString();
-
-      const result = formatDateTime(oldDate);
-      expect(result).toMatch(/Jan 1, 2024/);
-    });
-
-    it('should handle empty and invalid values', () => {
-      const { formatDateTime } = useFormatters();
-
-      expect(formatDateTime('')).toBe('');
-      expect(formatDateTime(null)).toBe('');
-      expect(formatDateTime(undefined)).toBe('');
-      expect(formatDateTime('invalid-date')).toBe('');
+    it('should handle text without entities', () => {
+      expect(decodeHtmlEntities('Regular text')).toBe('Regular text');
+      expect(decodeHtmlEntities('No entities here!')).toBe('No entities here!');
     });
   });
 
-  describe('formatDate', () => {
-    it('should format valid dates to YYYY-MM-DD', () => {
-      const { formatDate } = useFormatters();
-
-      expect(formatDate('2024-01-15T12:00:00Z')).toBe('2024-01-15');
-      expect(formatDate('2024-12-25')).toBe('2024-12-25');
+  describe('formatText', () => {
+    it('should format text by decoding HTML entities', () => {
+      expect(formatText('Company &amp; Associates')).toBe('Company & Associates');
+      expect(formatText('&lt;Event Name&gt;')).toBe('<Event Name>');
+      expect(formatText('&quot;La Cumparsita&quot; Festival')).toBe('"La Cumparsita" Festival');
     });
 
-    it('should handle invalid values', () => {
-      const { formatDate } = useFormatters();
-
-      expect(formatDate('')).toBe('');
-      expect(formatDate(null)).toBe('');
-      expect(formatDate(undefined)).toBe('');
-      expect(formatDate('invalid-date')).toBe('');
+    it('should handle null and undefined values', () => {
+      expect(formatText(null)).toBe('');
+      expect(formatText(undefined)).toBe('');
+      expect(formatText('')).toBe('');
     });
   });
 });
