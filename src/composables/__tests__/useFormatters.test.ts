@@ -4,22 +4,28 @@ import { useFormatters } from '../useFormatters';
 // Mock DOM environment
 Object.defineProperty(global, 'document', {
   value: {
-    createElement: () => ({
-      innerHTML: '',
-      textContent: '',
-      innerText: '',
-      set innerHTML(value: string) {
-        // Simple HTML entity decoding for test environment
-        this.textContent = value
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&nbsp;/g, ' ');
-        this.innerText = this.textContent;
-      },
-    }),
+    createElement: () => {
+      const element = {
+        textContent: '',
+        innerText: '',
+      };
+
+      Object.defineProperty(element, 'innerHTML', {
+        set(value: string) {
+          // Simple HTML entity decoding for test environment
+          this.textContent = value
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&nbsp;/g, ' ');
+          this.innerText = this.textContent;
+        },
+      });
+
+      return element;
+    },
   },
   writable: true,
 });
