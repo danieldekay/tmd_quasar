@@ -1,6 +1,6 @@
 ---
 description: 
-globs: *.ts,*.tsx
+globs: *.ts
 alwaysApply: false
 ---
 # Code Quality
@@ -12,5 +12,3 @@ alwaysApply: false
 # Rules
 
 - Always check for and handle undefined values when dealing with optional properties (property?: type). Use null coalescing operators (||, ??) or explicit checks to provide default values before assignment to non-nullable types.
-- We have a very strict typsecript setting, and should be very careful in type annotation
-- Always use as much of quasar's built-in functionality, as possible. Only if Quasar doesnt have a feature, ask the user and make a proposal.

@@ -1,15 +1,15 @@
 <template>
   <BaseListPage
-    title="Teaching Partnerships"
-    subtitle="Discover talented tango teaching partnerships from around the world"
+    title="Teachers"
+    subtitle="Discover talented tango teachers from around the world"
     :total-count="state.totalCount"
-    stats-label="Total Partnerships"
+    stats-label="Total Teachers"
     :loading="state.loading"
     :error="state.error"
     :show-empty-state="state.items.length === 0 && !state.loading && !state.error"
-    empty-state-icon="favorite"
-    empty-state-title="No Teaching Partnerships Found"
-    empty-state-message="There are no teaching partnerships to display at the moment."
+    empty-state-icon="school"
+    empty-state-title="No Teachers Found"
+    empty-state-message="There are no teachers to display at the moment."
     :search-query="filters.searchQuery"
     :has-active-filters="hasActiveFilters"
     :active-filter-count="activeFilterCount"
@@ -25,9 +25,9 @@
       <q-btn
         color="primary"
         icon="add"
-        label="Add Partnership"
+        label="Add Teacher"
         unelevated
-        @click="$router.push('/couples/new')"
+        @click="$router.push('/teachers/new')"
       />
     </template>
 
@@ -51,18 +51,35 @@
       </div>
       <div class="col-12 col-md-4">
         <q-select
-          :model-value="filters.partnershipStyle"
-          :options="partnershipStyleOptions"
+          :model-value="filters.role"
+          :options="roleOptions"
           outlined
           dense
-          placeholder="Filter by partnership style"
+          placeholder="Filter by role"
           clearable
           emit-value
           map-options
-          @update:model-value="updateFilter('partnershipStyle', $event || '')"
+          @update:model-value="updateFilter('role', $event || '')"
         >
           <template #prepend>
-            <q-icon name="style" />
+            <q-icon name="person" />
+          </template>
+        </q-select>
+      </div>
+      <div class="col-12 col-md-4">
+        <q-select
+          :model-value="filters.gender"
+          :options="genderOptions"
+          outlined
+          dense
+          placeholder="Filter by gender"
+          clearable
+          emit-value
+          map-options
+          @update:model-value="updateFilter('gender', $event || '')"
+        >
+          <template #prepend>
+            <q-icon name="wc" />
           </template>
         </q-select>
       </div>
@@ -78,12 +95,20 @@
         @remove="updateFilter('country', '')"
       />
       <q-chip
-        v-if="filters.partnershipStyle"
+        v-if="filters.role"
         removable
         color="secondary"
         text-color="white"
-        :label="`Style: ${filters.partnershipStyle}`"
-        @remove="updateFilter('partnershipStyle', '')"
+        :label="`Role: ${filters.role}`"
+        @remove="updateFilter('role', '')"
+      />
+      <q-chip
+        v-if="filters.gender"
+        removable
+        color="accent"
+        text-color="white"
+        :label="`Gender: ${filters.gender}`"
+        @remove="updateFilter('gender', '')"
       />
     </template>
 
@@ -107,25 +132,17 @@
         @row-click="handleRowClick"
       >
         <template #body="{ props }">
-          <q-td key="names" :props="props">
-            <div class="text-weight-medium">{{ getCoupleNames(props.row) }}</div>
-            <div class="text-caption text-grey-6 q-mt-xs">
-              <template v-if="props.row._embedded?.teachers">
-                <q-btn
-                  v-for="teacher in props.row._embedded.teachers"
-                  :key="teacher.id"
-                  :label="teacher.title"
-                  :to="`/teachers/${teacher.id}`"
-                  flat
-                  dense
-                  color="primary"
-                  size="sm"
-                  class="q-mr-xs"
-                >
-                  <q-tooltip>View {{ teacher.role }} profile</q-tooltip>
-                </q-btn>
-              </template>
-            </div>
+          <q-td key="photo" :props="props">
+            <q-avatar size="40px">
+              <img
+                :src="getTeacherPhoto()"
+                :alt="`Photo of ${getTeacherName(props.row)}`"
+                @error="handleImageError"
+              />
+            </q-avatar>
+          </q-td>
+          <q-td key="name" :props="props">
+            <div class="text-weight-medium">{{ getTeacherName(props.row) }}</div>
           </q-td>
           <q-td key="location" :props="props">
             <div v-if="props.row.meta_box?.city || props.row.meta_box?.country">
@@ -134,21 +151,24 @@
             </div>
             <span v-else class="text-grey-5">-</span>
           </q-td>
-          <q-td key="partnership_style" :props="props">
+          <q-td key="role" :props="props">
             <q-chip
-              v-if="props.row.meta_box?.partnership_style"
-              :label="props.row.meta_box.partnership_style"
-              color="purple"
+              v-if="props.row.meta_box?.role"
+              :label="props.row.meta_box.role"
+              :color="props.row.meta_box.role === 'leader' ? 'blue' : 'pink'"
               text-color="white"
               size="sm"
               dense
             />
             <span v-else class="text-grey-5">-</span>
           </q-td>
-          <q-td key="partnership_started" :props="props">
-            <div v-if="props.row.meta_box?.partnership_started" class="text-caption">
-              {{ props.row.meta_box.partnership_started }}
-            </div>
+          <q-td key="gender" :props="props">
+            <q-icon
+              v-if="props.row.meta_box?.gender"
+              :name="props.row.meta_box.gender === 'man' ? 'male' : 'female'"
+              :color="props.row.meta_box.gender === 'man' ? 'blue' : 'pink'"
+              size="sm"
+            />
             <span v-else class="text-grey-5">-</span>
           </q-td>
           <q-td key="website" :props="props">
@@ -177,7 +197,7 @@
                 color="primary"
                 icon="visibility"
                 size="sm"
-                :to="`/couples/${props.row.id}`"
+                :to="`/teachers/${props.row.id}`"
               >
                 <q-tooltip>View Details</q-tooltip>
               </q-btn>
@@ -187,9 +207,9 @@
                 color="secondary"
                 icon="edit"
                 size="sm"
-                @click.stop="editCouple(props.row)"
+                @click.stop="editTeacher(props.row)"
               >
-                <q-tooltip>Edit Couple</q-tooltip>
+                <q-tooltip>Edit Teacher</q-tooltip>
               </q-btn>
             </div>
           </q-td>
@@ -205,8 +225,8 @@ import { useRouter } from 'vue-router';
 import BaseListPage from '../components/BaseListPage.vue';
 import BaseTable from '../components/BaseTable.vue';
 import { useGenericList } from '../composables/useGenericList';
-import { coupleService } from '../services';
-import type { Couple } from '../services/types';
+import { teacherService } from '../services';
+import type { Teacher } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
 
@@ -215,44 +235,53 @@ const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
 
 // Define filters interface
-interface CoupleFilters {
+interface TeacherFilters {
   searchQuery: string;
   country: string;
-  partnershipStyle: string;
+  role: string;
+  gender: string;
   [key: string]: string; // Index signature for compatibility with ListFilters
 }
 
 // Table columns
 const columns = [
   {
-    name: 'names',
-    label: 'Names',
-    field: (row: Couple) => getCoupleNames(row),
+    name: 'photo',
+    label: 'Photo',
+    field: 'photo',
+    align: 'center' as const,
+    sortable: false,
+    style: 'width: 60px',
+  },
+  {
+    name: 'name',
+    label: 'Name',
+    field: (row: Teacher) => getTeacherName(row),
     align: 'left' as const,
     sortable: true,
   },
   {
     name: 'location',
     label: 'Location',
-    field: (row: Couple) => getLocationText(row),
+    field: (row: Teacher) => getLocationText(row),
     align: 'left' as const,
     sortable: true,
   },
   {
-    name: 'partnership_style',
-    label: 'Partnership Style',
-    field: (row: Couple) => row.meta_box?.partnership_style || '',
+    name: 'role',
+    label: 'Role',
+    field: (row: Teacher) => row.meta_box?.role || '',
     align: 'center' as const,
     sortable: true,
-    style: 'width: 140px',
+    style: 'width: 100px',
   },
   {
-    name: 'partnership_started',
-    label: 'Partnership Started',
-    field: (row: Couple) => row.meta_box?.partnership_started || '',
+    name: 'gender',
+    label: 'Gender',
+    field: (row: Teacher) => row.meta_box?.gender || '',
     align: 'center' as const,
     sortable: true,
-    style: 'width: 120px',
+    style: 'width: 80px',
   },
   {
     name: 'website',
@@ -281,12 +310,12 @@ const columns = [
 ];
 
 // Fetch function for the generic list
-const fetchCouples = async (params: {
+const fetchTeachers = async (params: {
   page: number;
   perPage: number;
   sortBy: string;
   descending: boolean;
-  filters: CoupleFilters;
+  filters: TeacherFilters;
 }) => {
   const { page, perPage, sortBy, descending, filters } = params;
 
@@ -294,7 +323,7 @@ const fetchCouples = async (params: {
   const apiParams: Record<string, unknown> = {
     page,
     per_page: perPage,
-    orderby: sortBy === 'names' ? 'title' : sortBy,
+    orderby: sortBy === 'name' ? 'title' : sortBy,
     order: descending ? 'desc' : 'asc',
   };
 
@@ -307,27 +336,33 @@ const fetchCouples = async (params: {
   }
 
   try {
-    const couples = await coupleService.getCouples(apiParams);
+    const teachers = await teacherService.getTeachers(apiParams);
 
-    // Filter by partnership style locally since API might not support this filter
-    let filteredCouples = couples || [];
+    // Filter by role and gender locally since API might not support these filters
+    let filteredTeachers = teachers || [];
 
-    if (filters.partnershipStyle) {
-      filteredCouples = filteredCouples.filter(
-        (couple) => couple.meta_box?.partnership_style === filters.partnershipStyle,
+    if (filters.role) {
+      filteredTeachers = filteredTeachers.filter(
+        (teacher) => teacher.meta_box?.role === filters.role,
       );
     }
 
-    // Since we're getting all couples and filtering locally,
+    if (filters.gender) {
+      filteredTeachers = filteredTeachers.filter(
+        (teacher) => teacher.meta_box?.gender === filters.gender,
+      );
+    }
+
+    // Since we're getting all teachers and filtering locally,
     // we need to implement pagination manually
-    const totalCount = filteredCouples.length;
+    const totalCount = filteredTeachers.length;
     const totalPages = Math.ceil(totalCount / perPage);
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
-    const paginatedCouples = filteredCouples.slice(startIndex, endIndex);
+    const paginatedTeachers = filteredTeachers.slice(startIndex, endIndex);
 
     return {
-      items: paginatedCouples,
+      items: paginatedTeachers,
       totalCount,
       totalPages,
       currentPage: page,
@@ -335,7 +370,7 @@ const fetchCouples = async (params: {
       hasPrevPage: page > 1,
     };
   } catch (error) {
-    console.error('Error fetching couples:', error);
+    console.error('Error fetching teachers:', error);
     throw error;
   }
 };
@@ -352,20 +387,21 @@ const {
   clearFilters,
   retry,
   initialize,
-} = useGenericList<Couple, CoupleFilters>({
-  fetchFn: fetchCouples,
+} = useGenericList<Teacher, TeacherFilters>({
+  fetchFn: fetchTeachers,
   defaultFilters: {
     searchQuery: '',
     country: '',
-    partnershipStyle: '',
+    role: '',
+    gender: '',
   },
   defaultPagination: {
     page: 1,
     rowsPerPage: 20,
-    sortBy: 'names',
+    sortBy: 'name',
     descending: false,
   },
-  persistenceKey: 'couples-filters',
+  persistenceKey: 'teachers-filters',
   enableSearch: true,
   searchMinLength: 2,
   searchDebounce: 300,
@@ -374,9 +410,9 @@ const {
 // Filter options
 const countryOptions = computed(() => {
   const countries = new Set<string>();
-  state.value.items.forEach((couple) => {
-    if (couple.meta_box?.country) {
-      countries.add(couple.meta_box.country);
+  state.value.items.forEach((item) => {
+    if (item.meta_box?.country) {
+      countries.add(item.meta_box.country);
     }
   });
   return Array.from(countries)
@@ -387,60 +423,49 @@ const countryOptions = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const partnershipStyleOptions = computed(() => {
-  const styles = new Set<string>();
-  state.value.items.forEach((couple) => {
-    if (couple.meta_box?.partnership_style) {
-      styles.add(couple.meta_box.partnership_style);
-    }
-  });
-  return Array.from(styles)
-    .map((style) => ({
-      label: style,
-      value: style,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
+const roleOptions = [
+  { label: 'Leader', value: 'leader' },
+  { label: 'Follower', value: 'follower' },
+];
+
+const genderOptions = [
+  { label: 'Man', value: 'man' },
+  { label: 'Woman', value: 'woman' },
+];
 
 // Helper functions
-const getCoupleNames = (couple: Couple): string => {
-  // First priority: use embedded teacher data if available
-  if (couple._embedded?.teachers) {
-    const teachers = couple._embedded.teachers;
-    const leaderName = teachers.find((t) => t.role === 'leader')?.title || 'Unknown';
-    const followerName = teachers.find((t) => t.role === 'follower')?.title || 'Unknown';
-    return `${followerName} & ${leaderName}`;
-  }
-
-  // Fallback to leader_name and follower_name if available
-  if (couple.leader_name && couple.follower_name) {
-    return `${couple.follower_name} & ${couple.leader_name}`;
-  }
-
-  // Last resort: decode HTML entities from title
-  return decodeHtmlEntities(couple.title || 'Unknown Partnership');
+const getTeacherName = (teacher: Teacher): string => {
+  const firstName = teacher.meta_box?.first_name || '';
+  const lastName = teacher.meta_box?.last_name || '';
+  return `${firstName} ${lastName}`.trim() || teacher.title || 'Unknown';
 };
 
-const decodeHtmlEntities = (str: string): string => {
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = str;
-  return textarea.value;
-};
-
-const getLocationText = (couple: Couple): string => {
-  const city = couple.meta_box?.city || '';
-  const country = couple.meta_box?.country || '';
+const getLocationText = (teacher: Teacher): string => {
+  const city = teacher.meta_box?.city || '';
+  const country = teacher.meta_box?.country || '';
   const countryName = country ? getCountryName(country) : '';
   return [city, countryName].filter(Boolean).join(', ');
 };
 
-// Event handlers
-const handleRowClick = (couple: Couple) => {
-  void router.push(`/couples/${couple.id}`);
+const getTeacherPhoto = (): string => {
+  // TODO: Add proper photo field when available
+  return 'https://cdn.quasar.dev/img/avatar.png';
 };
 
-const editCouple = (couple: Couple) => {
-  void router.push(`/couples/${couple.id}/edit`);
+// Event handlers
+const handleRowClick = (teacher: Teacher) => {
+  void router.push(`/teachers/${teacher.id}`);
+};
+
+const editTeacher = (teacher: Teacher) => {
+  void router.push(`/teachers/${teacher.id}/edit`);
+};
+
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.src = 'https://cdn.quasar.dev/img/avatar.png';
+  }
 };
 
 // Initialize the component

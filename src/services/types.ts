@@ -96,12 +96,6 @@ export interface EventDetails extends BaseEvent {
     'wp:featuredmedia'?: unknown[];
     'wp:term'?: unknown[][];
   };
-  content: Content;
-  excerpt: Excerpt;
-  author: number;
-  featured_media: number;
-  comment_status: string;
-  ping_status: string;
 }
 
 export interface DJ extends BaseEntity {
@@ -188,12 +182,6 @@ export interface Teacher extends BaseEntity {
   // Embedded related data
   _embedded?: {
     events?: BaseEvent[];
-    couples?: Array<{
-      id: number;
-      title: string;
-      slug: string;
-      link: string;
-    }>;
     author?: unknown[];
   };
 }
@@ -241,7 +229,7 @@ export interface Couple extends BaseEntity {
       href: string;
       city?: string;
       country?: string;
-      role: 'leader' | 'follower' | 'both' | 'double-role';
+      role: 'leader' | 'follower';
     }>;
     leader?: Teacher[];
     follower?: Teacher[];
@@ -333,51 +321,4 @@ export interface EventParams {
   start_date_to?: string;
   registration_start_date_from?: string;
   registration_start_date_to?: string;
-}
-
-// User Interaction Types
-export type InteractionType = 'like' | 'bookmark' | 'reminder' | 'follow';
-
-export type ContentType =
-  | 'tmd_event'
-  | 'tmd_teacher'
-  | 'tmd_dj'
-  | 'tmd_teacher_couple'
-  | 'tmd_event_series';
-
-export interface UserInteraction {
-  id: number;
-  interaction_type: InteractionType;
-  target_post_id: number;
-  target_post_type: ContentType;
-  interaction_date: string;
-  expires_date?: string | undefined;
-  reminder_note?: string | undefined;
-  private_note?: string | undefined;
-  notification_sent: boolean;
-}
-
-export interface CreateInteractionRequest {
-  interaction_type: InteractionType;
-  target_post_id: number;
-  target_post_type: ContentType;
-  expires_date?: string;
-  reminder_note?: string;
-  private_note?: string;
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-}
-
-export interface Content {
-  rendered: string;
-  protected: boolean;
-}
-
-export interface Excerpt {
-  rendered: string;
-  protected: boolean;
 }

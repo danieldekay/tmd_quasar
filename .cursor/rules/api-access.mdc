@@ -1,9 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-You can test on the local API:
-- you have credentials
-- use graphql for getting the JWT token
-- use primarily TMD/V3 endpoints

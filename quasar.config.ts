@@ -2,11 +2,6 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app/wrappers';
-import dotenv from 'dotenv';
-
-// Load environment variables from .env file
-const envPath = process.env.APP_ENV ? `.env.${process.env.APP_ENV}` : '.env';
-dotenv.config({ path: envPath });
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -16,7 +11,7 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['pinia', 'axios', 'apollo'],
+    boot: ['axios'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss'],
@@ -57,28 +52,7 @@ export default defineConfig((/* ctx */) => {
 
       // publicPath: '/',
       // analyze: true,
-      env: {
-        API_BASE_URL:
-          process.env.API_BASE_URL ||
-          (process.env.NODE_ENV === 'production'
-            ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
-            : 'http://localhost:10014/wp-json/tmd/v3'),
-        API_URL:
-          process.env.API_URL ||
-          (process.env.NODE_ENV === 'production'
-            ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
-            : 'http://localhost:10014/wp-json/tmd/v3'),
-        GRAPHQL_ENDPOINT:
-          process.env.GRAPHQL_ENDPOINT ||
-          (process.env.NODE_ENV === 'production'
-            ? 'https://www.tangomarathons.com/graphql'
-            : 'http://localhost:10014/graphql'),
-        WORDPRESS_API_URL:
-          process.env.WORDPRESS_API_URL ||
-          (process.env.NODE_ENV === 'production'
-            ? 'https://www.tangomarathons.com'
-            : 'http://localhost:10014'),
-      },
+      // env: {},
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -124,7 +98,7 @@ export default defineConfig((/* ctx */) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify'],
+      plugins: [],
     },
 
     // animations: 'all', // --- includes all animations
@@ -220,7 +194,7 @@ export default defineConfig((/* ctx */) => {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: 'tmd-quasar',
+        appId: 'tmd-app',
       },
     },
 

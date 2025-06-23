@@ -1,13 +1,14 @@
-// Export all services
-export { eventService } from './eventService';
-export { eventListService } from './eventListService';
-export { eventDetailsService } from './eventDetailsService';
-export { eventSeriesService } from './eventSeriesService';
-export { djService } from './djService';
-export { teacherService } from './teacherService';
-export { coupleService } from './coupleService';
-export { authService } from './authService';
+// Base service for DRY principles
+export * from './baseService';
 
-// Export types
-export type * from './types';
-export type * from './v3ApiTypes';
+// Service implementations
+export * from './djService';
+export * from './teacherService';
+export * from './coupleService';
+export * from './eventService';
+export * from './eventListService';
+export * from './eventDetailsService';
+export * from './eventSeriesService';
+
+// Types
+export * from './types';

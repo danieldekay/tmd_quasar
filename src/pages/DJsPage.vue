@@ -1,280 +1,381 @@
 <template>
-  <q-page class="djs-list-page">
-    <!-- Header -->
+  <q-page class="dj-directory">
+    <!-- Header Section -->
     <div class="page-header q-pa-lg">
       <div class="row items-center justify-between">
-        <div class="col">
-          <h1 class="text-h4 text-weight-bold q-mb-xs">DJs Directory</h1>
-          <p class="text-subtitle1 text-grey-6 q-ma-none">
-            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} DJs
-            found based on filters
+        <div>
+          <h1 class="text-h3 text-weight-light q-ma-none">DJ Directory</h1>
+          <p class="text-subtitle1 text-grey-7 q-mt-sm q-mb-none">
+            Discover tango DJs from around the world
           </p>
         </div>
-        <div class="col-auto">
-          <q-btn round color="primary" icon="refresh" @click="refreshData" :loading="loading">
-            <q-tooltip>Refresh DJs</q-tooltip>
-          </q-btn>
+        <div class="header-stats">
+          <q-card flat class="stats-card">
+            <q-card-section class="text-center q-pa-md">
+              <div class="text-h4 text-primary text-weight-bold">
+                {{ totalDJs.toLocaleString() }}
+              </div>
+              <div class="text-caption text-grey-6">Total DJs</div>
+            </q-card-section>
+          </q-card>
         </div>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-section q-px-lg q-pb-md">
+    <!-- Filters Section -->
+    <div class="filters-section q-px-lg q-pb-lg">
       <q-card flat bordered class="filters-card">
-        <q-card-section>
-          <div class="row q-gutter-md">
+        <q-card-section class="q-pa-lg">
+          <div class="row q-col-gutter-lg">
             <!-- Search -->
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6">
               <q-input
                 v-model="searchQuery"
-                placeholder="Search DJs, cities, or countries..."
-                dense
+                placeholder="Search by DJ name (min 3 characters)..."
                 outlined
+                dense
                 clearable
                 @update:model-value="onSearchChange"
-                @clear="onSearchChange"
+                class="search-input"
               >
                 <template v-slot:prepend>
-                  <q-icon name="search" />
+                  <q-icon name="search" color="grey-6" />
+                </template>
+                <template v-slot:append v-if="searchQuery">
+                  <q-spinner-hourglass
+                    v-if="loading && searchQuery.length >= 3"
+                    color="primary"
+                    size="16px"
+                    class="q-mr-sm"
+                  />
+                  <q-chip
+                    removable
+                    @remove="clearSearch"
+                    color="primary"
+                    text-color="white"
+                    size="sm"
+                  >
+                    "{{ searchQuery }}"
+                  </q-chip>
                 </template>
               </q-input>
             </div>
 
             <!-- Country Filter -->
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-4">
               <q-select
                 v-model="selectedCountry"
                 :options="countryOptions"
-                label="Filter by Country"
-                dense
+                label="Country"
                 outlined
+                dense
                 clearable
                 emit-value
                 map-options
-                :option-label="getCountryName"
-                :option-value="(opt) => opt"
-                @update:model-value="onFilterChange"
+                @update:model-value="onCountryChange"
+                class="country-select"
               >
                 <template v-slot:prepend>
-                  <q-icon name="flag" />
+                  <q-icon name="public" color="grey-6" />
                 </template>
               </q-select>
             </div>
 
-            <!-- Activity Type Filter -->
-            <div class="col-12 col-md-4">
-              <q-select
-                v-model="selectedActivityType"
-                :options="activityTypeOptions"
-                label="Filter by Activity Type"
-                dense
-                outlined
-                clearable
-                emit-value
-                map-options
-                @update:model-value="onFilterChange"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="music_note" />
-                </template>
-              </q-select>
-            </div>
-
-            <!-- Clear Filters -->
-            <div class="col-12 col-md-1">
-              <q-btn
-                flat
+            <!-- Activity Filters -->
+            <div class="col-12 col-md-2">
+              <q-btn-dropdown
+                outline
                 color="grey-7"
-                icon="clear_all"
-                label="Clear Filters"
-                @click="clearFilters"
-                :disable="!hasActiveFilters"
-              />
+                label="Activities"
+                icon="filter_list"
+                dense
+                class="full-width"
+              >
+                <q-list>
+                  <q-item
+                    v-for="activity in activityFilters"
+                    :key="activity.key"
+                    clickable
+                    @click="toggleActivityFilter(activity.key)"
+                  >
+                    <q-item-section avatar>
+                      <q-checkbox :model-value="activity.active" :color="activity.color" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ activity.label }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
             </div>
           </div>
 
           <!-- Active Filters Display -->
-          <div v-if="hasActiveFilters" class="q-mt-md">
-            <q-chip
-              v-if="selectedCountry"
-              removable
-              @remove="clearCountryFilter"
-              size="sm"
-              icon="flag"
-            >
-              {{ getCountryName(selectedCountry) }}
-            </q-chip>
-            <q-chip
-              v-if="selectedActivityType"
-              removable
-              @remove="clearActivityTypeFilter"
-              size="sm"
-              icon="music_note"
-            >
-              {{ getActivityTypeLabel(selectedActivityType) }}
-            </q-chip>
-            <q-chip v-if="searchQuery" removable @remove="clearSearch" size="sm" icon="search">
-              Search: "{{ searchQuery }}"
-            </q-chip>
+          <div v-if="hasActiveFilters" class="row q-mt-md">
+            <div class="col-12">
+              <div class="text-caption text-grey-6 q-mb-xs">Active filters:</div>
+              <div class="row q-gutter-xs">
+                <q-chip
+                  v-if="searchQuery"
+                  removable
+                  @remove="clearSearch"
+                  color="primary"
+                  text-color="white"
+                  size="sm"
+                  icon="search"
+                >
+                  Search: "{{ searchQuery }}"
+                </q-chip>
+                <q-chip
+                  v-if="selectedCountry"
+                  removable
+                  @remove="clearCountry"
+                  color="secondary"
+                  text-color="white"
+                  size="sm"
+                  icon="public"
+                >
+                  {{ getCountryName(selectedCountry) }}
+                </q-chip>
+                <q-chip
+                  v-for="activity in activeActivityFilters"
+                  :key="activity.key"
+                  removable
+                  @remove="toggleActivityFilter(activity.key)"
+                  :color="activity.color"
+                  text-color="white"
+                  size="sm"
+                  :icon="activity.icon"
+                >
+                  {{ activity.label }}
+                </q-chip>
+              </div>
+            </div>
           </div>
         </q-card-section>
       </q-card>
     </div>
 
-    <!-- DJs Table -->
-    <div class="table-section q-px-lg q-pb-lg">
-      <q-card flat bordered class="table-card">
-        <q-table
-          :rows="djs"
-          :columns="columns"
-          :loading="loading"
-          v-model:pagination="pagination"
-          row-key="id"
-          @request="onRequest"
-          @row-click="handleRowClick"
-          :rows-per-page-options="[10, 20, 50, 100]"
-          binary-state-sort
-          flat
-          bordered
-          class="djs-table"
-        >
-          <!-- Custom Cell Templates -->
-          <template #body-cell-name="props">
-            <q-td :props="props" class="dj-name-cell cursor-pointer">
-              <div class="dj-name-content">
-                <div class="dj-name text-weight-medium">
-                  {{ formatText(props.row.tmd_dj_name || props.row.title) }}
-                </div>
-                <div
-                  v-if="
-                    props.row.tmd_dj_real_name &&
-                    props.row.tmd_dj_real_name !== (props.row.tmd_dj_name || props.row.title)
-                  "
-                  class="dj-real-name text-caption text-grey-6"
-                >
-                  {{ formatText(props.row.tmd_dj_real_name) }}
-                </div>
-              </div>
-            </q-td>
-          </template>
-
-          <template #body-cell-city="props">
-            <q-td :props="props" class="city-cell cursor-pointer">
-              <div class="city-content">
-                <q-icon name="place" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{
-                  formatText(capitalizeCity(props.row.tmd_dj_city || ''))
-                }}</span>
-              </div>
-            </q-td>
-          </template>
-
-          <template #body-cell-country="props">
-            <q-td :props="props" class="country-cell cursor-pointer">
-              <div class="country-content">
-                <q-icon name="flag" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{
-                  getCountryName(props.row.tmd_dj_country || '')
-                }}</span>
-              </div>
-            </q-td>
-          </template>
-
-          <template #body-cell-tmd_dj_activity_marathons="props">
-            <q-td :props="props" class="marathon-cell cursor-pointer">
-              <q-checkbox
-                :model-value="props.row.tmd_dj_activity_marathons === '1'"
-                disable
-                color="red-7"
-              />
-            </q-td>
-          </template>
-
-          <template #body-cell-tmd_dj_activity_festivals="props">
-            <q-td :props="props" class="festival-cell cursor-pointer">
-              <q-checkbox
-                :model-value="props.row.tmd_dj_activity_festivals === '1'"
-                disable
-                color="purple-6"
-              />
-            </q-td>
-          </template>
-
-          <template #body-cell-tmd_dj_activity_encuentros="props">
-            <q-td :props="props" class="encuentro-cell cursor-pointer">
-              <q-checkbox
-                :model-value="props.row.tmd_dj_activity_encuentros === '1'"
-                disable
-                color="blue-6"
-              />
-            </q-td>
-          </template>
-
-          <template #body-cell-tmd_dj_activity_milongas="props">
-            <q-td :props="props" class="milonga-cell cursor-pointer">
-              <q-checkbox
-                :model-value="props.row.tmd_dj_activity_milongas === '1'"
-                disable
-                color="teal-6"
-              />
-            </q-td>
-          </template>
-
-          <!-- No Data State -->
-          <template #no-data>
-            <div class="text-center q-py-xl">
-              <q-icon name="music_off" size="4em" color="grey-4" />
-              <p class="text-h6 q-mt-md text-grey-6">No DJs found</p>
-              <p class="text-body2 text-grey-5 q-mb-md">
-                Try adjusting your search criteria or filters
-              </p>
-              <q-btn
-                v-if="hasActiveFilters"
-                flat
-                color="primary"
-                label="Clear All Filters"
-                @click="clearFilters"
-              />
-            </div>
-          </template>
-
-          <!-- Loading State -->
-          <template #loading>
-            <q-inner-loading showing color="primary" />
-          </template>
-        </q-table>
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-section q-px-lg">
+      <q-card flat bordered>
+        <q-card-section class="text-center q-py-xl">
+          <q-spinner-dots color="primary" size="3em" />
+          <p class="text-subtitle1 q-mt-md text-grey-6">Loading DJs...</p>
+        </q-card-section>
       </q-card>
     </div>
 
     <!-- Error State -->
-    <div v-if="error" class="error-section q-px-lg">
-      <q-banner class="bg-negative" icon="error">
-        <template v-slot:avatar>
-          <q-icon name="error" color="white" />
-        </template>
-        Failed to load DJs
-        <template v-slot:action>
-          <q-btn flat color="white" label="Retry" @click="refreshData" />
-        </template>
-      </q-banner>
+    <div v-else-if="error" class="error-section q-px-lg">
+      <OfflineMessage :error="error" title="Failed to Load DJs" @retry="retryLoad" />
+    </div>
+
+    <!-- Results Section -->
+    <div v-else class="results-section q-px-lg q-pb-lg">
+      <q-card flat bordered class="results-card">
+        <!-- Results Header -->
+        <q-card-section class="results-header q-pa-lg border-bottom">
+          <div class="row items-center justify-between">
+            <div class="results-info">
+              <div class="text-h6 text-weight-medium">
+                {{ filteredCount.toLocaleString() }}
+                {{ filteredCount === 1 ? 'DJ' : 'DJs' }}
+                <span v-if="hasActiveFilters" class="text-grey-6">
+                  (filtered from {{ totalDJs.toLocaleString() }})
+                </span>
+              </div>
+              <div class="text-caption text-grey-6 q-mt-xs">
+                Page {{ pagination.page }} of
+                {{ Math.ceil(filteredCount / pagination.rowsPerPage) }}
+              </div>
+            </div>
+
+            <!-- View Options -->
+            <div class="view-options">
+              <q-select
+                v-model="pagination.rowsPerPage"
+                :options="[10, 20, 50, 100]"
+                label="Per page"
+                dense
+                outlined
+                style="min-width: 100px"
+                @update:model-value="onPerPageChange"
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <!-- Table View -->
+        <div>
+          <q-table
+            :key="`table-${searchQuery}-${selectedCountry}-${activeActivityFilters.map((f) => f.key).join(',')}`"
+            :rows="djs"
+            :columns="columns"
+            row-key="id"
+            :pagination="pagination"
+            :loading="loading"
+            @request="onRequest"
+            flat
+            class="dj-table"
+            @row-click="onRowClick"
+          >
+            <!-- Custom cell templates -->
+            <template v-slot:body-cell-name="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div class="dj-name-cell">
+                  <div class="text-weight-medium text-primary">{{ props.value }}</div>
+                  <div v-if="props.row.tmd_dj_city" class="text-caption text-grey-6">
+                    {{ props.row.tmd_dj_city }}
+                  </div>
+                </div>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-country="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div v-if="props.value" class="country-cell">
+                  <q-badge :label="props.value" color="grey-6" class="q-mr-xs" />
+                  <span class="text-body2">{{ getCountryName(props.value) }}</span>
+                </div>
+              </q-td>
+            </template>
+
+            <!-- Activity checkboxes with better styling -->
+            <template v-slot:body-cell-marathons="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-icon
+                  :name="
+                    props.row.tmd_dj_activity_marathons === '1'
+                      ? 'check_circle'
+                      : 'radio_button_unchecked'
+                  "
+                  :color="props.row.tmd_dj_activity_marathons === '1' ? 'red-6' : 'grey-4'"
+                  size="sm"
+                />
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-festivals="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-icon
+                  :name="
+                    props.row.tmd_dj_activity_festivals === '1'
+                      ? 'check_circle'
+                      : 'radio_button_unchecked'
+                  "
+                  :color="props.row.tmd_dj_activity_festivals === '1' ? 'purple-6' : 'grey-4'"
+                  size="sm"
+                />
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-encuentros="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-icon
+                  :name="
+                    props.row.tmd_dj_activity_encuentros === '1'
+                      ? 'check_circle'
+                      : 'radio_button_unchecked'
+                  "
+                  :color="props.row.tmd_dj_activity_encuentros === '1' ? 'blue-6' : 'grey-4'"
+                  size="sm"
+                />
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-milongas="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-icon
+                  :name="
+                    props.row.tmd_dj_activity_milongas === '1'
+                      ? 'check_circle'
+                      : 'radio_button_unchecked'
+                  "
+                  :color="props.row.tmd_dj_activity_milongas === '1' ? 'teal-6' : 'grey-4'"
+                  size="sm"
+                />
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-travel="props">
+              <q-td :props="props" class="cursor-pointer">
+                <q-icon
+                  :name="
+                    props.row.tmd_dj_activity_milongas_travel === '1'
+                      ? 'check_circle'
+                      : 'radio_button_unchecked'
+                  "
+                  :color="props.row.tmd_dj_activity_milongas_travel === '1' ? 'green-6' : 'grey-4'"
+                  size="sm"
+                />
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-links="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div class="links-cell row q-gutter-xs">
+                  <q-btn
+                    v-if="props.row.tmd_dj_webpage"
+                    flat
+                    round
+                    dense
+                    color="primary"
+                    icon="language"
+                    size="sm"
+                    :href="props.row.tmd_dj_webpage"
+                    target="_blank"
+                    @click.stop
+                  >
+                    <q-tooltip>Website</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    v-if="props.row.tmd_dj_link_to_facebook"
+                    flat
+                    round
+                    dense
+                    color="blue"
+                    icon="facebook"
+                    size="sm"
+                    :href="props.row.tmd_dj_link_to_facebook"
+                    target="_blank"
+                    @click.stop
+                  >
+                    <q-tooltip>Facebook</q-tooltip>
+                  </q-btn>
+                </div>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-date_added="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div class="text-caption">{{ formatDate(props.value) }}</div>
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-last_updated="props">
+              <q-td :props="props" class="cursor-pointer">
+                <div class="text-caption">{{ formatDate(props.value) }}</div>
+              </q-td>
+            </template>
+          </q-table>
+        </div>
+      </q-card>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
-import { djService, type DJ } from '../services';
+import { djService, type DJParams } from '../services/djService';
+import type { DJ } from '../services/types';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
 
 const router = useRouter();
-const $q = useQuasar();
-
-// Composables
-const { getCountryName, getCountryOptionsFromCodes } = useCountries();
-const { formatText } = useFormatters();
+const { formatDate } = useFormatters();
+const { getCountryName, getAllCountryOptions } = useCountries();
 
 // State
 const djs = ref<DJ[]>([]);
@@ -282,434 +383,376 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
 const selectedCountry = ref<string | null>(null);
-const selectedActivityType = ref<string | null>(null);
-const allCountries = ref<Set<string>>(new Set());
-const totalCount = ref(0);
+const totalDJs = ref(0);
+const filteredCount = ref(0);
+let searchTimeout: NodeJS.Timeout | null = null;
+let countryTimeout: NodeJS.Timeout | null = null;
+let currentRequest: AbortController | null = null;
 
-// Computed
-const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
-
-const activityTypeOptions = computed(() => [
-  { label: 'Marathon', value: 'marathon' },
-  { label: 'Festival', value: 'festival' },
-  { label: 'Encuentro', value: 'encuentro' },
-  { label: 'Milonga', value: 'milonga' },
+// Activity filters
+const activityFilters = ref([
+  { key: 'marathons', label: 'Marathons', color: 'red', icon: 'run_circle', active: false },
+  { key: 'festivals', label: 'Festivals', color: 'purple', icon: 'celebration', active: false },
+  { key: 'encuentros', label: 'Encuentros', color: 'blue', icon: 'groups', active: false },
+  { key: 'milongas', label: 'Milongas', color: 'teal', icon: 'music_note', active: false },
+  { key: 'travel', label: 'Travel', color: 'green', icon: 'travel_explore', active: false },
 ]);
 
-const hasActiveFilters = computed(() => {
-  return searchQuery.value || selectedCountry.value || selectedActivityType.value;
+const countryOptions = computed(() => {
+  return getAllCountryOptions().map(({ code, name }) => ({
+    label: name,
+    value: code,
+  }));
 });
 
-// Table columns
-const columns = [
-  {
-    name: 'name',
-    label: 'DJ Name',
-    field: 'name',
-    align: 'left' as const,
-    sortable: true,
-    style: 'min-width: 250px',
-  },
-  {
-    name: 'city',
-    label: 'City',
-    field: 'city',
-    align: 'left' as const,
-    sortable: true,
-    style: 'min-width: 120px',
-  },
-  {
-    name: 'country',
-    label: 'Country',
-    field: 'country',
-    align: 'left' as const,
-    sortable: true,
-    style: 'min-width: 120px',
-  },
-  {
-    name: 'tmd_dj_activity_marathons',
-    label: 'Marathon',
-    field: 'tmd_dj_activity_marathons',
-    align: 'center' as const,
-    sortable: false,
-    style: 'min-width: 100px',
-  },
-  {
-    name: 'tmd_dj_activity_festivals',
-    label: 'Festival',
-    field: 'tmd_dj_activity_festivals',
-    align: 'center' as const,
-    sortable: false,
-    style: 'min-width: 100px',
-  },
-  {
-    name: 'tmd_dj_activity_encuentros',
-    label: 'Encuentro',
-    field: 'tmd_dj_activity_encuentros',
-    align: 'center' as const,
-    sortable: false,
-    style: 'min-width: 100px',
-  },
-  {
-    name: 'tmd_dj_activity_milongas',
-    label: 'Milonga',
-    field: 'tmd_dj_activity_milongas',
-    align: 'center' as const,
-    sortable: false,
-    style: 'min-width: 100px',
-  },
-];
-
-// Pagination state
 const pagination = ref({
-  sortBy: 'name',
-  descending: false,
+  sortBy: 'date',
+  descending: true,
   page: 1,
   rowsPerPage: 20,
   rowsNumber: 0,
 });
 
-// Helper functions
-const capitalizeCity = (city: string): string => {
-  if (!city) return '';
-  return city
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
+// Computed properties
+const hasActiveFilters = computed(() => {
+  return !!(
+    searchQuery.value ||
+    selectedCountry.value ||
+    activityFilters.value.some((f) => f.active)
+  );
+});
 
-const getActivityTypeLabel = (activityType: string): string => {
-  switch (activityType) {
-    case 'marathon':
-      return 'Marathon';
-    case 'festival':
-      return 'Festival';
-    case 'encuentro':
-      return 'Encuentro';
-    case 'milonga':
-      return 'Milonga';
-    default:
-      return activityType;
-  }
-};
+const activeActivityFilters = computed(() => {
+  return activityFilters.value.filter((f) => f.active);
+});
 
-const updateCountrySet = (djs: DJ[]) => {
-  djs.forEach((dj) => {
-    if (dj.tmd_dj_country) allCountries.value.add(dj.tmd_dj_country);
-  });
-};
+// Table columns
+const columns = computed(() => [
+  {
+    name: 'id',
+    label: 'ID',
+    field: 'id',
+    sortable: true,
+    align: 'left' as const,
+    style: 'width: 80px',
+  },
+  {
+    name: 'name',
+    label: 'DJ Name',
+    field: (row: DJ) => row.tmd_dj_name || row.title,
+    sortable: true,
+    align: 'left' as const,
+    style: 'width: 200px',
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    field: 'tmd_dj_country',
+    sortable: true,
+    align: 'left' as const,
+    style: 'width: 160px',
+  },
+  {
+    name: 'marathons',
+    label: 'Marathons',
+    field: 'marathons',
+    sortable: false,
+    align: 'center' as const,
+    style: 'width: 90px',
+  },
+  {
+    name: 'festivals',
+    label: 'Festivals',
+    field: 'festivals',
+    sortable: false,
+    align: 'center' as const,
+    style: 'width: 90px',
+  },
+  {
+    name: 'encuentros',
+    label: 'Encuentros',
+    field: 'encuentros',
+    sortable: false,
+    align: 'center' as const,
+    style: 'width: 90px',
+  },
+  {
+    name: 'milongas',
+    label: 'Milongas',
+    field: 'milongas',
+    sortable: false,
+    align: 'center' as const,
+    style: 'width: 90px',
+  },
+  {
+    name: 'travel',
+    label: 'Travel',
+    field: 'travel',
+    sortable: false,
+    align: 'center' as const,
+    style: 'width: 80px',
+  },
+  {
+    name: 'links',
+    label: 'Links',
+    field: 'links',
+    sortable: false,
+    align: 'center' as const,
+    style: 'width: 120px',
+  },
+  {
+    name: 'date_added',
+    label: 'Added',
+    field: 'date',
+    sortable: true,
+    align: 'left' as const,
+    style: 'width: 100px',
+  },
+  {
+    name: 'last_updated',
+    label: 'Updated',
+    field: 'modified',
+    sortable: true,
+    align: 'left' as const,
+    style: 'width: 100px',
+  },
+]);
 
-// API functions
-const loadDJs = async (forceReload = false) => {
-  loading.value = true;
-  error.value = null;
-
+// Methods
+const loadDJs = async (params: DJParams = {}) => {
   try {
-    const params: Record<string, unknown> = {
-      page: pagination.value.page,
-      perPage: pagination.value.rowsPerPage,
-      orderby: pagination.value.sortBy === 'name' ? 'title' : pagination.value.sortBy,
-      order: pagination.value.descending ? 'desc' : 'asc',
-      meta_fields:
-        'tmd_dj_name,tmd_dj_country,tmd_dj_city,tmd_dj_real_name,tmd_dj_activity_marathons,tmd_dj_activity_festivals,tmd_dj_activity_encuentros,tmd_dj_activity_milongas',
-    };
-
-    if (selectedCountry.value) {
-      params.country = selectedCountry.value;
-    }
-    if (selectedActivityType.value) {
-      params.activity_type = selectedActivityType.value;
-    }
-    if (searchQuery.value) {
-      params.search = searchQuery.value;
-    }
-    if (forceReload) {
-      params._t = Date.now();
+    // Cancel any ongoing request
+    if (currentRequest) {
+      currentRequest.abort();
     }
 
-    const response = await djService.getDJs(params);
+    // Create new abort controller for this request
+    currentRequest = new AbortController();
 
+    loading.value = true;
+    const response = await djService.getDJs(params, currentRequest.signal);
     djs.value = response.djs;
+    totalDJs.value = response.total;
+    filteredCount.value = response.total;
     pagination.value.rowsNumber = response.total;
-
-    // Load total count without filters if we don't have it yet or if it's a fresh load
-    if (totalCount.value === 0 || forceReload) {
-      try {
-        const totalParams = {
-          page: 1,
-          perPage: 1,
-          orderby: 'title' as const,
-          order: 'asc' as const,
-          meta_fields:
-            'tmd_dj_name,tmd_dj_country,tmd_dj_city,tmd_dj_real_name,tmd_dj_activity_marathons,tmd_dj_activity_festivals,tmd_dj_activity_encuentros,tmd_dj_activity_milongas',
-        };
-        const totalResponse = await djService.getDJs(totalParams);
-        totalCount.value = totalResponse.total;
-      } catch (totalErr) {
-        console.warn('Failed to load total count:', totalErr);
-        totalCount.value = response.total;
-      }
+    currentRequest = null;
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      // Request was cancelled, ignore
+      return;
     }
-
-    updateCountrySet(response.djs);
-
-    if (forceReload) {
-      $q.notify({
-        type: 'positive',
-        message: 'DJs refreshed successfully',
-        position: 'top',
-        timeout: 2000,
-      });
-    }
-  } catch (err) {
     console.error('Error loading DJs:', err);
     error.value = 'Failed to load DJs';
+    currentRequest = null;
   } finally {
     loading.value = false;
   }
 };
 
-// Event handlers
-const onRequest = async (requestProp: {
+const onRequest = async (requestProps: {
   pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
 }) => {
-  const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
+  const { page, rowsPerPage, sortBy, descending } = requestProps.pagination;
 
   pagination.value.page = page;
   pagination.value.rowsPerPage = rowsPerPage;
-  pagination.value.sortBy = sortBy || 'name';
+  pagination.value.sortBy = sortBy || 'date';
   pagination.value.descending = descending;
 
-  await loadDJs();
-};
+  const params: DJParams = {
+    page,
+    per_page: rowsPerPage,
+    orderby: sortBy || 'date',
+    order: descending ? 'desc' : 'asc',
+  };
 
-const handleRowClick = (evt: Event, row: Record<string, unknown>) => {
-  const djId = row.id as number;
-  void router.push(`/djs/${djId}`);
-};
+  if (searchQuery.value.trim()) {
+    params.search = searchQuery.value.trim();
+  }
 
-const refreshData = () => {
-  void loadDJs(true);
+  if (selectedCountry.value) {
+    params.country = selectedCountry.value;
+  }
+
+  await loadDJs(params);
 };
 
 const onSearchChange = () => {
-  pagination.value.page = 1;
-  void loadDJs();
+  // Clear existing timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  // Only search if 3+ characters or empty (to clear search)
+  if (searchQuery.value.length >= 3 || searchQuery.value.length === 0) {
+    searchTimeout = setTimeout(() => {
+      pagination.value.page = 1;
+      void onRequest({ pagination: pagination.value });
+      searchTimeout = null;
+    }, 1000); // Increased to 1 second as requested
+  }
 };
 
-const onFilterChange = () => {
-  pagination.value.page = 1;
-  void loadDJs();
-};
+const onCountryChange = () => {
+  // Clear existing timeout
+  if (countryTimeout) {
+    clearTimeout(countryTimeout);
+  }
 
-const clearFilters = () => {
-  searchQuery.value = '';
-  selectedCountry.value = null;
-  selectedActivityType.value = null;
-  pagination.value.page = 1;
-  void loadDJs();
-};
-
-const clearCountryFilter = () => {
-  selectedCountry.value = null;
-  onFilterChange();
-};
-
-const clearActivityTypeFilter = () => {
-  selectedActivityType.value = null;
-  onFilterChange();
-};
-
-const clearSearch = () => {
-  searchQuery.value = '';
-  onSearchChange();
-};
-
-// Watchers
-watch(
-  [selectedCountry, selectedActivityType],
-  () => {
+  countryTimeout = setTimeout(() => {
     pagination.value.page = 1;
-    void loadDJs();
-  },
-  { deep: true },
-);
+    void onRequest({ pagination: pagination.value });
+    countryTimeout = null;
+  }, 150); // Debounce country changes too
+};
 
-// Lifecycle
+const onPerPageChange = () => {
+  pagination.value.page = 1;
+  void onRequest({ pagination: pagination.value });
+};
+
+const onRowClick = (evt: Event | null, row: DJ) => {
+  void router.push(`/djs/${row.id}`);
+};
+
+const retryLoad = () => {
+  error.value = null;
+  void onRequest({ pagination: pagination.value });
+};
+
+// Filter methods
+const clearSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  searchQuery.value = '';
+  pagination.value.page = 1;
+  void onRequest({ pagination: pagination.value });
+};
+
+const clearCountry = () => {
+  if (countryTimeout) {
+    clearTimeout(countryTimeout);
+    countryTimeout = null;
+  }
+  selectedCountry.value = null;
+  pagination.value.page = 1;
+  void onRequest({ pagination: pagination.value });
+};
+
+const toggleActivityFilter = (key: string) => {
+  const filter = activityFilters.value.find((f) => f.key === key);
+  if (filter) {
+    filter.active = !filter.active;
+    // TODO: Implement activity filtering logic
+  }
+};
+
 onMounted(() => {
-  void loadDJs();
+  void onRequest({ pagination: pagination.value });
+});
+
+// Cleanup timeouts on unmount
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  if (countryTimeout) {
+    clearTimeout(countryTimeout);
+  }
+  if (currentRequest) {
+    currentRequest.abort();
+  }
 });
 </script>
 
 <style lang="scss" scoped>
-.djs-list-page {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+.dj-directory {
+  background: #fafafa;
   min-height: 100vh;
 }
 
 .page-header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  .stats-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+.filters-card {
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.filters-section {
-  .filters-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    margin-top: 1rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-  }
+.results-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.table-section {
-  .table-card {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    overflow: hidden;
+.border-bottom {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dj-table {
+  :deep(.q-table tbody tr) {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.04);
+    }
   }
 
-  .djs-table {
-    :deep(.q-table__top) {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 16px 20px;
-    }
-
-    :deep(.q-table__bottom) {
-      background-color: #fafafa;
-      border-top: 1px solid #e0e0e0;
-      padding: 12px 20px;
-    }
-
-    :deep(.q-table thead th) {
-      background: white;
-      color: black !important;
-      font-weight: 600 !important;
-      font-size: 13px !important;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 14px 12px !important;
-      border-bottom: none !important;
-
-      .q-icon {
-        color: rgba(0, 0, 0, 0.7);
-        transition: all 0.2s ease;
-
-        &.q-table__sort-icon--active {
-          color: black;
-          transform: scale(1.1);
-        }
-      }
-    }
-
-    :deep(.q-table tbody tr) {
-      transition: all 0.2s ease;
-      border-bottom: 1px solid #f0f0f0;
-
-      &:nth-child(even) {
-        background-color: #fafafa;
-      }
-
-      &:hover {
-        background-color: rgba(25, 118, 210, 0.08) !important;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      }
-
-      .q-td {
-        padding: 14px 12px !important;
-        vertical-align: top;
-        border-bottom: none !important;
-      }
-    }
+  :deep(.q-table th) {
+    font-weight: 600;
+    color: #424242;
   }
 }
 
 .dj-name-cell {
-  .dj-name-content {
-    .dj-name {
-      font-size: 14px;
-      line-height: 1.4;
-      max-width: none;
-      white-space: normal;
-      overflow: visible;
-      text-overflow: initial;
-    }
-
-    .dj-real-name {
-      margin-top: 2px;
-      font-size: 11px;
-    }
+  .text-primary {
+    color: #1976d2 !important;
   }
 }
 
-.city-cell,
 .country-cell {
-  .city-content,
-  .country-content {
-    display: flex;
-    align-items: center;
-    font-size: 13px;
-
-    .q-icon {
-      opacity: 0.8;
-    }
-  }
+  display: flex;
+  align-items: center;
 }
 
-.marathon-cell,
-.festival-cell,
-.encuentro-cell,
-.milonga-cell {
-  .q-checkbox {
-    margin-left: 16px;
-  }
+.links-cell {
+  justify-content: center;
 }
 
-.error-section {
-  .q-banner {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
+.search-input :deep(.q-field__control) {
+  border-radius: 8px;
 }
 
-// Responsive design
+.country-select :deep(.q-field__control) {
+  border-radius: 8px;
+}
+
 @media (max-width: 768px) {
   .page-header {
-    .text-h4 {
-      font-size: 1.5rem;
-    }
-  }
+    .row {
+      flex-direction: column;
+      text-align: center;
 
-  .filters-section {
-    .filters-card {
-      .row {
-        .col-12 {
-          margin-bottom: 8px;
-        }
+      .header-stats {
+        margin-top: 1rem;
       }
     }
   }
 
-  .table-section {
-    .djs-table {
-      :deep(.q-table thead th) {
-        padding: 10px 8px !important;
-        font-size: 11px !important;
-      }
-
-      :deep(.q-table tbody tr .q-td) {
-        padding: 10px 8px !important;
-        font-size: 12px;
-      }
-    }
+  .view-options {
+    justify-content: center;
+    margin-top: 1rem;
   }
 }
 </style>

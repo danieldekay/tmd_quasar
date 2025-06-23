@@ -1,6 +1,6 @@
-# TMD Quasar Frontend
+# TMD App
 
-A modern, mobile-first frontend application for the Tango Marathons website,
+A modern, mobile-first application for the Tango Marathons website,
 built with Quasar Vue.js and WordPress as a headless CMS.
 
 ## Overview
@@ -147,6 +147,10 @@ The API provides bidirectional relationships:
 - DJs have embedded related events (`?_embed`)
 - Events link back to their DJs
 - Performance statistics calculated from relationships
+
+### Authentication (Future Implementation)
+
+Authentication for write operations or accessing protected content will be handled via JWT (JSON Web Tokens). These tokens are intended to be sourced from a dedicated GraphQL endpoint. Specific details of this endpoint and the authentication flow will be documented as the feature is implemented.
 
 ## Performance
 
