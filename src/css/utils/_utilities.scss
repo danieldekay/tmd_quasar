@@ -1,0 +1,63 @@
+// Utility classes
+
+// Example: Border utility from BaseListPage.vue
+.border-bottom-util {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+
+  body.body--dark & {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+// Example: Line height utility from DJCard.vue
+.line-height-sm-util {
+  line-height: 1.3;
+}
+
+// Responsive visibility (example, Quasar has its own)
+// .hidden-sm-down {
+//   @media (max-width: $breakpoint-sm-max) {
+//     display: none !important;
+//   }
+// }
+
+// Spacing helpers (Quasar has q-pa-*, q-ma-*)
+// Only add if Quasar's don't cover a specific need.
+// .custom-padding-large {
+//   padding: 2rem;
+// }
+
+// Text alignment
+// .text-center { text-align: center; } // Quasar has this
+
+// Flex helpers (Quasar has extensive flex classes)
+// .flex-grow-1 { flex-grow: 1; }
+
+// From BaseListPage.vue pagination section
+.pagination-section-util {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: rgba(0, 0, 0, 0.02); // Very light background for pagination
+
+  body.body--dark & {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+}
+
+// Responsive adjustments from BaseListPage.vue for results header
+// These are quite specific to a certain layout structure.
+// It might be better to handle this with Quasar's flex utilities directly in the template,
+// or create a more semantic component/layout class if this structure is reused.
+.responsive-header-columns {
+  @media (max-width: $breakpoint-md-max) { // Or $breakpoint-sm-max, depending on desired breakpoint
+    &.row { // Assuming it's applied to a div with class="row"
+      flex-direction: column;
+      align-items: flex-start !important; // important to override Quasar's .items-center
+      gap: 1rem; // Spacing between items when stacked
+
+      .view-options { // Assuming a child div with this class
+        width: 100%; // Make view options take full width when stacked
+      }
+    }
+  }
+}

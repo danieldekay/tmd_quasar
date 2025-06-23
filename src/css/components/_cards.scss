@@ -1,0 +1,77 @@
+// Styles for card components
+
+// Common card style extracted from app.scss and page components
+// This can be applied using a class or extended by other card styles.
+.styled-content-card {
+  background-color: #fff;
+  border-radius: 8px; // Consistent border radius
+  border: 1px solid rgba(0, 0, 0, 0.12); // Quasar's default is similar
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1); // Subtle shadow
+  // padding: 24px; // Padding can vary, so apply it via utility or specific component style
+
+  body.body--dark & {
+    background-color: $dark; // Assumes $dark is defined in quasar.variables.scss
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  // Example of how page-specific cards used this
+  // &.filters-card, &.table-card from EventList.vue / DJsPage.vue
+  // Could be:
+  // .filters-card-styling { @extend .styled-content-card; }
+  // or applied directly in components: <q-card class="styled-content-card">
+}
+
+// Specific card styles from pages like EventList.vue / DJsPage.vue
+.filters-card-wrapper,
+.table-card-wrapper {
+  // These styles were applied to q-card directly in the pages.
+  // Consider if they should be q-card variants or utility classes.
+  // For now, creating wrapper classes that can be applied to the q-card.
+  // This provides a good abstraction over Quasar's q-card.
+  @extend .styled-content-card; // Inherit base styling
+
+  background: rgba(255, 255, 255, 0.95); // Specific to list page cards
+  backdrop-filter: blur(10px);
+  border-radius: 12px; // Slightly larger radius for these cards
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
+  body.body--dark & {
+    background: rgba($dark-page, 0.85); // Example dark mode adaptation
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.table-card-wrapper {
+  overflow: hidden; // Specific to table card
+}
+
+// Styles from DJCard.vue (glossy buttons) - might fit better in _buttons.scss if generalized
+// For now, keeping card-related styles here.
+.glossy-button-mixin { // This will be a mixin to apply to buttons within cards or elsewhere
+  background: linear-gradient(145deg, lighten($grey-6, 5%) 0%, darken($grey-6, 5%) 100%);
+
+  &.bg-blue-grey-6 { // This is too specific for a general mixin, better handled by Quasar color props
+    // background: linear-gradient(145deg, lighten($blue-grey-6, 5%) 0%, darken($blue-grey-6, 5%) 100%);
+  }
+  // ... similar for other colors. Quasar's `glossy` prop on q-btn is preferred.
+  // This custom glossy effect might be redundant or could be a theme variation.
+}
+
+// DJCard specific styling (dj-card class)
+// This is very component-specific, so it should ideally live with DJCard.vue's scoped styles.
+// If we want a global theme for "hoverable cards", we can extract parts of it.
+// For now, this will be left in DJCard.vue's scoped styles.
+// .dj-card-global-theme {
+//   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+//   border-radius: 8px;
+//   overflow: hidden;
+//   position: relative;
+//
+//   &:hover {
+//     transform: translateY(-2px);
+//     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); // Standard hover shadow
+//   }
+// }

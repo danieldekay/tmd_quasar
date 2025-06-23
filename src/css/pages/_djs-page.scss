@@ -1,0 +1,22 @@
+// Page-specific styles for DJsPage.vue
+
+// Similar to _event-list.scss, most common styles have been extracted.
+// Only include styles here that are unique to DJsPage.vue.
+
+// Example:
+// .djs-page-specific-visual {
+//   // Styling for a visual element only on the DJs page
+// }
+
+// The checkbox alignment in the table (e.g., .marathon-cell .q-checkbox)
+// was specific to how DJsPage.vue presented activities.
+// .marathon-cell, .festival-cell, .encuentro-cell, .milonga-cell {
+//   .q-checkbox {
+//     margin-left: 16px; // This was in the original scoped CSS.
+//                       // If this centering/spacing is specific to DJ page table,
+//                       // it can be defined here or in a component style if this table is a component.
+//                       // The refactored global table style uses text-align: center for these.
+//   }
+// }
+// This is now handled by text-align: center in components/_tables.scss and dense prop on q-checkbox.
+// So, likely no specific styles needed here for that.
