@@ -41,3 +41,14 @@ All notable changes to this project will be documented in this file.
 - User authentication status in main layout
 - Comprehensive test coverage for authentication
 - Documentation for JWT setup and WordPress configuration
+
+## [0.0.2] - 2024-06-23
+
+### Added
+
+- Login page now links directly to WordPress password reset and registration pages, removing internal dialogs.
+- Event list displays event edition as a numeric badge preceding the event title.
+
+### Changed
+
+- Bumped application version to 0.0.2.
