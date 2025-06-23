@@ -162,6 +162,9 @@
             <q-td :props="props" class="event-title-cell cursor-pointer">
               <div class="event-title-content">
                 <div class="event-title text-weight-medium">
+                  <q-badge v-if="props.row.edition" color="primary" class="q-mr-sm">
+                    {{ Number(props.row.edition) || props.row.edition }}
+                  </q-badge>
                   {{ formatText(props.row.title) }}
                 </div>
                 <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
