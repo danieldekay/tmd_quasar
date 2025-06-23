@@ -307,7 +307,8 @@ export const useGenericList = <T, F extends ListFilters>(options: UseGenericList
    * Search functionality with debounce
    */
   let searchTimeout: NodeJS.Timeout | null = null;
-  const updateSearch = (query: string) => {
+  const updateSearch = (query: string | number | null) => {
+    const qStr = query === null || query === undefined ? '' : query.toString();
     if (!enableSearch) return;
 
     if (searchTimeout) {
@@ -315,7 +316,7 @@ export const useGenericList = <T, F extends ListFilters>(options: UseGenericList
     }
 
     searchTimeout = setTimeout(() => {
-      updateFilter('searchQuery' as keyof F, query as F[keyof F]);
+      updateFilter('searchQuery' as keyof F, qStr as F[keyof F]);
     }, options.searchDebounce || 300);
   };
 
