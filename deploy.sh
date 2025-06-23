@@ -9,6 +9,15 @@ set -e
 SSH_CONNECTION="netcup-webserver-shared"
 REMOTE_PATH="/domains/app.tangomarathons.com"
 
+# Prepare environment variables for production build
+echo "🔧 Preparing production environment variables..."
+# Backup any existing .env
+if [ -f .env ]; then
+  mv .env .env.backup || true
+fi
+
+cp docs/env.prod .env
+
 echo "🚀 Building TMD Quasar App..."
 
 # Build the app
