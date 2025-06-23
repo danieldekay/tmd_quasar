@@ -49,7 +49,7 @@
                 color="primary"
                 label="Forgot password?"
                 :disable="isLoading"
-                @click="showForgotPassword = true"
+                @click="redirectToForgotPassword"
               />
             </div>
 
@@ -74,7 +74,7 @@
               color="primary"
               label="Sign up"
               :disable="isLoading"
-              @click="showRegister = true"
+              @click="redirectToRegister"
             />
           </div>
         </q-card-section>
@@ -129,89 +129,6 @@
         </q-card-section>
       </q-card>
     </div>
-
-    <!-- Forgot Password Dialog -->
-    <q-dialog v-model="showForgotPassword">
-      <q-card style="min-width: 350px">
-        <q-card-section>
-          <div class="text-h6">Reset Password</div>
-        </q-card-section>
-
-        <q-card-section>
-          <q-input
-            v-model="forgotPasswordEmail"
-            label="Email address"
-            type="email"
-            outlined
-            :rules="[(val) => !!val || 'Email is required']"
-          />
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="primary" @click="showForgotPassword = false" />
-          <q-btn
-            flat
-            label="Send Reset Link"
-            color="primary"
-            :loading="isResettingPassword"
-            @click="handleForgotPassword"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
-    <!-- Register Dialog -->
-    <q-dialog v-model="showRegister">
-      <q-card style="min-width: 400px">
-        <q-card-section>
-          <div class="text-h6">Create Account</div>
-        </q-card-section>
-
-        <q-card-section>
-          <q-form @submit="handleRegister" class="q-gutter-md">
-            <q-input
-              v-model="registerForm.username"
-              label="Username"
-              type="text"
-              outlined
-              :rules="[(val) => !!val || 'Username is required']"
-            />
-            <q-input
-              v-model="registerForm.email"
-              label="Email"
-              type="email"
-              outlined
-              :rules="[(val) => !!val || 'Email is required']"
-            />
-            <q-input
-              v-model="registerForm.name"
-              label="Display Name"
-              type="text"
-              outlined
-              :rules="[(val) => !!val || 'Display name is required']"
-            />
-            <q-input
-              v-model="registerForm.password"
-              label="Password"
-              :type="showRegisterPassword ? 'text' : 'password'"
-              outlined
-              :rules="[(val) => !!val || 'Password is required']"
-            >
-              <template #append>
-                <q-icon
-                  :name="showRegisterPassword ? 'visibility' : 'visibility_off'"
-                  class="cursor-pointer"
-                  @click="showRegisterPassword = !showRegisterPassword"
-                />
-              </template>
-            </q-input>
-            <q-btn type="submit" color="primary" class="full-width" :loading="isRegistering">
-              Create Account
-            </q-btn>
-          </q-form>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
@@ -220,7 +137,6 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
-import { authService } from '../services/authService';
 
 const router = useRouter();
 const route = useRoute();
@@ -235,22 +151,6 @@ const form = reactive({
 
 const showPassword = ref(false);
 const isLoading = ref(false);
-
-// Dialog states
-const showForgotPassword = ref(false);
-const showRegister = ref(false);
-const forgotPasswordEmail = ref('');
-const isResettingPassword = ref(false);
-
-// Register form
-const registerForm = reactive({
-  username: '',
-  email: '',
-  name: '',
-  password: '',
-});
-const showRegisterPassword = ref(false);
-const isRegistering = ref(false);
 
 // Debug flag
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -283,6 +183,17 @@ const userAgent = computed(() => {
   if (typeof window === 'undefined') return 'Server-side rendering';
   return `${window.navigator.userAgent.substring(0, 50)}...`;
 });
+
+// Redirect functions for password reset and sign-up
+const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+
+const redirectToForgotPassword = (): void => {
+  window.open(`${wordpressUrl}/wp-login.php?action=lostpassword`, '_blank');
+};
+
+const redirectToRegister = (): void => {
+  window.open(`${wordpressUrl}/wp-login.php?action=register`, '_blank');
+};
 
 // Handle login
 const handleLogin = async (): Promise<void> => {
@@ -324,75 +235,6 @@ const handleLogin = async (): Promise<void> => {
     });
   } finally {
     isLoading.value = false;
-  }
-};
-
-// Handle forgot password
-const handleForgotPassword = (): void => {
-  if (!forgotPasswordEmail.value) return;
-
-  isResettingPassword.value = true;
-
-  try {
-    authService.requestPasswordReset(forgotPasswordEmail.value);
-    Notify.create({
-      type: 'positive',
-      message: 'Password reset page opened in new tab',
-      position: 'top',
-    });
-    showForgotPassword.value = false;
-    forgotPasswordEmail.value = '';
-  } catch (error) {
-    Notify.create({
-      type: 'negative',
-      message: error instanceof Error ? error.message : 'Failed to open reset page',
-      position: 'top',
-    });
-  } finally {
-    isResettingPassword.value = false;
-  }
-};
-
-// Handle register
-const handleRegister = async (): Promise<void> => {
-  if (
-    !registerForm.username ||
-    !registerForm.email ||
-    !registerForm.name ||
-    !registerForm.password
-  ) {
-    return;
-  }
-
-  isRegistering.value = true;
-
-  try {
-    authService.register({
-      username: registerForm.username,
-      email: registerForm.email,
-      name: registerForm.name,
-      password: registerForm.password,
-    });
-
-    Notify.create({
-      type: 'positive',
-      message: 'Registration page opened in new tab',
-      position: 'top',
-    });
-
-    showRegister.value = false;
-
-    // Redirect to intended page or home
-    const redirect = route.query.redirect as string;
-    await router.push(redirect || '/');
-  } catch (error) {
-    Notify.create({
-      type: 'negative',
-      message: error instanceof Error ? error.message : 'Failed to open registration page',
-      position: 'top',
-    });
-  } finally {
-    isRegistering.value = false;
   }
 };
 
