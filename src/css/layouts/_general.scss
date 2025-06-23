@@ -1,0 +1,36 @@
+// General layout styles, containers, etc.
+
+// From app.scss - .page-container
+// This can be used as a general wrapper for page content if needed,
+// though Quasar's q-page padding often suffices.
+.page-container-gutters { // Renamed to be more specific
+  padding: 12px; // Default padding
+
+  @media (max-width: $breakpoint-sm-max) { // Ensure $breakpoint-sm-max is available
+    padding: 16px; // Larger padding on smaller screens
+  }
+}
+
+// From app.scss - .content-card (moved to components/_cards.scss as .styled-content-card)
+// This file is for layout structures, not specific components like cards.
+
+// General page header styling from EventList.vue / DJsPage.vue
+.page-header-styling {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  body.body--dark & {
+    background: rgba($dark-page, 0.9); // Adjust dark mode appearance
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  // Responsive adjustments
+  @media (max-width: $breakpoint-sm-max) { // Quasar's breakpoint variable
+    .text-h4 { // Assuming this targets a q-item-label or similar with text-h4 class
+      font-size: 1.5rem !important; // Make sure this is desired behavior
+    }
+  }
+}

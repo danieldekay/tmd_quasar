@@ -1,118 +1,7 @@
 <template>
-  <q-pull-to-refresh v-if="enablePullToRefresh" @refresh="handlePullToRefresh">
-    <q-page :padding="!fullWidth">
-      <div :class="fullWidth ? '' : 'row q-col-gutter-lg'">
-        <div :class="fullWidth ? '' : 'col-12'">
-          <!-- Page Header -->
-          <ListPageHeader
-            :title="title"
-            :subtitle="subtitle"
-            :show-stats="showStats"
-            :total-count="totalCount"
-            :stats-label="statsLabel"
-          >
-            <template #actions>
-              <slot name="header-actions" />
-            </template>
-            <template #content>
-              <slot name="header-content" />
-            </template>
-          </ListPageHeader>
-
-          <!-- Filters Section -->
-          <div v-if="showFilters" class="q-px-lg q-pb-lg">
-            <ListFilters
-              :enable-search="enableSearch"
-              :search-query="searchQuery"
-              :search-placeholder="searchPlaceholder"
-              :search-debounce="searchDebounce"
-              :has-active-filters="hasActiveFilters"
-              :active-filter-count="activeFilterCount"
-              @update:search-query="$emit('update:searchQuery', $event)"
-              @clear-filters="$emit('clear-filters')"
-            >
-              <template #filters>
-                <slot name="filters" />
-              </template>
-              <template #active-filters>
-                <slot name="active-filters" />
-              </template>
-            </ListFilters>
-          </div>
-
-          <!-- Loading State -->
-          <div v-if="loading" class="loading-section q-px-lg">
-            <q-card flat bordered>
-              <q-card-section class="text-center q-py-xl">
-                <q-spinner-dots color="primary" size="3em" />
-                <p class="text-subtitle1 q-mt-md text-grey-6">{{ loadingMessage }}</p>
-              </q-card-section>
-            </q-card>
-          </div>
-
-          <!-- Error State -->
-          <div v-else-if="error" class="error-section q-px-lg">
-            <OfflineMessage :error="error" :title="errorTitle" @retry="$emit('retry')" />
-          </div>
-
-          <!-- Empty State -->
-          <div v-else-if="showEmptyState" class="empty-section q-px-lg">
-            <ListEmptyState
-              :icon="emptyStateIcon"
-              :title="emptyStateTitle"
-              :message="emptyStateMessage"
-            >
-              <template #actions>
-                <slot name="empty-actions" />
-              </template>
-            </ListEmptyState>
-          </div>
-
-          <!-- Content Section -->
-          <div v-else class="content-section q-px-lg q-pb-lg">
-            <q-card flat bordered class="content-card">
-              <!-- Results Header -->
-              <q-card-section v-if="showResultsHeader" class="results-header q-pa-lg border-bottom">
-                <div class="row items-center justify-between">
-                  <div class="results-info">
-                    <div class="text-h6 text-weight-medium">
-                      {{ formatResultsText(displayCount || 0) }}
-                      <span v-if="hasActiveFilters" class="text-grey-6">
-                        (filtered from {{ totalCount?.toLocaleString() }})
-                      </span>
-                    </div>
-                    <div v-if="showPagination" class="text-caption text-grey-6 q-mt-xs">
-                      Page {{ currentPage }} of {{ totalPages }}
-                    </div>
-                  </div>
-
-                  <!-- View Options -->
-                  <div class="view-options">
-                    <slot name="view-options" />
-                  </div>
-                </div>
-              </q-card-section>
-
-              <!-- Main Content -->
-              <div class="content-body">
-                <slot name="content" />
-              </div>
-
-              <!-- Pagination -->
-              <q-card-section v-if="showPagination" class="pagination-section">
-                <slot name="pagination" />
-              </q-card-section>
-            </q-card>
-          </div>
-        </div>
-      </div>
-    </q-page>
-  </q-pull-to-refresh>
-
-  <!-- Non-pull-to-refresh version -->
-  <q-page v-else :padding="!fullWidth">
-    <div :class="fullWidth ? '' : 'row q-col-gutter-lg'">
-      <div :class="fullWidth ? '' : 'col-12'">
+  <q-page :class="fullWidth ? '' : 'base-list-page'">
+    <q-pull-to-refresh v-if="enablePullToRefresh" @refresh="handlePullToRefresh">
+      <div class="base-list-page-content-wrapper">
         <!-- Page Header -->
         <ListPageHeader
           :title="title"
@@ -121,9 +10,6 @@
           :total-count="totalCount"
           :stats-label="statsLabel"
         >
-          <template #actions>
-            <slot name="header-actions" />
-          </template>
           <template #content>
             <slot name="header-content" />
           </template>
@@ -180,10 +66,10 @@
 
         <!-- Content Section -->
         <div v-else class="content-section q-px-lg q-pb-lg">
-          <q-card flat bordered class="content-card">
+          <q-card flat bordered class="styled-content-card">
             <!-- Results Header -->
-            <q-card-section v-if="showResultsHeader" class="results-header q-pa-lg border-bottom">
-              <div class="row items-center justify-between">
+            <q-card-section v-if="showResultsHeader" class="results-header q-pa-lg border-bottom-util">
+              <div class="row items-center justify-between responsive-header-columns">
                 <div class="results-info">
                   <div class="text-h6 text-weight-medium">
                     {{ formatResultsText(displayCount || 0) }}
@@ -209,11 +95,112 @@
             </div>
 
             <!-- Pagination -->
-            <q-card-section v-if="showPagination" class="pagination-section">
+            <q-card-section v-if="showPagination" class="pagination-section-util">
               <slot name="pagination" />
             </q-card-section>
           </q-card>
         </div>
+      </div>
+    </q-pull-to-refresh>
+
+    <div v-else class="base-list-page-content-wrapper">
+      <!-- Page Header -->
+      <ListPageHeader
+        :title="title"
+        :subtitle="subtitle"
+        :show-stats="showStats"
+        :total-count="totalCount"
+        :stats-label="statsLabel"
+      >
+        <template #content>
+          <slot name="header-content" />
+        </template>
+      </ListPageHeader>
+
+      <!-- Filters Section -->
+      <div v-if="showFilters" class="q-px-lg q-pb-lg">
+        <ListFilters
+          :enable-search="enableSearch"
+          :search-query="searchQuery"
+          :search-placeholder="searchPlaceholder"
+          :search-debounce="searchDebounce"
+          :has-active-filters="hasActiveFilters"
+          :active-filter-count="activeFilterCount"
+          @update:search-query="$emit('update:searchQuery', $event)"
+          @clear-filters="$emit('clear-filters')"
+        >
+          <template #filters>
+            <slot name="filters" />
+          </template>
+          <template #active-filters>
+            <slot name="active-filters" />
+          </template>
+        </ListFilters>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-section q-px-lg">
+        <q-card flat bordered>
+          <q-card-section class="text-center q-py-xl">
+            <q-spinner-dots color="primary" size="3em" />
+            <p class="text-subtitle1 q-mt-md text-grey-6">{{ loadingMessage }}</p>
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="error-section q-px-lg">
+        <OfflineMessage :error="error" :title="errorTitle" @retry="$emit('retry')" />
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="showEmptyState" class="empty-section q-px-lg">
+        <ListEmptyState
+          :icon="emptyStateIcon"
+          :title="emptyStateTitle"
+          :message="emptyStateMessage"
+        >
+          <template #actions>
+            <slot name="empty-actions" />
+          </template>
+        </ListEmptyState>
+      </div>
+
+      <!-- Content Section -->
+      <div v-else class="content-section q-px-lg q-pb-lg">
+        <q-card flat bordered class="styled-content-card">
+          <!-- Results Header -->
+          <q-card-section v-if="showResultsHeader" class="results-header q-pa-lg border-bottom-util">
+            <div class="row items-center justify-between responsive-header-columns">
+              <div class="results-info">
+                <div class="text-h6 text-weight-medium">
+                  {{ formatResultsText(displayCount || 0) }}
+                  <span v-if="hasActiveFilters" class="text-grey-6">
+                    (filtered from {{ totalCount?.toLocaleString() }})
+                  </span>
+                </div>
+                <div v-if="showPagination" class="text-caption text-grey-6 q-mt-xs">
+                  Page {{ currentPage }} of {{ totalPages }}
+                </div>
+              </div>
+
+              <!-- View Options -->
+              <div class="view-options">
+                <slot name="view-options" />
+              </div>
+            </div>
+          </q-card-section>
+
+          <!-- Main Content -->
+          <div class="content-body">
+            <slot name="content" />
+          </div>
+
+          <!-- Pagination -->
+          <q-card-section v-if="showPagination" class="pagination-section-util">
+            <slot name="pagination" />
+          </q-card-section>
+        </q-card>
       </div>
     </div>
   </q-page>
@@ -327,14 +314,12 @@ const handlePullToRefresh = (done: () => void) => {
 </script>
 
 <style lang="scss" scoped>
-.border-bottom {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
+// .border-bottom has been replaced by .border-bottom-util utility class
+// .content-card has been replaced by .styled-content-card utility class
+// .pagination-section has been replaced by .pagination-section-util utility class
+// Responsive adjustments for .results-header .row are now in .responsive-header-columns utility class
 
-.content-card {
-  border-radius: 8px;
-}
-
+// Scoped styles that remain specific to BaseListPage's internal structure
 .results-header {
   .results-info {
     flex: 1;
@@ -342,25 +327,28 @@ const handlePullToRefresh = (done: () => void) => {
 
   .view-options {
     flex-shrink: 0;
+    // If .view-options needs width: 100% on mobile, it's handled by .responsive-header-columns
   }
 }
 
-.pagination-section {
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-  background-color: rgba(0, 0, 0, 0.02);
-}
+// Ensure q-page content fills height if needed, especially for empty/loading states.
+// This might be better handled by flex classes on q-page or its children if issues arise.
+.base-list-page-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: inherit; // Inherit min-height from q-page if set (e.g. screen-height)
 
-// Responsive adjustments
-@media (max-width: 768px) {
-  .results-header {
-    .row {
-      flex-direction: column;
-      align-items: flex-start !important;
-      gap: 1rem;
-    }
-
-    .view-options {
+  .loading-section,
+  .error-section,
+  .empty-section {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%; // Ensure the inner card takes available width
+    > .q-card {
       width: 100%;
+      max-width: 600px; // Optional: constrain width of message cards
     }
   }
 }

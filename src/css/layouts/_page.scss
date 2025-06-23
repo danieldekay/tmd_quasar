@@ -1,0 +1,24 @@
+// Styles specific to overall page structure if needed beyond q-page.
+
+// Common page background for list pages (EventList.vue, DJsPage.vue)
+.gradient-background-page {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh; // Ensure it covers the full viewport height
+
+  body.body--dark & {
+    // Define a dark mode equivalent for the gradient background if desired
+    // For example, a darker gradient or a solid dark color:
+    background: linear-gradient(135deg, darken(#1e2024, 5%) 0%, darken(#303a42, 5%) 100%);
+    // Or simply:
+    // background-color: $dark-page; (if $dark-page is a solid color)
+  }
+}
+
+// BaseListPage.vue specific class (if any global overrides are needed)
+// .base-list-page {
+//   // Styles for the .base-list-page class in BaseListPage.vue
+// }
+
+// .base-list-page-content-wrapper {
+//   // Styles for the content wrapper inside BaseListPage.vue
+// }

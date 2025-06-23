@@ -16,7 +16,9 @@ const safeString = (value: unknown): string => {
   if (typeof value === 'string') return value;
   if (value === null || value === undefined) return '';
   if (typeof value === 'object') return '';
-  return String(value);
+  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  return '';
 };
 
 /**

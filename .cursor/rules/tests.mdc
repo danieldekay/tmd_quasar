@@ -1,0 +1,353 @@
+---
+description: 
+globs: *.test.ts
+alwaysApply: false
+---
+Start with simple tests that don't require extensive mocking, before you go to more advanced tests.
+
+Pay attention to:
+- typing. Our linter won't allow any type mismatches or ambiguity.
+
+Run `pnpm test` without watch mode.
+
+
+# Testing Guidelines for TMD Quasar Project
+
+## Core Testing Philosophy
+
+**Start Simple, Build Up**: Begin with basic tests that don't require extensive mocking, then progressively add more complex scenarios. This approach prevents import resolution issues and complex setup problems.
+
+## Critical Rules
+
+### 1. **Import Validation First**
+
+Always validate that imports work before writing extensive tests:
+
+```typescript
+describe('Module Import Validation', () => {
+  it('should import without errors', () => {
+    expect(() => require('../serviceToTest')).not.toThrow();
+  });
+});
+```
+
+### 2. **Simple Mock Strategy**
+
+Mock entire modules rather than trying to mock individual internal dependencies:
+
+```typescript
+// ✅ Good: Mock the entire module
+vi.mock('../services/complexService', () => ({
+  complexService: {
+    method1: vi.fn(),
+    method2: vi.fn(),
+  },
+}));
+
+// ❌ Avoid: Complex boot file mocking that can fail
+vi.mock('boot/axios', () => ({
+  /* complex setup */
+}));
+```
+
+### 3. **Test Public API Behavior**
+
+Focus on testing what functions return, not how they work internally:
+
+```typescript
+// ✅ Good: Test the output
+it('should return correctly formatted data', () => {
+  const result = service.getData();
+  expect(result).toMatchObject({
+    id: expect.any(Number),
+    title: expect.any(String),
+  });
+});
+
+// ❌ Avoid: Testing implementation details
+expect(internalHelper).toHaveBeenCalledWith(specificArgs);
+```
+
+### 4. **Flexible Mock Assertions**
+
+Use flexible matchers to avoid brittle tests:
+
+```typescript
+// ✅ Good: Flexible matching
+expect(mockFn).toHaveBeenCalledWith(
+  expect.objectContaining({
+    headers: expect.objectContaining({
+      authorization: expect.stringMatching(/Bearer .+/i),
+    }),
+  }),
+);
+
+// ❌ Avoid: Overly specific assertions
+expect(mockFn).toHaveBeenCalledWith({
+  authorization: 'Bearer exact-token-123',
+});
+```
+
+### 5. **Strict TypeScript Compliance**
+
+Our linter won't allow type mismatches or ambiguity. Use proper typing:
+
+```typescript
+// ✅ Good: Proper type mapping
+const getContentType = (type: string): ContentType => {
+  const contentTypeMap: Record<string, ContentType> = {
+    event: 'tmd_event',
+    teacher: 'tmd_teacher',
+  };
+  return contentTypeMap[type] || 'tmd_event';
+};
+
+// ❌ Avoid: Unnecessary type assertions
+return `tmd_${type}` as ContentType;
+```
+
+### 6. **Minimal Test Structure**
+
+Start with basic functionality tests before adding complexity:
+
+```typescript
+describe('ServiceName', () => {
+  // Start here
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should have required methods', () => {
+    expect(typeof service.method).toBe('function');
+  });
+
+  // Then add behavior tests
+  it('should handle valid input', () => {
+    const result = service.method('valid-input');
+    expect(result).toBeDefined();
+  });
+
+  // Finally add edge cases
+  it('should handle edge cases', () => {
+    expect(service.method('')).toBe('');
+    expect(service.method(null)).toBe('');
+  });
+});
+```
+
+## Common Patterns to Avoid
+
+### 1. **Boot File Import Issues**
+
+```typescript
+// ❌ This often fails in test environment
+import { api } from 'boot/axios';
+
+// ✅ Better: Mock at test level or use dependency injection
+const mockApi = { get: vi.fn(), post: vi.fn() };
+vi.mock('boot/axios', () => ({ api: mockApi }));
+```
+
+### 2. **Singleton Service Mocking**
+
+```typescript
+// ❌ Complex singleton mocking
+const mockSingleton = vi.fn();
+vi.doMock('../singleton', () => mockSingleton);
+
+// ✅ Better: Test the public interface
+const result = await service.publicMethod();
+expect(result).toEqual(expectedOutput);
+```
+
+### 3. **Over-Specific Error Messages**
+
+```typescript
+// ❌ Too specific
+await expect(service.method()).rejects.toThrow('Exact error message');
+
+// ✅ More flexible
+await expect(service.method()).rejects.toThrow(/error keyword/i);
+```
+
+## Test Execution
+
+Always run tests without watch mode for CI/validation:
+
+```bash
+pnpm test --run
+```
+
+Use watch mode only during development:
+
+```bash
+pnpm test
+```
+
+## Test File Organization
+
+### Location
+
+- Place tests next to the file they test: `service.ts` → `service.test.ts`
+- Use `__tests__` directories for shared test utilities
+
+### Naming
+
+- Test files: `*.test.ts`
+- Test utilities: `test-utils/` or `__tests__/utils/`
+
+### Structure
+
+```typescript
+// Standard test file structure
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { serviceToTest } from '../serviceToTest';
+
+describe('ServiceToTest', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('methodName', () => {
+    it('should handle normal case', () => {
+      // Test implementation
+    });
+
+    it('should handle edge case', () => {
+      // Test implementation
+    });
+  });
+});
+```
+
+## Error Handling in Tests
+
+### Async Error Testing
+
+```typescript
+// ✅ Good async error testing
+const expectToThrowAsync = async (fn: () => Promise<any>, message: string) => {
+  await expect(fn()).rejects.toThrow(expect.stringContaining(message));
+};
+
+await expectToThrowAsync(() => service.invalidCall(), 'Invalid');
+```
+
+### Validation Testing
+
+```typescript
+// ✅ Test input validation
+it('should validate required parameters', () => {
+  expect(() => service.method()).toThrow(/required/i);
+  expect(() => service.method('')).toThrow(/required/i);
+  expect(() => service.method('valid')).not.toThrow();
+});
+```
+
+## Integration with Existing Codebase
+
+### Vue Component Testing
+
+```typescript
+// ✅ Simple component tests first
+import { mount } from '@vue/test-utils';
+import ComponentName from '../ComponentName.vue';
+
+it('should render without errors', () => {
+  const wrapper = mount(ComponentName);
+  expect(wrapper.exists()).toBe(true);
+});
+```
+
+### Composable Testing
+
+```typescript
+// ✅ Test composables in isolation
+import { useComposable } from '../useComposable';
+
+it('should return expected interface', () => {
+  const { property, method } = useComposable();
+  expect(typeof property.value).toBe('string');
+  expect(typeof method).toBe('function');
+});
+```
+
+## When Tests Fail
+
+1. **Check imports first** - Ensure all modules can be imported
+2. **Simplify the test** - Remove complex mocking temporarily
+3. **Check types** - Ensure all TypeScript types are correct
+4. **Run linter** - Fix any linting issues before debugging test logic
+5. **Isolate the problem** - Create minimal reproduction
+
+## Summary Checklist
+
+Before writing complex tests:
+
+- [ ] Validate imports work
+- [ ] Start with simple "should be defined" tests
+- [ ] Ensure TypeScript types are correct
+- [ ] Run `pnpm lint` to check for issues
+- [ ] Use `pnpm test --run` for validation
+- [ ] Mock at module level, not implementation level
+- [ ] Test public API behavior, not internals
+- [ ] Use flexible assertions
+
+This approach prevents the common issues we've encountered: import resolution failures, overly complex mocking, type assertion problems, and brittle test assertions.
+
+## Real-World Example: Auth Service Test Issues
+
+The following are actual test failures from our codebase that demonstrate the problems our guidelines prevent:
+
+### Problem 1: Over-Specific Error Messages
+
+```typescript
+// ❌ Brittle test that failed
+await expect(authService.login({ username: 'wrong' })).rejects.toThrow('Invalid credentials');
+
+// ✅ Fixed with flexible matching
+await expect(authService.login({ username: 'wrong' })).rejects.toThrow(
+  /invalid|credentials|failed/i,
+);
+```
+
+### Problem 2: Case-Sensitive Header Assertions
+
+```typescript
+// ❌ Failed due to case sensitivity
+expect(apolloClient.query).toHaveBeenCalledWith({
+  context: {
+    headers: {
+      authorization: 'Bearer token', // Expected lowercase
+    },
+  },
+});
+
+// ✅ Fixed with flexible matching
+expect(apolloClient.query).toHaveBeenCalledWith(
+  expect.objectContaining({
+    context: expect.objectContaining({
+      headers: expect.objectContaining({
+        authorization: expect.stringMatching(/Bearer .+/i),
+      }),
+    }),
+  }),
+);
+```
+
+### Problem 3: Complex GraphQL Query Matching
+
+```typescript
+// ❌ Overly specific GraphQL query structure
+expect(apolloClient.query).toHaveBeenCalledWith({
+  query: expect.any(Object), // This was too generic
+  context: {
+    /* specific structure */
+  },
+});
+
+// ✅ Focus on behavior, not structure
+const result = await authService.validateToken(token);
+expect(result).toBe(true);
+expect(apolloClient.query).toHaveBeenCalled();
+```

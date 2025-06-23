@@ -1,3 +1,18 @@
 {
-  "extends": "./.quasar/tsconfig.json"
+  "extends": "./.quasar/tsconfig.json",
+
+  "compilerOptions": {
+    "types": ["vitest/globals"], // test globals
+    "incremental": true // optional: faster IDE builds
+  },
+
+  "include": [
+    "src/**/*",
+    "quasar.config.ts",
+    "vitest.config.ts",
+    "vitest.config.api.ts",
+    "__mocks__/**/*"
+  ],
+
+  "exclude": ["dist", "node_modules"]
 }

@@ -1,0 +1,33 @@
+// Page-specific styles for EventList.vue
+// Only include styles here that are TRULY unique to EventList.vue
+// and cannot be generalized into components or layouts.
+
+// Most styles from EventList.vue (page background, card styles, table styles)
+// have been moved to new SASS partials in `layouts` and `components`.
+
+// Example:
+// .event-list-specific-feature {
+//   // Unique styling for a feature only on the event list page
+// }
+
+// The responsive adjustments for .filters-card .row .col-12 in EventList.vue:
+// @media (max-width: 768px) { // Should use $breakpoint-sm-max
+//   .filters-section .filters-card .row .col-12 { // This is quite specific
+//     margin-bottom: 8px;
+//   }
+// }
+// This could be a utility class like .mb-sm-2 (margin-bottom on small screens, value 2)
+// or remain scoped if it's truly unique to this page's filter layout.
+// For now, assuming Quasar spacing classes can handle this (e.g. q-mb-sm).
+// If not, it can be added here, but prefer utility classes or component-level styles.
+
+// .error-section .q-banner styling from EventList.vue:
+// .error-section {
+//   .q-banner {
+//     border-radius: 8px;
+//     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+//   }
+// }
+// This is a good candidate for components/_banners.scss or a utility if used elsewhere.
+// If only for this page's error section, it can live here.
+// For now, consider it for generalization later.

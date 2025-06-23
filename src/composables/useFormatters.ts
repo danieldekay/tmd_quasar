@@ -8,11 +8,90 @@ export const useFormatters = () => {
     if (value === null || value === undefined || value === '') return '';
     if (typeof value === 'boolean') return '';
 
-    const date = typeof value === 'number' ? new Date(value) : new Date(String(value));
+    let timestamp: number;
+
+    if (typeof value === 'string') {
+      // Accept ISO YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+      if (/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value)) {
+        timestamp = Date.parse(value);
+      } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+        // Handle MM/DD/YYYY by manually constructing a Date in UTC to avoid locale ambiguity
+        const [mStr, dStr, yStr] = value.split('/');
+        const month = Number(mStr);
+        const day = Number(dStr);
+        const year = Number(yStr);
+        if (Number.isNaN(month) || Number.isNaN(day) || Number.isNaN(year)) {
+          return '';
+        }
+        timestamp = Date.UTC(year, month - 1, day);
+      } else {
+        return '';
+      }
+    } else if (typeof value === 'number') {
+      timestamp = value;
+    } else {
+      timestamp = NaN;
+    }
+
+    if (Number.isNaN(timestamp)) return '';
+
+    const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return '';
 
     const isoDate = date.toISOString().split('T')[0] ?? '';
     return isoDate;
+  };
+
+  /**
+   * Format a date-time value with relative time for recent dates
+   */
+  const formatDateTime = (value: string | number | boolean | null | undefined): string => {
+    if (value === null || value === undefined || value === '') return '';
+    if (typeof value === 'boolean') return '';
+
+    let timestamp: number;
+
+    if (typeof value === 'string') {
+      if (!/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value)) {
+        return '';
+      }
+      timestamp = Date.parse(value);
+    } else if (typeof value === 'number') {
+      timestamp = value;
+    } else {
+      timestamp = NaN;
+    }
+
+    if (Number.isNaN(timestamp)) return '';
+
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    // Show relative time for recent dates
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+    } else {
+      // For older dates, show formatted date
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
   };
 
   /**
@@ -131,12 +210,36 @@ export const useFormatters = () => {
     return String(value) === '1';
   };
 
+  /**
+   * Decode HTML entities in text
+   * Handles common HTML entities like &amp;, &lt;, &gt;, &quot;, &#39;, etc.
+   */
+  const decodeHtmlEntities = (text: string | null | undefined): string => {
+    if (!text || typeof text !== 'string') return '';
+
+    // Create a temporary element to leverage browser's built-in HTML decoding
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = text;
+    return tempElement.textContent || tempElement.innerText || '';
+  };
+
+  /**
+   * Format text by decoding HTML entities - safe for display
+   * This is the main formatter to use in tables and other UI components
+   */
+  const formatText = (text: string | null | undefined): string => {
+    return decodeHtmlEntities(text);
+  };
+
   return {
     formatDate,
+    formatDateTime,
     formatLocation,
     getEventCategory,
     getCategoryColor,
     getEventCategoryColor,
     isFeatureAvailable,
+    decodeHtmlEntities,
+    formatText,
   };
 };

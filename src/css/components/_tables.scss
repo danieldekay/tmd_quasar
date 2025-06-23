@@ -1,0 +1,136 @@
+// Styles for table components, especially QTable customizations
+
+// Common QTable styling from EventList.vue and DJsPage.vue
+// This can be applied via a wrapper class around QTable or by targeting QTable globally (less ideal)
+// Using a wrapper class for better scoping: e.g., .styled-q-table
+.styled-q-table {
+  // :deep() is a Vue construct, cannot be used directly in global SASS.
+  // These styles will need to be applied in a way that Quasar's classes can be targeted.
+  // One way is to use these as global overrides if all q-tables should look like this.
+  // Another is to wrap q-table in a div with .styled-q-table and target like:
+  // .styled-q-table .q-table__top { ... }
+
+  .q-table__top {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 20px;
+  }
+
+  .q-table__bottom {
+    background-color: #fafafa;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 20px;
+
+    body.body--dark & {
+      background-color: lighten($dark, 5%); // Example dark mode adjustment
+      border-top: 1px solid lighten($dark, 15%);
+    }
+  }
+
+  thead th {
+    background: white;
+    color: black !important; // Important might be needed to override Quasar
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 12px !important;
+    border-bottom: none !important;
+
+    body.body--dark & {
+      background: $dark; // Example dark mode adjustment
+      color: $grey-4 !important;
+      border-bottom: 1px solid lighten($dark, 15%) !important;
+    }
+
+    .q-icon {
+      color: rgba(0, 0, 0, 0.7); // Adjusted for white background in light mode
+      transition: all 0.2s ease;
+
+      body.body--dark & {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      &.q-table__sort-icon--active {
+        color: black; // Adjusted for white background in light mode
+        transform: scale(1.1);
+        body.body--dark & {
+          color: white;
+        }
+      }
+    }
+  }
+
+  tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0; // Light border for rows
+
+    body.body--dark & {
+      border-bottom: 1px solid lighten($dark, 10%);
+    }
+
+    &:nth-child(even) {
+      background-color: #fafafa;
+      body.body--dark & {
+        background-color: lighten($dark, 5%);
+      }
+    }
+
+    &:hover {
+      background-color: rgba($primary, 0.08) !important; // Use primary color for hover
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      body.body--dark & {
+        background-color: rgba($primary, 0.15) !important;
+      }
+    }
+
+    .q-td {
+      padding: 14px 12px !important;
+      vertical-align: top;
+      border-bottom: none !important; // Handled by tr border
+    }
+  }
+
+  // Responsive adjustments from pages
+  @media (max-width: $breakpoint-sm-max) { // Ensure $breakpoint-sm-max is available (from Quasar)
+    thead th {
+      padding: 10px 8px !important;
+      font-size: 11px !important;
+    }
+
+    tbody tr .q-td {
+      padding: 10px 8px !important;
+      font-size: 12px;
+    }
+  }
+
+  // Specific cell content styling from EventList/DJsPage
+  // These are better handled by classes applied to elements within td,
+  // or by targeting specific td based on column name if consistent.
+  .event-title-cell, .dj-name-cell {
+    .event-title, .dj-name {
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: none;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+    }
+    .event-subtitle, .dj-real-name {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+  }
+
+  .date-cell .date-content,
+  .city-cell .city-content,
+  .country-cell .country-content {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    .q-icon {
+      opacity: 0.8;
+    }
+  }
+}

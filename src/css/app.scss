@@ -1,1 +1,41 @@
 // app global css in SCSS form
+
+// 1. Abstracts - Variables, mixins, functions
+// Import Quasar's own SASS variables first if you need to use them in your abstracts.
+// However, `quasar.variables.scss` is special and handled by Quasar CLI.
+// Your custom variables should be compatible.
+@import 'abstracts/variables'; // Your custom SASS variables
+@import 'abstracts/mixins';   // Your custom SASS mixins
+
+// 2. Base - Resets, global element styling, typography
+@import 'base/base';         // Base element styles, body background, etc.
+@import 'base/typography';   // Base typography
+
+// 3. Layouts - Page structure, containers, grids
+@import 'layouts/general';   // General layout helpers (e.g., page header styling)
+@import 'layouts/page';      // Page-level structural styles (e.g., page backgrounds)
+
+// 4. Components - Styling for reusable UI components
+@import 'components/buttons';  // Custom button styles
+@import 'components/cards';    // Custom card styles (e.g., .styled-content-card, .filters-card-wrapper)
+@import 'components/tables';   // Custom table styles (e.g., .styled-q-table)
+// Add other component styles as needed (e.g., _forms.scss, _modals.scss)
+
+// 5. Pages - Page-specific styles (use sparingly)
+// Only if styles cannot be generalized to components or layouts.
+@import 'pages/event-list';
+@import 'pages/djs-page';
+// Add other page-specific styles as needed
+
+// 6. Utilities - Helper classes
+@import 'utils/utilities';   // Utility classes (e.g., borders, spacing, responsive helpers)
+
+// Note: `quasar.variables.scss` is automatically imported by Quasar CLI process.
+// Ensure it's configured in quasar.config.js if you have specific overrides for Quasar's theme.
+// The styles defined here will be able to use variables defined in `quasar.variables.scss`
+// (like $primary, $dark, $breakpoint-sm-max etc.)
+
+// Styles previously in app.scss have been moved:
+// - body.body--dark background: moved to base/_base.scss
+// - .page-container: moved to layouts/_general.scss (as .page-container-gutters)
+// - .content-card: moved to components/_cards.scss (as .styled-content-card)

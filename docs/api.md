@@ -210,7 +210,144 @@ start_date, end_date, country, city, registration_start_date
 country, brand_type, brand_first_year, brand_last_year
 ```
 
+### 🎯 User Interactions (NEW)
+
+**⚠️ Authentication Required - Currently in Development**
+
+User interactions allow authenticated users to interact with content through likes, bookmarks, reminders, and follows.
+
+**Endpoints:**
+
+- `GET /tmd/v3/me/interactions` - Get current user's interactions
+- `GET /tmd/v3/user-interactions` - List all interactions (admin only)
+- `POST /tmd/v3/user-interactions` - Create new interaction
+- `GET /tmd/v3/user-interactions/{id}` - Get specific interaction
+- `DELETE /tmd/v3/user-interactions/{id}` - Delete specific interaction
+- `POST /tmd/v3/user-interactions/bulk` - Create multiple interactions
+- `DELETE /tmd/v3/user-interactions/bulk` - Delete multiple interactions
+
+**Interaction Types:**
+
+- `bookmark` - Save content for later
+- `like` - Express appreciation for content
+- `reminder` - Set reminders for events/content
+- `follow` - Follow content updates
+
+**Supported Content Types:**
+
+- `tmd_event` - Events
+- `tmd_teacher` - Teachers
+- `tmd_dj` - DJs
+- `tmd_teacher_couple` - Teacher Couples
+- `tmd_event_series` - Event Series
+
+**Available Meta Fields:**
+
+```
+expires_date, interaction_date, interaction_type, notification_sent,
+private_note, reminder_note, target_post_id, target_post_type
+```
+
+**Query Parameters:**
+
+- `interaction_type` - Filter by type (`bookmark`, `like`, `reminder`, `follow`)
+- `target_post_type` - Filter by content type
+- `target_post_id` - Filter by specific content ID
+- `user_id` - Filter by user (admin only)
+- `_embed` - Include embedded target content
+
+**Creating Interactions:**
+
+```json
+POST /tmd/v3/user-interactions
+{
+  "interaction_type": "like",
+  "target_post_id": 12345,
+  "target_post_type": "tmd_event",
+  "expires_date": "2024-12-31T23:59:59+00:00",
+  "reminder_note": "Don't forget to register!",
+  "private_note": "Looks interesting"
+}
+```
+
+**Bulk Operations:**
+
+```json
+POST /tmd/v3/user-interactions/bulk
+{
+  "interactions": [
+    {
+      "interaction_type": "bookmark",
+      "target_post_id": 123,
+      "target_post_type": "tmd_event"
+    },
+    {
+      "interaction_type": "like",
+      "target_post_id": 456,
+      "target_post_type": "tmd_teacher"
+    }
+  ]
+}
+```
+
+```json
+DELETE /tmd/v3/user-interactions/bulk
+{
+  "ids": [123, 456, 789]
+}
+```
+
+**Response Format:**
+
+```json
+{
+  "_embedded": {
+    "user-interactions": [
+      {
+        "id": 123,
+        "interaction_type": "like",
+        "target_post_id": 12345,
+        "target_post_type": "tmd_event",
+        "interaction_date": "2024-01-15T10:30:00+00:00",
+        "expires_date": null,
+        "reminder_note": "",
+        "private_note": "",
+        "notification_sent": false,
+        "_links": {
+          "self": [{ "href": "/wp-json/tmd/v3/user-interactions/123" }],
+          "target": [{ "href": "/wp-json/tmd/v3/events/12345" }]
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": [{ "href": "/wp-json/tmd/v3/me/interactions" }]
+  },
+  "page": 1,
+  "per_page": 10,
+  "count": 1,
+  "total": 1
+}
+```
+
+**⚠️ Current Status:**
+
+- Endpoints are defined and discoverable
+- Authentication required for all operations
+- May require additional permissions/setup
+- Response format follows HAL specification
+- Suitable for building favorites/bookmarks features
+
 ## Universal Query Parameters
+=======
+- `GET /wp/v2/tmd_dj` - DJ posts (can be used for production access to DJ data)
+- `GET /wp/v2/tmd_dj/{id}` - Specific DJ post (can be used for production access to specific DJ data)
+- `GET /wp/v2/dj-category` - DJ categories (can be used for production access to DJ categories)
+
+**Note on Production Endpoints for Other Content Types:**
+
+- While `tmd/v2` is the primary production API for Events, other content types like DJs, Teachers, and Event Series may utilize `tmd/v3` endpoints in production (e.g., `GET /tmd/v3/djs`), or rely on the standard WordPress `wp/v2` API as shown above for DJs.
+- This mixed-version approach for production (Events on `v2`, others on `v3` or `wp/v2`) should be confirmed by checking the frontend application's API service configurations for production builds. The `README.md` and `DESIGN.md` have been updated to reflect this understanding.
 
 All endpoints support these parameters:
 
@@ -351,3 +488,10 @@ A comprehensive test suite is available at `docs/test_v3_final.sh` that verifies
 - Meta field integration
 - Error handling
 - Performance with large datasets
+
+**⚠️ Interaction Endpoints:**
+
+- Endpoints are discoverable and properly defined
+- Currently require authentication and may need additional setup
+- Not yet included in automated test suite
+- Ready for frontend integration once permissions are configured
