@@ -1,0 +1,31 @@
+// Base styles for HTML elements, body, etc.
+
+body {
+  // Default body styles if needed, beyond Quasar's defaults
+  // Example: color: $text-color; (assuming $text-color is defined in variables)
+}
+
+// Apply a common background for dark mode if not handled by Quasar variables directly
+body.body--dark {
+  background: #0c0c0c; // From original app.scss
+}
+
+// Other global resets or base element styling can go here.
+// For example, link styling, box-sizing preferences etc.
+// However, Quasar already provides a good reset (based on normalize.css).
+// Only add what's truly project-specific and global.
+
+*,
+*::before,
+*::after {
+  // box-sizing: border-box; // Quasar usually handles this
+}
+
+// Base link styling (example)
+// a {
+//   color: $primary;
+//   text-decoration: none;
+//   &:hover {
+//     text-decoration: underline;
+//   }
+// }
