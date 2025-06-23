@@ -4,9 +4,16 @@ import { onError } from '@apollo/client/link/error';
 import type { App } from 'vue';
 import { getJWTToken } from '../utils/cookies';
 
+const rootWordpressUrl =
+  process.env.WORDPRESS_URL ||
+  process.env.WORDPRESS_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://www.tangomarathons.com'
+    : 'http://localhost:10014');
+
 // Create the http link
 const httpLink = createHttpLink({
-  uri: process.env.GRAPHQL_ENDPOINT || 'http://localhost:10014/graphql',
+  uri: process.env.GRAPHQL_ENDPOINT || `${rootWordpressUrl}/graphql`,
 });
 
 // Create the auth link

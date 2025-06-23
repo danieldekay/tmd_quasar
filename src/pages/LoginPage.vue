@@ -79,6 +79,11 @@
           </div>
         </q-card-section>
 
+        <!-- Version -->
+        <q-card-section class="text-center q-pt-none">
+          <div class="text-caption text-grey-6">v{{ version }}</div>
+        </q-card-section>
+
         <!-- Debug Information (only shown on localhost) -->
         <q-card-section v-if="isLocalhost" class="q-pt-none">
           <q-separator class="q-my-md" />
@@ -100,7 +105,7 @@
                   <span class="debug-value">{{ envInfo.graphqlEndpoint }}</span>
                 </div>
                 <div class="debug-item">
-                  <span class="debug-label">WORDPRESS_API_URL:</span>
+                  <span class="debug-label">WORDPRESS_URL:</span>
                   <span class="debug-value">{{ envInfo.wordpressUrl }}</span>
                 </div>
                 <div class="debug-item">
@@ -137,6 +142,10 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - JSON import for version reading
+import pkg from '../../package.json';
+const { version } = pkg as { version: string };
 
 const router = useRouter();
 const route = useRoute();
@@ -169,7 +178,7 @@ const isLocalhost = computed(() => {
 const envInfo = computed(() => ({
   apiBaseUrl: process.env.API_BASE_URL || 'Not set',
   graphqlEndpoint: process.env.GRAPHQL_ENDPOINT || 'Not set',
-  wordpressUrl: process.env.WORDPRESS_API_URL || 'Not set',
+  wordpressUrl: process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'Not set',
   nodeEnv: process.env.NODE_ENV || 'development',
   routerMode: process.env.VUE_ROUTER_MODE || 'hash',
 }));
@@ -185,7 +194,8 @@ const userAgent = computed(() => {
 });
 
 // Redirect functions for password reset and sign-up
-const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+const wordpressUrl =
+  process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';
 
 const redirectToForgotPassword = (): void => {
   window.open(`${wordpressUrl}/wp-login.php?action=lostpassword`, '_blank');

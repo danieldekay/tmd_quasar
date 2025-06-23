@@ -18,9 +18,17 @@ interface APIError extends Error {
   originalError?: AxiosError;
 }
 
+const isBrowser = typeof window !== 'undefined';
+const isLocalhost =
+  isBrowser &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 const api = axios.create({
   baseURL:
-    process.env.API_BASE_URL || process.env.API_URL || 'http://localhost:10014/wp-json/tmd/v3',
+    process.env.API_BASE_URL ||
+    (isLocalhost
+      ? 'http://localhost:10014/wp-json/tmd/v3'
+      : 'https://www.tangomarathons.com/wp-json/tmd/v3'),
   headers: {
     'Content-Type': 'application/json',
   },
