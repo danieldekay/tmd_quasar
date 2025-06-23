@@ -27,7 +27,7 @@
     <!-- Main Content -->
     <q-card-section class="q-py-sm">
       <!-- Bio/Description -->
-      <div v-if="dj.tmd_dj_about_the_dj" class="text-caption text-grey-8 q-mb-sm line-height-sm">
+      <div v-if="dj.tmd_dj_about_the_dj" class="text-caption text-grey-8 q-mb-sm line-height-sm-util">
         {{
           dj.tmd_dj_about_the_dj.length > 80
             ? dj.tmd_dj_about_the_dj.substring(0, 80) + '...'
@@ -82,7 +82,7 @@
             color="blue-grey-6"
             icon="language"
             @click.stop="openExternalLink(dj.tmd_dj_webpage)"
-            class="glossy"
+            glossy
           >
             <q-tooltip>Website</q-tooltip>
           </q-btn>
@@ -96,7 +96,7 @@
             @click.stop="
               openExternalLink((dj.tmd_dj_link_to_facebook || dj.tmd_dj_link_to_facebook_page)!)
             "
-            class="glossy"
+            glossy
           >
             <q-tooltip>Facebook</q-tooltip>
           </q-btn>
@@ -108,7 +108,7 @@
             color="green-6"
             icon="email"
             @click.stop="openExternalLink(`mailto:${dj.tmd_dj_e_mail}`)"
-            class="glossy"
+            glossy
           >
             <q-tooltip>Email</q-tooltip>
           </q-btn>
@@ -226,9 +226,7 @@ const openExternalLink = (url: string) => {
   border-radius: 8px;
 }
 
-.line-height-sm {
-  line-height: 1.3;
-}
+// .line-height-sm replaced by .line-height-sm-util utility class
 
 .full-height {
   height: 100%;
@@ -240,23 +238,5 @@ const openExternalLink = (url: string) => {
   }
 }
 
-.glossy {
-  background: linear-gradient(145deg, lighten($grey-6, 5%) 0%, darken($grey-6, 5%) 100%);
-
-  &.bg-blue-grey-6 {
-    background: linear-gradient(
-      145deg,
-      lighten($blue-grey-6, 5%) 0%,
-      darken($blue-grey-6, 5%) 100%
-    );
-  }
-
-  &.bg-blue-8 {
-    background: linear-gradient(145deg, lighten($blue-8, 5%) 0%, darken($blue-8, 5%) 100%);
-  }
-
-  &.bg-green-6 {
-    background: linear-gradient(145deg, lighten($green-6, 5%) 0%, darken($green-6, 5%) 100%);
-  }
-}
+// .glossy class and its color variations removed, using Quasar's `glossy` prop on q-btn instead.
 </style>
