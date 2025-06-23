@@ -17,7 +17,7 @@
     "test:api": "vitest --config vitest.config.api.ts run",
     "test:api:watch": "vitest --config vitest.config.api.ts",
     "dev": "quasar dev",
-    "dev:prod-api": "cross-env APP_ENV=prod-api quasar dev",
+    "dev:prod-api": "cross-env APP_ENV=dev-with-prod-api quasar dev",
     "build": "quasar build",
     "serve": "quasar serve dist/spa",
     "postinstall": "quasar prepare"

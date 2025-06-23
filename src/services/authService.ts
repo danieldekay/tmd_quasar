@@ -132,7 +132,8 @@ export class AuthService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   requestPasswordReset(email: string): void {
     // Redirect to WordPress password reset page
-    const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+    const wordpressUrl =
+      process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';
     const resetUrl = `${wordpressUrl}/wp-login.php?action=lostpassword`;
 
     // Open in new tab/window
@@ -148,7 +149,8 @@ export class AuthService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   register(userData: { username: string; email: string; name: string; password: string }): void {
     // Redirect to WordPress registration page
-    const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
+    const wordpressUrl =
+      process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';
     const registerUrl = `${wordpressUrl}/wp-login.php?action=register`;
 
     // Open in new tab/window

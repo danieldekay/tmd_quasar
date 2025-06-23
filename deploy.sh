@@ -28,8 +28,13 @@ echo "📤 Deploying to $SSH_CONNECTION:$REMOTE_PATH..."
 TEMP_DIR=$(mktemp -d)
 cp -r dist/spa/* "$TEMP_DIR/"
 
-# Deploy using scp
+# Deploy using scp (app files)
 scp -r "$TEMP_DIR"/* $SSH_CONNECTION:$REMOTE_PATH/
+
+# Also upload production env file as .env
+if [ -f "docs/env.prod" ]; then
+  scp docs/env.prod $SSH_CONNECTION:$REMOTE_PATH/.env
+fi
 
 # Clean up temporary directory
 rm -rf "$TEMP_DIR"

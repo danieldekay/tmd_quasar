@@ -63,17 +63,13 @@ export default defineConfig((/* ctx */) => {
           (process.env.NODE_ENV === 'production'
             ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
             : 'http://localhost:10014/wp-json/tmd/v3'),
-        API_URL:
-          process.env.API_URL ||
-          (process.env.NODE_ENV === 'production'
-            ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
-            : 'http://localhost:10014/wp-json/tmd/v3'),
         GRAPHQL_ENDPOINT:
           process.env.GRAPHQL_ENDPOINT ||
           (process.env.NODE_ENV === 'production'
             ? 'https://www.tangomarathons.com/graphql'
             : 'http://localhost:10014/graphql'),
-        WORDPRESS_API_URL:
+        WORDPRESS_URL:
+          process.env.WORDPRESS_URL ||
           process.env.WORDPRESS_API_URL ||
           (process.env.NODE_ENV === 'production'
             ? 'https://www.tangomarathons.com'

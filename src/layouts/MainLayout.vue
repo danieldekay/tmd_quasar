@@ -226,6 +226,11 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <!-- App footer with version -->
+    <q-footer elevated class="bg-grey-1 text-grey-8 text-center">
+      <div class="q-pa-xs text-caption">Version {{ version }}</div>
+    </q-footer>
   </q-layout>
 </template>
 
@@ -236,11 +241,16 @@ import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
 import { useSessionMonitor } from '../composables/useSessionMonitor';
 import { useInteractionCache } from '../composables/useInteractionCache';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import pkg from '../../package.json';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const sessionMonitor = useSessionMonitor();
 const interactionCache = useInteractionCache();
+
+const { version } = pkg as { version: string };
 
 interface LinkProps {
   title: string;
