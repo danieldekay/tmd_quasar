@@ -10,17 +10,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Load credentials from credentials.local.json
+# Load credentials from credentials.local.json or exit
 if [ -f "../credentials.local.json" ]; then
     echo -e "${BLUE}Loading credentials from ../credentials.local.json${NC}"
     USERNAME=$(grep -o '"username": "[^"]*"' ../credentials.local.json | cut -d'"' -f4)
     PASSWORD=$(grep -o '"password": "[^"]*"' ../credentials.local.json | cut -d'"' -f4)
     BASE_URL=$(grep -o '"baseUrl": "[^"]*"' ../credentials.local.json | cut -d'"' -f4)
 else
-    echo -e "${YELLOW}../credentials.local.json not found, using default credentials${NC}"
-    USERNAME="danieltest123"
-    PASSWORD="I^oT#x!H&4R)I&*d"
-    BASE_URL="http://localhost:10014"
+    echo -e "${RED}../credentials.local.json not found.${NC}"
+    echo -e "${RED}Please create this file with fields: username, password, baseUrl${NC}"
+    exit 1
 fi
 
 # Add API path to BASE_URL
@@ -74,7 +73,8 @@ JWT_USERNAME=""
 # Test credentials (update these as needed)
 TEST_USERNAME="$USERNAME"
 TEST_PASSWORD="$PASSWORD"
-TEST_EMAIL="danieltest1234@example.com"
+# Derive a synthetic email from the provided username (required for some login flows)
+TEST_EMAIL="${USERNAME}@example.com"
 
 # Endpoint configurations - using simple arrays instead of associative
 ENDPOINTS="events djs teachers couples event-series orchestras brands"

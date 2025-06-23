@@ -3,6 +3,7 @@ import { ref, watch, nextTick } from 'vue';
 export interface EventFilters {
   searchQuery: string;
   selectedCountry: string | null;
+  selectedCategory: string | null;
   showPastEvents: boolean;
   startDateRange: { from: string | null; to: string | null };
   registrationDateRange: { from: string | null; to: string | null };
@@ -22,6 +23,7 @@ export const useEventFilters = () => {
   const defaultFilters: EventFilters = {
     searchQuery: '',
     selectedCountry: null,
+    selectedCategory: null,
     showPastEvents: false,
     startDateRange: { from: null, to: null },
     registrationDateRange: { from: null, to: null },
@@ -95,6 +97,7 @@ export const useEventFilters = () => {
     return (
       filters.value.searchQuery !== defaultFilters.searchQuery ||
       filters.value.selectedCountry !== defaultFilters.selectedCountry ||
+      filters.value.selectedCategory !== defaultFilters.selectedCategory ||
       filters.value.showPastEvents !== defaultFilters.showPastEvents ||
       filters.value.startDateRange.from !== defaultFilters.startDateRange.from ||
       filters.value.startDateRange.to !== defaultFilters.startDateRange.to ||
@@ -110,6 +113,7 @@ export const useEventFilters = () => {
     let count = 0;
     if (filters.value.searchQuery) count++;
     if (filters.value.selectedCountry) count++;
+    if (filters.value.selectedCategory) count++;
     if (filters.value.showPastEvents) count++;
     if (filters.value.startDateRange.from || filters.value.startDateRange.to) count++;
     if (filters.value.registrationDateRange.from || filters.value.registrationDateRange.to) count++;

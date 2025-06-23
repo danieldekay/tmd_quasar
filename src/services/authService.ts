@@ -121,7 +121,8 @@ export class AuthService {
       };
     } catch (error) {
       console.error('Get current user error:', error);
-      return null;
+      // Re-throw the error so callers can handle it
+      throw error;
     }
   }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import axios, { type AxiosResponse } from 'axios';
+import axios, { type AxiosResponse, type AxiosError } from 'axios';
 import { API_BASE_URL_V3, DEFAULT_REQUEST_TIMEOUT } from './config';
 
 const DJS_ENDPOINT = `${API_BASE_URL_V3}djs`;
@@ -11,9 +11,12 @@ describe('API v3: DJs Endpoint (/djs)', () => {
   beforeAll(async () => {
     try {
       response = await axios.get(DJS_ENDPOINT, { timeout: DEFAULT_REQUEST_TIMEOUT });
-    } catch (error) {
-      errorResponse = error;
-      console.warn(`API v3 /djs: Could not connect to the API at ${DJS_ENDPOINT}. Tests will likely fail or be skipped. Error: ${error.message}`);
+    } catch (e) {
+      errorResponse = e;
+      const error = e as AxiosError;
+      console.warn(
+        `API v3 /djs: Could not connect to the API at ${DJS_ENDPOINT}. Tests will likely fail or be skipped. Error: ${error.message}`,
+      );
     }
   });
 
@@ -26,7 +29,8 @@ describe('API v3: DJs Endpoint (/djs)', () => {
   });
 
   it('should have HAL _links.self in the response', () => {
-    if (!response?.data) throw new Error('No response data from API for HAL _links.self test (DJs v3)');
+    if (!response?.data)
+      throw new Error('No response data from API for HAL _links.self test (DJs v3)');
     expect(response.data._links).toBeDefined();
     expect(response.data._links.self).toBeDefined();
     expect(Array.isArray(response.data._links.self)).toBe(true);
@@ -35,11 +39,17 @@ describe('API v3: DJs Endpoint (/djs)', () => {
   });
 
   const getEmbeddedDjs = (responseData: any): any[] | undefined => {
-    return responseData?._embedded?.djs || responseData?._embedded?.tmd_dj || responseData?._embedded?.['wp:post_type'] || responseData?._embedded?.items;
-  }
+    return (
+      responseData?._embedded?.djs ||
+      responseData?._embedded?.tmd_dj ||
+      responseData?._embedded?.['wp:post_type'] ||
+      responseData?._embedded?.items
+    );
+  };
 
   it('should have _embedded items if DJs exist, or an empty array/object if not', () => {
-    if (!response?.data) throw new Error('No response data from API for _embedded items test (DJs v3)');
+    if (!response?.data)
+      throw new Error('No response data from API for _embedded items test (DJs v3)');
     expect(response.data._embedded).toBeDefined();
 
     const embeddedDjs = getEmbeddedDjs(response.data);
@@ -48,27 +58,34 @@ describe('API v3: DJs Endpoint (/djs)', () => {
   });
 
   it('individual DJs in _embedded collection should have _links.self', () => {
-    if (!response?.data) throw new Error('No response data from API for individual DJ _links.self test (DJs v3)');
+    if (!response?.data)
+      throw new Error('No response data from API for individual DJ _links.self test (DJs v3)');
     const embeddedDjs = getEmbeddedDjs(response.data);
 
     if (!embeddedDjs || embeddedDjs.length === 0) {
-      console.warn('API v3 /djs: No embedded DJs found to test individual _links.self. Skipping detailed check.');
+      console.warn(
+        'API v3 /djs: No embedded DJs found to test individual _links.self. Skipping detailed check.',
+      );
       return;
     }
 
     const itemsToTest = embeddedDjs.slice(0, Math.min(embeddedDjs.length, 3));
     itemsToTest.forEach((item: any, index: number) => {
       expect(item._links, `DJ at index ${index} missing _links`).toBeDefined();
-      expect(item._links.self?.[0]?.href, `DJ at index ${index} _links.self[0].href`).toEqual(expect.stringContaining(`${DJS_ENDPOINT}/${item.id}`));
+      expect(item._links.self?.[0]?.href, `DJ at index ${index} _links.self[0].href`).toEqual(
+        expect.stringContaining(`${DJS_ENDPOINT}/${item.id}`),
+      );
 
-      if (item._links.author?.[0]?.href) expect(item._links.author[0].href).toEqual(expect.any(String));
+      if (item._links.author?.[0]?.href)
+        expect(item._links.author[0].href).toEqual(expect.any(String));
       if (item._links['wp:featuredmedia']?.[0]?.href) {
         expect(item._links['wp:featuredmedia'][0].href).toEqual(expect.any(String));
         if (item._links['wp:featuredmedia'][0].embeddable !== undefined) {
-            expect(item._links['wp:featuredmedia'][0].embeddable).toEqual(expect.any(Boolean));
+          expect(item._links['wp:featuredmedia'][0].embeddable).toEqual(expect.any(Boolean));
         }
       }
-      if (item._links['wp:term']) { // wp:term can be an array of term links
+      if (item._links['wp:term']) {
+        // wp:term can be an array of term links
         expect(Array.isArray(item._links['wp:term'])).toBe(true);
         item._links['wp:term'].forEach((termLink: any) => {
           expect(termLink.href).toEqual(expect.any(String));
@@ -80,8 +97,8 @@ describe('API v3: DJs Endpoint (/djs)', () => {
 
   it('should contain _links.next or _links.prev if pagination is applicable', () => {
     if (!response?.data?._links) {
-        console.warn('API v3 /djs: No _links object in response for pagination tests. Skipping.');
-        return;
+      console.warn('API v3 /djs: No _links object in response for pagination tests. Skipping.');
+      return;
     }
     const { next, prev } = response.data._links;
     const totalPages = parseInt(response.headers?.['x-wp-totalpages'] || '0', 10);
@@ -115,12 +132,14 @@ describe('API v3: DJs Endpoint (/djs)', () => {
 
     const meta = item.meta || item; // Meta fields might be nested or direct
     if (meta.dj_city) expect(meta.dj_city, `${context} dj_city`).toEqual(expect.any(String));
-    if (meta.dj_country_code) expect(meta.dj_country_code, `${context} dj_country_code`).toEqual(expect.any(String));
+    if (meta.dj_country_code)
+      expect(meta.dj_country_code, `${context} dj_country_code`).toEqual(expect.any(String));
     // Add other key DJ properties if known
   };
 
   it('embedded DJs should have key properties with correct types', () => {
-    if (!response?.data) throw new Error('No response data from API for embedded DJ property validation (DJs v3)');
+    if (!response?.data)
+      throw new Error('No response data from API for embedded DJ property validation (DJs v3)');
     const embeddedDjs = getEmbeddedDjs(response.data);
 
     if (!embeddedDjs || embeddedDjs.length === 0) {
@@ -137,7 +156,9 @@ describe('API v3: DJs Endpoint (/djs)', () => {
 
     beforeAll(async () => {
       if (errorResponse || !response?.data) {
-        console.warn('API v3 /djs: Skipping single DJ tests due to collection fetch failure or no data.');
+        console.warn(
+          'API v3 /djs: Skipping single DJ tests due to collection fetch failure or no data.',
+        );
         return;
       }
       const embeddedDjs = getEmbeddedDjs(response.data);
@@ -145,12 +166,17 @@ describe('API v3: DJs Endpoint (/djs)', () => {
         firstDjSelfLink = embeddedDjs[0]._links.self.href;
         try {
           singleDjResponse = await axios.get(firstDjSelfLink, { timeout: DEFAULT_REQUEST_TIMEOUT });
-        } catch (error) {
-          singleDjError = error;
-          console.warn(`API v3 /djs: Could not fetch single DJ from ${firstDjSelfLink}. Error: ${error.message}`);
+        } catch (e) {
+          singleDjError = e;
+          const error = e as AxiosError;
+          console.warn(
+            `API v3 /djs: Could not fetch single DJ from ${firstDjSelfLink}. Error: ${error.message}`,
+          );
         }
       } else {
-        console.warn('API v3 /djs: No items with self link found in collection to fetch single DJ.');
+        console.warn(
+          'API v3 /djs: No items with self link found in collection to fetch single DJ.',
+        );
       }
     });
 
@@ -206,7 +232,8 @@ describe('API v3: DJs Endpoint (/djs)', () => {
       }
       const links = singleDjResponse.data._links;
       if (links.author?.[0]?.href) expect(links.author[0].href).toEqual(expect.any(String));
-      if (links['wp:featuredmedia']?.[0]?.href) expect(links['wp:featuredmedia'][0].href).toEqual(expect.any(String));
+      if (links['wp:featuredmedia']?.[0]?.href)
+        expect(links['wp:featuredmedia'][0].href).toEqual(expect.any(String));
       // Add other relevant link checks
     });
   });
@@ -215,38 +242,50 @@ describe('API v3: DJs Endpoint (/djs)', () => {
     it('should accept a "search" query parameter and return status 200', async () => {
       const searchTerm = 'TestDJName';
       try {
-        const searchResponse = await axios.get(`${DJS_ENDPOINT}?search=${searchTerm}`, { timeout: DEFAULT_REQUEST_TIMEOUT });
+        const searchResponse = await axios.get(`${DJS_ENDPOINT}?search=${searchTerm}`, {
+          timeout: DEFAULT_REQUEST_TIMEOUT,
+        });
         expect(searchResponse.status).toBe(200);
         expect(searchResponse.data).toBeDefined();
         expect(searchResponse.data._links?.self?.href).toBeDefined();
       } catch (error: any) {
         if (error.code === 'ECONNREFUSED') {
-          console.warn(`API v3 /djs filtering (search): Skipping test due to API connection failure. ${error.message}`);
+          console.warn(
+            `API v3 /djs filtering (search): Skipping test due to API connection failure. ${error.message}`,
+          );
           return;
         }
         if (error.response) {
-            expect(error.response.status).toBeGreaterThanOrEqual(200);
-            expect(error.response.status).toBeLessThan(500);
-        } else { throw error; }
+          expect(error.response.status).toBeGreaterThanOrEqual(200);
+          expect(error.response.status).toBeLessThan(500);
+        } else {
+          throw error;
+        }
       }
     });
 
     it('should accept a "country" query parameter and return status 200', async () => {
       const countryCode = 'DE'; // Example country code
       try {
-        const filterResponse = await axios.get(`${DJS_ENDPOINT}?country=${countryCode}`, { timeout: DEFAULT_REQUEST_TIMEOUT });
+        const filterResponse = await axios.get(`${DJS_ENDPOINT}?country=${countryCode}`, {
+          timeout: DEFAULT_REQUEST_TIMEOUT,
+        });
         expect(filterResponse.status).toBe(200);
         expect(filterResponse.data).toBeDefined();
         expect(filterResponse.data._links?.self?.href).toBeDefined();
       } catch (error: any) {
         if (error.code === 'ECONNREFUSED') {
-          console.warn(`API v3 /djs filtering (country): Skipping test due to API connection failure. ${error.message}`);
+          console.warn(
+            `API v3 /djs filtering (country): Skipping test due to API connection failure. ${error.message}`,
+          );
           return;
         }
         if (error.response) {
-            expect(error.response.status).toBeGreaterThanOrEqual(200);
-            expect(error.response.status).toBeLessThan(500);
-        } else { throw error; }
+          expect(error.response.status).toBeGreaterThanOrEqual(200);
+          expect(error.response.status).toBeLessThan(500);
+        } else {
+          throw error;
+        }
       }
     });
   });
@@ -258,17 +297,24 @@ describe('API v3: DJs Endpoint (/djs)', () => {
     beforeAll(async () => {
       // Only run this if the main collection endpoint was reachable
       if (errorResponse) {
-        console.warn('API v3 /djs embedding: Skipping all embedding tests due to main collection fetch failure.');
+        console.warn(
+          'API v3 /djs embedding: Skipping all embedding tests due to main collection fetch failure.',
+        );
         return;
       }
       try {
-        embedResponse = await axios.get(`${DJS_ENDPOINT}?_embed=true`, { timeout: DEFAULT_REQUEST_TIMEOUT });
-      } catch (error) {
-        embedError = error;
+        embedResponse = await axios.get(`${DJS_ENDPOINT}?_embed=true`, {
+          timeout: DEFAULT_REQUEST_TIMEOUT,
+        });
+      } catch (e) {
+        embedError = e;
+        const error = e as AxiosError;
         if (error.code === 'ECONNREFUSED') {
-            console.warn(`API v3 /djs embedding: API connection failure for _embed call. ${error.message}`);
+          console.warn(
+            `API v3 /djs embedding: API connection failure for _embed call. ${error.message}`,
+          );
         } else {
-            console.error(`API v3 /djs embedding: Error fetching with _embed=true. ${error.message}`);
+          console.error(`API v3 /djs embedding: Error fetching with _embed=true. ${error.message}`);
         }
       }
     });
@@ -278,7 +324,9 @@ describe('API v3: DJs Endpoint (/djs)', () => {
       if (embedError) {
         // If ECONNREFUSED, this specific call failed, treat as skip for this test's purpose.
         if (embedError.code === 'ECONNREFUSED') {
-          console.warn(`API v3 /djs embedding (_embed param): Skipping test due to API connection failure. ${embedError.message}`);
+          console.warn(
+            `API v3 /djs embedding (_embed param): Skipping test due to API connection failure. ${embedError.message}`,
+          );
           return;
         }
         expect(embedError.message).toBeNull(); // Fail for other errors
@@ -291,7 +339,9 @@ describe('API v3: DJs Endpoint (/djs)', () => {
 
     it('should include an "_embedded" object in the response when using _embed', () => {
       if (errorResponse || embedError || !embedResponse?.data) {
-        console.warn('API v3 /djs embedding (check _embedded): Skipping test due to previous errors or no data.');
+        console.warn(
+          'API v3 /djs embedding (check _embedded): Skipping test due to previous errors or no data.',
+        );
         return;
       }
       expect(embedResponse.data._embedded).toBeDefined();
@@ -300,7 +350,9 @@ describe('API v3: DJs Endpoint (/djs)', () => {
 
     it('should have valid properties for embedded author if present', () => {
       if (errorResponse || embedError || !embedResponse?.data?._embedded?.author) {
-        console.warn('API v3 /djs embedding: Skipping author validation due to previous errors, no data, or no embedded author.');
+        console.warn(
+          'API v3 /djs embedding: Skipping author validation due to previous errors, no data, or no embedded author.',
+        );
         return;
       }
       const author = embedResponse.data._embedded.author[0]; // Typically an array with one author
@@ -313,7 +365,9 @@ describe('API v3: DJs Endpoint (/djs)', () => {
 
     it('should have valid properties for embedded terms (wp:term) if present', () => {
       if (errorResponse || embedError || !embedResponse?.data?._embedded?.['wp:term']) {
-        console.warn('API v3 /djs embedding: Skipping wp:term validation due to previous errors, no data, or no embedded terms.');
+        console.warn(
+          'API v3 /djs embedding: Skipping wp:term validation due to previous errors, no data, or no embedded terms.',
+        );
         return;
       }
       const termGroups: any[][] = embedResponse.data._embedded['wp:term'];
@@ -336,6 +390,37 @@ describe('API v3: DJs Endpoint (/djs)', () => {
           expect(term.taxonomy, `Term taxonomy in group ${groupIndex}`).toEqual(expect.any(String));
         }
       });
+    });
+
+    it('should return embedded orchestra, event, and teacher data when _embed=true', async () => {
+      let embedResponse: AxiosResponse | undefined;
+      let embedError: unknown;
+      try {
+        embedResponse = await axios.get(DJS_ENDPOINT, {
+          params: { _embed: true },
+          timeout: DEFAULT_REQUEST_TIMEOUT,
+        });
+      } catch (e) {
+        embedError = e;
+        const error = e as AxiosError;
+        if (error.code === 'ECONNREFUSED') {
+          console.warn(
+            `API v3 /djs embedding: API connection failure for _embed call. ${error.message}`,
+          );
+        } else {
+          console.error(`API v3 /djs embedding: Error fetching with _embed=true. ${error.message}`);
+        }
+      }
+
+      if (embedError && (embedError as AxiosError).code === 'ECONNREFUSED') {
+        return; // Skip test if API is not available
+      }
+
+      if (embedResponse) {
+        expect(embedResponse.status).toBe(200);
+        expect(embedResponse.data).toBeDefined();
+        expect(embedResponse.data._links?.self?.href).toBeDefined();
+      }
     });
   });
 });

@@ -34,12 +34,12 @@ describe('useEventFilters', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     clearCookie(COOKIE_NAME);
-    vi.useRealTimers(); // Reset timers if faked
   });
 
   const defaultFilters: EventFilters = {
     searchQuery: '',
     selectedCountry: null,
+    selectedCategory: null,
     showPastEvents: false,
     startDateRange: { from: null, to: null },
     registrationDateRange: { from: null, to: null },
@@ -55,7 +55,7 @@ describe('useEventFilters', () => {
     expect(filters.value).toEqual(defaultFilters);
   });
 
-  it('should load filters from cookie on initialization', async () => {
+  it('should load filters from cookie on initialization', () => {
     const saved: EventFilters = {
       ...defaultFilters,
       searchQuery: 'Test Query',
@@ -72,7 +72,7 @@ describe('useEventFilters', () => {
   });
 
   it('should save filters to cookie when filters change', async () => {
-    const { filters, updateFilter, initializeFilters } = useEventFilters();
+    const { updateFilter, initializeFilters } = useEventFilters();
     initializeFilters(); // Initialize to establish watcher
 
     // Clear any calls from initialization if necessary, though initializeFilters->loadFilters shouldn't set.
@@ -85,9 +85,11 @@ describe('useEventFilters', () => {
     await nextTick(); // Watcher's internal nextTick for saveFilters
 
     expect(cookieSpySet).toHaveBeenCalled();
-    const cookieSetValue = cookieSpySet.mock.calls[0][0]; // Should be the first call after mockClear
+    const cookieSetValue = cookieSpySet.mock.calls[0]![0] as string;
     expect(cookieSetValue).toContain(`${COOKIE_NAME}=`);
-    expect(decodeURIComponent(cookieSetValue.split('=')[1].split(';')[0])).toContain('"searchQuery":"New Search"');
+    expect(decodeURIComponent(cookieSetValue.split('=')[1]!.split(';')[0]!)).toContain(
+      '"searchQuery":"New Search"',
+    );
   });
 
   it('should handle malformed cookie data gracefully', () => {
@@ -96,7 +98,6 @@ describe('useEventFilters', () => {
     initializeFilters();
     expect(filters.value).toEqual(defaultFilters); // Should fall back to defaults
   });
-
 
   it('updateFilter should modify a specific filter', async () => {
     const { filters, updateFilter, initializeFilters } = useEventFilters();
@@ -117,8 +118,12 @@ describe('useEventFilters', () => {
 
     expect(filters.value).toEqual(defaultFilters);
     expect(cookieSpySet).toHaveBeenCalledTimes(2); // Initial + clear
-    const lastCookieCall = cookieSpySet.mock.calls[cookieSpySet.mock.calls.length -1][0];
-    expect(decodeURIComponent(lastCookieCall.split('=')[1].split(';')[0])).toBe(JSON.stringify(defaultFilters));
+    const lastCookieCall = cookieSpySet.mock.calls[
+      cookieSpySet.mock.calls.length - 1
+    ]![0] as string;
+    expect(decodeURIComponent(lastCookieCall.split('=')[1]!.split(';')[0]!)).toBe(
+      JSON.stringify(defaultFilters),
+    );
   });
 
   describe('hasActiveFilters', () => {
@@ -130,28 +135,28 @@ describe('useEventFilters', () => {
     });
 
     it('should return true if searchQuery is set', () => {
-      const { filters, updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
+      const { updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
       initializeFilters();
       updateFilter('searchQuery', 'active');
       expect(hasActiveFilters()).toBe(true);
     });
 
     it('should return true if selectedCountry is set', () => {
-      const { filters, updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
+      const { updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
       initializeFilters();
       updateFilter('selectedCountry', 'FR');
       expect(hasActiveFilters()).toBe(true);
     });
 
     it('should return true if showPastEvents is true', () => {
-      const { filters, updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
+      const { updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
       initializeFilters();
       updateFilter('showPastEvents', true);
       expect(hasActiveFilters()).toBe(true);
     });
 
     it('should return true if startDateRange.from is set', () => {
-      const { filters, updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
+      const { updateFilter, hasActiveFilters, initializeFilters } = useEventFilters();
       initializeFilters();
       updateFilter('startDateRange', { from: '2024-01-01', to: null });
       expect(hasActiveFilters()).toBe(true);
@@ -167,7 +172,7 @@ describe('useEventFilters', () => {
     });
 
     it('should correctly count active filters', () => {
-      const { filters, updateFilter, activeFilterCount, initializeFilters } = useEventFilters();
+      const { updateFilter, activeFilterCount, initializeFilters } = useEventFilters();
       initializeFilters();
       updateFilter('searchQuery', 'test');
       updateFilter('selectedCountry', 'CA');
@@ -222,7 +227,9 @@ describe('useEventFilters', () => {
     });
 
     it('should format "date to date" if both are set', () => {
-      expect(formatDateRange({ from: '2024-01-01', to: '2024-02-01' })).toBe('2024-01-01 to 2024-02-01');
+      expect(formatDateRange({ from: '2024-01-01', to: '2024-02-01' })).toBe(
+        '2024-01-01 to 2024-02-01',
+      );
     });
   });
 
@@ -234,7 +241,9 @@ describe('useEventFilters', () => {
       // Other properties missing
     };
     setCookie(COOKIE_NAME, JSON.stringify(partialSavedFilters), 30);
-    cookieSpyGet.mockReturnValue(`${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(partialSavedFilters))}`);
+    cookieSpyGet.mockReturnValue(
+      `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(partialSavedFilters))}`,
+    );
 
     const { filters, initializeFilters } = useEventFilters();
     initializeFilters();

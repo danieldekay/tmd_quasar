@@ -6,7 +6,8 @@ import EssentialLink from '../EssentialLink.vue';
 const QItemStub = {
   name: 'QItem',
   props: ['href', 'clickable', 'tag', 'target'],
-  template: '<a :href="href" :data-clickable="clickable" :data-tag="tag" :data-target="target"><slot /></a>',
+  template:
+    '<a :href="href" :data-clickable="clickable" :data-tag="tag" :data-target="target"><slot /></a>',
 };
 
 const QItemSectionStub = {
@@ -26,7 +27,6 @@ const QIconStub = {
   props: ['name'],
   template: '<i class="mocked-q-icon">{{ name }}</i>', // Render name for easy check
 };
-
 
 describe('EssentialLink.vue', () => {
   const defaultProps = {
@@ -56,7 +56,9 @@ describe('EssentialLink.vue', () => {
     });
     expect(wrapper.text()).toContain(captionText);
     // Check if q-item-label with caption prop was rendered
-    const captionLabel = wrapper.findAllComponents(QItemLabelStub).find(c => c.props('caption') === true || c.props('caption') === '');
+    const captionLabel = wrapper
+      .findAllComponents(QItemLabelStub)
+      .find((c) => c.props('caption') === true || c.props('caption') === '');
     expect(captionLabel).toBeDefined();
     if (captionLabel) {
       expect(captionLabel.text()).toContain(captionText);
@@ -92,15 +94,16 @@ describe('EssentialLink.vue', () => {
       global: { stubs: globalStubs },
     });
     const itemSections = wrapper.findAllComponents(QItemSectionStub);
-    const avatarSection = itemSections.find(s => s.props('avatar') === true || s.props('avatar') === '');
+    const avatarSection = itemSections.find(
+      (s) => s.props('avatar') === true || s.props('avatar') === '',
+    );
     expect(avatarSection).toBeDefined();
     expect(avatarSection?.findComponent(QIconStub).exists()).toBe(true);
   });
 
-
   it('does not render q-icon if icon prop is not provided', () => {
     const wrapper = mount(EssentialLink, {
-      props: { ...defaultProps, icon: undefined }, // Explicitly pass undefined for icon
+      props: { ...defaultProps }, // omit icon prop
       global: { stubs: globalStubs },
     });
     expect(wrapper.findComponent(QIconStub).exists()).toBe(false);

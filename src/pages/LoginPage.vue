@@ -228,8 +228,8 @@ const authStore = useAuthStore();
 
 // Form state
 const form = reactive({
-  username: 'danieltest123',
-  password: 'I^oT#x!H&4R)I&*d',
+  username: '',
+  password: '',
   remember: false,
 });
 

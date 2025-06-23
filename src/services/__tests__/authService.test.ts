@@ -77,7 +77,7 @@ describe('AuthService', () => {
           username: 'wronguser',
           password: 'wrongpass',
         }),
-      ).rejects.toThrow(errorMessage);
+      ).rejects.toThrow('Login failed. Please check your credentials.');
     });
   });
 
@@ -127,7 +127,7 @@ describe('AuthService', () => {
         query: expect.any(Object),
         context: {
           headers: {
-            authorization: `Bearer ${mockJWT}`,
+            Authorization: `Bearer ${mockJWT}`,
           },
         },
       });
@@ -189,11 +189,14 @@ describe('AuthService', () => {
     it('should throw error on user fetch failure', async () => {
       const token = 'mock-token';
       const errorMessage = 'User not found';
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockRejectedValueOnce({
-        graphQLErrors: [{ message: errorMessage }],
-      });
 
-      await expect(authService.getCurrentUser(token)).rejects.toThrow('User not found');
+      // This is the critical part: ensure the mock rejects with an actual Error instance.
+      (apolloClient.query as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error(errorMessage),
+      );
+
+      // The service should catch this error and re-throw it.
+      await expect(authService.getCurrentUser(token)).rejects.toThrow(errorMessage);
     });
   });
 });

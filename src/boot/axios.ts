@@ -27,7 +27,9 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
-// Track if we're currently attempting a re-login to avoid infinite loops
+// --- auto-relogin state -----------------------------------
+const MAX_RELOGIN_ATTEMPTS = 3;
+let reloginAttempts = 0;
 let isAttemptingRelogin = false;
 
 // Request interceptor to add request metadata and auth token

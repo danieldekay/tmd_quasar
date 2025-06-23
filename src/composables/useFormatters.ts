@@ -8,7 +8,34 @@ export const useFormatters = () => {
     if (value === null || value === undefined || value === '') return '';
     if (typeof value === 'boolean') return '';
 
-    const date = typeof value === 'number' ? new Date(value) : new Date(String(value));
+    let timestamp: number;
+
+    if (typeof value === 'string') {
+      // Accept ISO YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+      if (/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value)) {
+        timestamp = Date.parse(value);
+      } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+        // Handle MM/DD/YYYY by manually constructing a Date in UTC to avoid locale ambiguity
+        const [mStr, dStr, yStr] = value.split('/');
+        const month = Number(mStr);
+        const day = Number(dStr);
+        const year = Number(yStr);
+        if (Number.isNaN(month) || Number.isNaN(day) || Number.isNaN(year)) {
+          return '';
+        }
+        timestamp = Date.UTC(year, month - 1, day);
+      } else {
+        return '';
+      }
+    } else if (typeof value === 'number') {
+      timestamp = value;
+    } else {
+      timestamp = NaN;
+    }
+
+    if (Number.isNaN(timestamp)) return '';
+
+    const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return '';
 
     const isoDate = date.toISOString().split('T')[0] ?? '';
@@ -22,7 +49,22 @@ export const useFormatters = () => {
     if (value === null || value === undefined || value === '') return '';
     if (typeof value === 'boolean') return '';
 
-    const date = typeof value === 'number' ? new Date(value) : new Date(String(value));
+    let timestamp: number;
+
+    if (typeof value === 'string') {
+      if (!/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value)) {
+        return '';
+      }
+      timestamp = Date.parse(value);
+    } else if (typeof value === 'number') {
+      timestamp = value;
+    } else {
+      timestamp = NaN;
+    }
+
+    if (Number.isNaN(timestamp)) return '';
+
+    const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return '';
 
     const now = new Date();

@@ -34,18 +34,10 @@ export const loadTestCredentials = async (): Promise<TestCredentials> => {
     cachedCredentials = (await response.json()) as TestCredentials;
     return cachedCredentials;
   } catch (error) {
-    console.warn('Failed to load test credentials:', error);
-    // Return default credentials for development
-    return {
-      testUser: {
-        username: 'danieltest123',
-        password: 'I^oT#x!H&4R)I&*d',
-      },
-      api: {
-        baseUrl: 'http://localhost:10014',
-        graphqlEndpoint: 'http://localhost:10014/graphql',
-      },
-    };
+    console.error('Failed to load test credentials:', error);
+    throw new Error(
+      'Unable to load test credentials. Please create credentials.local.json with the required fields or provide credentials via environment variables.',
+    );
   }
 };
 
