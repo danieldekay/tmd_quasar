@@ -1,6 +1,6 @@
 {
   "name": "tmd-quasar",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "TMD Quasar App",
   "productName": "TMD Frontend based on Quasar",
   "author": "Daniel de Kay <daniel@dekay.org>",
