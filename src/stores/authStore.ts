@@ -8,6 +8,7 @@ import {
   getRefreshToken,
   clearJWTTokens,
 } from '../utils/cookies';
+import { getJwtExpiration } from '../utils/jwt';
 
 export interface User {
   id: number;
@@ -70,6 +71,33 @@ export const useAuthStore = defineStore('auth', () => {
     () => hasRole.value('administrator') || hasRole.value('manage_options'),
   );
 
+  /* --------------------------------------------------------------------------
+   *  Internal: automatic token refresh handling
+   * ------------------------------------------------------------------------*/
+  let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const scheduleRefresh = (jwt: string | null): void => {
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+      refreshTimeout = null;
+    }
+
+    if (!jwt) return;
+
+    const expMs = getJwtExpiration(jwt);
+    if (!expMs) return;
+
+    // Refresh 60 s before expiry if possible
+    const delay = expMs - Date.now() - 60000;
+    if (delay > 0) {
+      refreshTimeout = setTimeout(() => {
+        /* eslint-disable @typescript-eslint/no-floating-promises */
+        refreshToken();
+        /* eslint-enable @typescript-eslint/no-floating-promises */
+      }, delay);
+    }
+  };
+
   // Actions
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     isLoading.value = true;
@@ -87,6 +115,7 @@ export const useAuthStore = defineStore('auth', () => {
         setRefreshToken(response.refreshToken, credentials.remember);
       }
 
+      scheduleRefresh(response.token);
       return true;
     } catch (err) {
       console.error('Login error:', err);
@@ -113,6 +142,11 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Clear stored tokens
       clearJWTTokens();
+
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+        refreshTimeout = null;
+      }
     }
   };
 
@@ -130,9 +164,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.refreshToken(storedRefreshToken);
 
       token.value = response.token;
-
-      // Update stored token
-      setJWTToken(response.token, true);
+      scheduleRefresh(response.token);
 
       // If we have user data from the refresh, update it
       if (response.user) {
@@ -171,6 +203,7 @@ export const useAuthStore = defineStore('auth', () => {
         if (isValid) {
           // Token is still valid, might have been a temporary network issue
           token.value = storedToken;
+          scheduleRefresh(storedToken);
 
           // Try to get user data if we don't have it
           if (!user.value) {
@@ -244,6 +277,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // Set the token immediately for better UX
       token.value = storedToken;
+      scheduleRefresh(storedToken);
 
       // Try to validate the token in the background
       try {

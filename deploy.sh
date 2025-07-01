@@ -11,6 +11,36 @@ REMOTE_PATH="/domains/app.tangomarathons.com"
 
 # Prepare environment variables for production build
 echo "🔧 Preparing production environment variables..."
+
+# Bump package.json version (patch) so we can track deployments
+echo "🔖 Bumping patch version..."
+pnpm version patch --no-git-tag-version --no-commit-hooks --yes || {
+  echo "⚠️  Version bump failed – continuing without version change";
+}
+
+# Capture bumped version from package.json
+APP_VERSION=$(node -p "require('./package.json').version")
+echo "   Current version is now $APP_VERSION"
+
+# Commit & tag only if inside git repo
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "💾 Committing version bump..."
+    git add package.json pnpm-lock.yaml || true
+    git commit -m "chore: bump version to v$APP_VERSION" || true
+
+    echo "🏷️  Tagging version $APP_VERSION..."
+    if ! git rev-parse "v$APP_VERSION" >/dev/null 2>&1; then
+      git tag -a "v$APP_VERSION" -m "Release v$APP_VERSION" || true
+      git push origin "$(git branch --show-current)" --tags || true
+    else
+      echo "⚠️  Tag v$APP_VERSION already exists, skipping tag creation"
+    fi
+  else
+    echo "ℹ️  Working tree clean – nothing to commit"
+  fi
+fi
+
 # Backup any existing .env
 if [ -f .env ]; then
   mv .env .env.backup || true
