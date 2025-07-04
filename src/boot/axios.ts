@@ -27,8 +27,8 @@ const api = axios.create({
   baseURL:
     process.env.API_BASE_URL ||
     (isLocalhost
-      ? 'http://localhost:10014/wp-json/tmd/v3'
-      : 'https://www.tangomarathons.com/wp-json/tmd/v3'),
+      ? 'http://localhost:10014/wp-json/tmd/v4'
+      : 'https://www.tangomarathons.com/wp-json/tmd/v4'),
   headers: {
     'Content-Type': 'application/json',
   },

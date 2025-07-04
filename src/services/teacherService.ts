@@ -34,6 +34,7 @@ class TeacherService extends BaseService<Teacher> {
     super('/teachers', {
       _embed: false, // Disable embeds for better performance by default
       meta_fields: ESSENTIAL_TEACHER_META_FIELDS, // Use essential fields only by default
+      include_relationships: true,
     });
     this.defaultMetaFields = ESSENTIAL_TEACHER_META_FIELDS;
   }
@@ -273,16 +274,23 @@ class TeacherService extends BaseService<Teacher> {
   }
 
   /**
-   * Transform a single teacher from V3 API format to application format
+   * Transform a single teacher from V4 API format to application format
    */
   private transformTeacher(teacher: Teacher): Teacher {
-    // Ensure all V3 API fields are properly mapped
+    // Handle V4 API title format (object with rendered property)
+    const title =
+      typeof teacher.title === 'object' && teacher.title && 'rendered' in teacher.title
+        ? (teacher.title as { rendered: string }).rendered
+        : teacher.title;
+
+    // Ensure all V4 API fields are properly mapped
     const transformed: Teacher = {
       ...teacher,
-      // Map V3 API meta fields to expected structure
+      title: title || '',
+      // Map V4 API meta fields to expected structure
       meta_box: {
         ...teacher.meta_box,
-        nickname: teacher.title,
+        nickname: title || '',
         ...(teacher.city && { city: teacher.city }),
         ...(teacher.country && { country: teacher.country }),
       },

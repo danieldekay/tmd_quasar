@@ -29,6 +29,7 @@ class CoupleService extends BaseService<Couple> {
     super('/couples', {
       _embed: false, // Disable embeds for better performance by default
       meta_fields: ESSENTIAL_COUPLE_META_FIELDS, // Use essential fields only by default
+      include_relationships: true,
     });
     this.defaultMetaFields = ESSENTIAL_COUPLE_META_FIELDS;
   }
@@ -272,13 +273,20 @@ class CoupleService extends BaseService<Couple> {
   }
 
   /**
-   * Transform a single couple from V3 API format to application format
+   * Transform a single couple from V4 API format to application format
    */
   private transformCouple(couple: Couple): Couple {
-    // Ensure all V3 API fields are properly mapped
+    // Handle V4 API title format (object with rendered property)
+    const title =
+      typeof couple.title === 'object' && couple.title && 'rendered' in couple.title
+        ? (couple.title as { rendered: string }).rendered
+        : couple.title;
+
+    // Ensure all V4 API fields are properly mapped
     const transformed: Couple = {
       ...couple,
-      // Map V3 API meta fields to expected structure
+      title: title || '',
+      // Map V4 API meta fields to expected structure
       meta_box: couple.meta_box
         ? {
             ...couple.meta_box,

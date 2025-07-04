@@ -18,6 +18,7 @@ export interface BaseServiceOptions {
   _embed?: boolean;
   meta_fields?: string;
   include_taxonomies?: boolean;
+  include_relationships?: boolean;
   [key: string]: unknown;
 }
 
@@ -34,7 +35,17 @@ export interface SearchParams {
 export type BaseParams = BaseServiceOptions & PaginationParams & SearchParams;
 
 /**
- * HAL-compliant API response structure
+ * WordPress REST API response structure (V4)
+ */
+export interface WordPressResponse<T> {
+  // V4 returns direct arrays for collections
+  // Individual items are returned as objects
+  data?: T[];
+  // Pagination info is in headers
+}
+
+/**
+ * HAL-compliant API response structure (V3 - for backward compatibility)
  */
 export interface HALResponse<T> {
   _embedded?: {
@@ -87,17 +98,31 @@ export class BaseService<T = Record<string, unknown>> {
   }
 
   /**
-   * Extract pagination info from HAL response body (v3 API)
-   * Falls back to headers for legacy support (v2 API)
+   * Extract pagination info from WordPress REST API headers (v4 API)
+   * Falls back to HAL response body for v3 compatibility
    */
   protected extractPaginationInfo(
-    response: HALResponse<T> | T[],
+    response: WordPressResponse<T> | HALResponse<T> | T[],
     headers: Record<string, string>,
     currentPage = 1,
   ) {
-    // First try to extract from HAL response body (v3 API)
+    // First try to extract from WordPress REST API headers (v4 API)
+    const totalCount = parseInt(headers['x-wp-total'] || '0', 10);
+    const totalPages = parseInt(headers['x-wp-totalpages'] || '1', 10);
+
+    if (totalCount > 0) {
+      return {
+        totalCount,
+        totalPages,
+        currentPage,
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1,
+      };
+    }
+
+    // Fallback to HAL response body for v3 compatibility
     if (response && typeof response === 'object' && !Array.isArray(response)) {
-      const halResponse = response;
+      const halResponse = response as HALResponse<T>;
 
       if (halResponse.total !== undefined && halResponse.page !== undefined) {
         const totalCount = halResponse.total;
@@ -114,26 +139,28 @@ export class BaseService<T = Record<string, unknown>> {
       }
     }
 
-    // Fallback to headers for legacy API support
-    const totalCount = parseInt(headers['x-wp-total'] || '0', 10);
-    const totalPages = parseInt(headers['x-wp-totalpages'] || '1', 10);
-
+    // Default fallback
     return {
-      totalCount,
-      totalPages,
+      totalCount: 0,
+      totalPages: 1,
       currentPage,
-      hasNextPage: currentPage < totalPages,
-      hasPrevPage: currentPage > 1,
+      hasNextPage: false,
+      hasPrevPage: false,
     };
   }
 
   /**
-   * Extract data from HAL response or return array directly
+   * Extract data from WordPress REST API response or HAL response
    */
-  protected extractDataFromResponse(response: HALResponse<T> | T[]): T[] {
-    // Handle HAL response format
+  protected extractDataFromResponse(response: WordPressResponse<T> | HALResponse<T> | T[]): T[] {
+    // Handle direct array response (WordPress REST API v4 format)
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    // Handle HAL response format (v3 compatibility)
     if (response && typeof response === 'object' && !Array.isArray(response)) {
-      const halResponse = response;
+      const halResponse = response as HALResponse<T>;
 
       if (halResponse._embedded) {
         // Try to find data in _embedded using the endpoint name
@@ -175,14 +202,14 @@ export class BaseService<T = Record<string, unknown>> {
       return [];
     }
 
-    // Handle direct array response (legacy format)
-    return Array.isArray(response) ? response : [];
+    // Default fallback
+    return [];
   }
 
   /**
    * Make a GET request with enhanced error handling and offline detection
    */
-  protected async makeRequest<R = HALResponse<T> | T[]>(
+  protected async makeRequest<R = WordPressResponse<T> | HALResponse<T> | T[]>(
     path: string,
     params: BaseParams = {},
     signal?: AbortSignal,
@@ -217,7 +244,7 @@ export class BaseService<T = Record<string, unknown>> {
    */
   async getAll(params: BaseParams = {}, signal?: AbortSignal): Promise<PaginatedResponse<T>> {
     try {
-      const { data, headers } = await this.makeRequest<HALResponse<T> | T[]>(
+      const { data, headers } = await this.makeRequest<WordPressResponse<T> | HALResponse<T> | T[]>(
         this.endpoint,
         params,
         signal,

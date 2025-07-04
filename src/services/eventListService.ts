@@ -1,4 +1,4 @@
-import { BaseService, type HALResponse } from './baseService';
+import { BaseService, type HALResponse, type WordPressResponse } from './baseService';
 import type { EventListItem, EventParams, EventTaxonomies } from './types';
 import type { BaseParams } from './baseService';
 
@@ -70,8 +70,9 @@ export interface EnhancedEventParams extends BaseParams, EventParams {
  * Handles embedded relationships and feature detection
  */
 const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => {
-  // V3 API includes meta fields directly in the response
-  const meta = (rawEvent.meta || rawEvent.acf || {}) as Record<string, unknown>;
+  // V4 API includes meta fields directly at the root level
+  // V3 API includes meta fields nested under meta or acf
+  const meta = (rawEvent.meta || rawEvent.acf || rawEvent) as Record<string, unknown>;
 
   // Extract taxonomies from _embedded or direct taxonomy fields
   let taxonomies: EventTaxonomies | undefined;
@@ -140,7 +141,11 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
   // Build the result with enhanced feature detection
   const result: EventListItem = {
     id: Number(rawEvent.id) || 0,
-    title: getString(rawEvent.title),
+    title: getString(
+      typeof rawEvent.title === 'object' && rawEvent.title && 'rendered' in rawEvent.title
+        ? ((rawEvent.title as Record<string, unknown>).rendered as string)
+        : rawEvent.title,
+    ),
     date: getString(rawEvent.date),
     link: getString(rawEvent.link),
     start_date: getString(meta.start_date || rawEvent.start_date),
@@ -179,72 +184,6 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
   return result;
 };
 
-/**
- * Build meta_filters object from parameters
- */
-const buildMetaFilters = (params: EnhancedEventParams): EventMetaFilters | undefined => {
-  const filters: EventMetaFilters = {};
-  let hasFilters = false;
-
-  // Direct meta_filters from params
-  if (params.meta_filters) {
-    Object.assign(filters, params.meta_filters);
-    hasFilters = true;
-  }
-
-  // Legacy boolean filters converted to V3 API format
-  if (params.have_milongas !== undefined) {
-    filters.have_milongas = params.have_milongas ? '1' : '0';
-    hasFilters = true;
-  }
-  if (params.have_food !== undefined) {
-    filters.have_food = params.have_food ? '1' : '0';
-    hasFilters = true;
-  }
-  if (params.have_sleep !== undefined) {
-    filters.have_sleep = params.have_sleep ? '1' : '0';
-    hasFilters = true;
-  }
-  if (params.have_registration !== undefined) {
-    filters.have_registration = params.have_registration ? '1' : '0';
-    hasFilters = true;
-  }
-  if (params.invitation_only !== undefined) {
-    filters.invitation_only = params.invitation_only ? '1' : '0';
-    hasFilters = true;
-  }
-
-  // Location filters
-  if (params.country) {
-    filters.country = params.country;
-    hasFilters = true;
-  }
-  if (params.city) {
-    filters.city = params.city;
-    hasFilters = true;
-  }
-
-  // Date range filters
-  if (params.start_date_from) {
-    filters.start_date_from = params.start_date_from;
-    hasFilters = true;
-  }
-  if (params.start_date_to) {
-    filters.start_date_to = params.start_date_to;
-    hasFilters = true;
-  }
-  if (params.registration_start_date_from) {
-    filters.registration_start_date_from = params.registration_start_date_from;
-    hasFilters = true;
-  }
-  if (params.registration_start_date_to) {
-    filters.registration_start_date_to = params.registration_start_date_to;
-    hasFilters = true;
-  }
-
-  return hasFilters ? filters : undefined;
-};
-
 export interface PaginatedEventsResponse {
   events: EventListItem[];
   totalCount: number;
@@ -259,6 +198,7 @@ class EventListService extends BaseService<EventListItem> {
     super('/events', {
       meta_fields: META_FIELD_SETS.LIST_COMPLETE,
       include_taxonomies: true,
+      include_relationships: true,
       _embed: false, // Disable by default for performance, enable when needed
     });
   }
@@ -267,7 +207,7 @@ class EventListService extends BaseService<EventListItem> {
    * Override extractDataFromResponse to apply enhanced event transformation
    */
   protected override extractDataFromResponse(
-    response: HALResponse<EventListItem> | EventListItem[],
+    response: WordPressResponse<EventListItem> | HALResponse<EventListItem> | EventListItem[],
   ): EventListItem[] {
     // Get raw data from HAL response as unknown objects
     const rawData = super.extractDataFromResponse(response);
@@ -294,12 +234,6 @@ class EventListService extends BaseService<EventListItem> {
       requestParams.category = params.category;
     }
 
-    // Add meta filters
-    const metaFilters = buildMetaFilters(params);
-    if (metaFilters) {
-      requestParams.meta_filters = JSON.stringify(metaFilters);
-    }
-
     // Add search if provided
     if (params.search) {
       requestParams.search = params.search;
@@ -307,7 +241,15 @@ class EventListService extends BaseService<EventListItem> {
 
     // Enhanced embedding options
     if (params.include_djs || params.include_teachers || params.include_event_series) {
-      requestParams._embed = true;
+      requestParams.include_relationships = true;
+    }
+
+    // Add V4 date filtering parameters
+    if (params.start_date_from) {
+      requestParams.start_date_after = params.start_date_from;
+    }
+    if (params.start_date_to) {
+      requestParams.start_date_before = params.start_date_to;
     }
 
     // Copy other params
@@ -319,18 +261,10 @@ class EventListService extends BaseService<EventListItem> {
           'orderby',
           'order',
           'category',
-          'meta_filters',
           'search',
           'include_djs',
           'include_teachers',
           'include_event_series',
-          'have_milongas',
-          'have_food',
-          'have_sleep',
-          'have_registration',
-          'invitation_only',
-          'country',
-          'city',
           'start_date_from',
           'start_date_to',
           'registration_start_date_from',

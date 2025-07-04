@@ -27,6 +27,7 @@ class EventSeriesService extends BaseService<EventSeries> {
     super('/event-series', {
       _embed: false, // Disable embeds for better performance by default
       meta_fields: ESSENTIAL_EVENT_SERIES_META_FIELDS, // Use essential fields only by default
+      include_relationships: true,
     });
     this.defaultMetaFields = ESSENTIAL_EVENT_SERIES_META_FIELDS;
   }
@@ -198,13 +199,20 @@ class EventSeriesService extends BaseService<EventSeries> {
   }
 
   /**
-   * Transform a single event series from V3 API format to application format
+   * Transform a single event series from V4 API format to application format
    */
   private transformEventSeriesItem(eventSeries: EventSeries): EventSeries {
-    // Ensure all V3 API fields are properly mapped
+    // Handle V4 API title format (object with rendered property)
+    const title =
+      typeof eventSeries.title === 'object' && eventSeries.title && 'rendered' in eventSeries.title
+        ? (eventSeries.title as { rendered: string }).rendered
+        : eventSeries.title;
+
+    // Ensure all V4 API fields are properly mapped
     const transformed: EventSeries = {
       ...eventSeries,
-      // Map V3 API meta fields to expected structure
+      title: title || '',
+      // Map V4 API meta fields to expected structure
       acf: {
         description: eventSeries.acf?.description || '',
         website: eventSeries.website || '',

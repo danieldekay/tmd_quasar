@@ -61,8 +61,8 @@ export default defineConfig((/* ctx */) => {
         API_BASE_URL:
           process.env.API_BASE_URL ||
           (process.env.NODE_ENV === 'production'
-            ? 'https://www.tangomarathons.com/wp-json/tmd/v3'
-            : 'http://localhost:10014/wp-json/tmd/v3'),
+            ? 'https://www.tangomarathons.com/wp-json/tmd/v4'
+            : 'http://localhost:10014/wp-json/tmd/v4'),
         GRAPHQL_ENDPOINT:
           process.env.GRAPHQL_ENDPOINT ||
           (process.env.NODE_ENV === 'production'

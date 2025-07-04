@@ -28,6 +28,7 @@ class DJService extends BaseService<DJ> {
     super('/djs', {
       _embed: false, // Disable embeds for better performance by default
       meta_fields: ESSENTIAL_DJ_META_FIELDS, // Use essential fields only by default
+      include_relationships: true,
     });
     this.defaultMetaFields = ESSENTIAL_DJ_META_FIELDS;
   }
@@ -212,16 +213,23 @@ class DJService extends BaseService<DJ> {
   }
 
   /**
-   * Transform a single DJ from V3 API format to application format
+   * Transform a single DJ from V4 API format to application format
    */
   private transformDJ(dj: DJ): DJ {
-    // Ensure all V3 API fields are properly mapped
+    // Handle V4 API title format (object with rendered property)
+    const title =
+      typeof dj.title === 'object' && dj.title && 'rendered' in dj.title
+        ? (dj.title as { rendered: string }).rendered
+        : dj.title;
+
+    // Ensure all V4 API fields are properly mapped
     const transformed: DJ = {
       ...dj,
-      // Map V3 API meta fields to expected structure
+      title: title || '',
+      // Map V4 API meta fields to expected structure
       acf: {
         bio: dj.tmd_dj_about_the_dj || dj.abstract || '',
-        photo: '', // Not available in V3 API
+        photo: '', // Not available in V4 API
         website: dj.tmd_dj_webpage || '',
       },
       // Ensure embedded relationships are properly structured

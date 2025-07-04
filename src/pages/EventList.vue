@@ -324,7 +324,7 @@ const allCountriesSet = ref<Set<string>>(new Set()); // To populate country drop
 const currentView = ref<'table' | 'calendar'>('table');
 const viewOptions = [
   { label: 'Table', value: 'table', icon: 'table_rows' },
-  { label: 'Calendar', value: 'calendar', icon: 'calendar_month' }
+  { label: 'Calendar', value: 'calendar', icon: 'calendar_month' },
 ];
 
 // --- useGenericList Setup ---
@@ -355,19 +355,16 @@ const {
     const apiParams: Record<string, unknown> = {
       page: params.page,
       perPage: params.perPage,
-      orderby: params.sortBy === 'start_date' ? 'meta_value' : 'title',
+      orderby: params.sortBy,
       order: params.descending ? 'desc' : 'asc',
-      meta_key: params.sortBy === 'start_date' ? 'start_date' : undefined,
-      taxonomies: true,
+      include_relationships: true,
     };
 
     if (!params.filters.showPastEvents) {
       const today = new Date();
       today.setDate(today.getDate() - 4); // Show events ending recently
       const minDate = today.toISOString().split('T')[0];
-      apiParams.meta_query = JSON.stringify([
-        { key: 'start_date', value: minDate, compare: '>=', type: 'DATE' },
-      ]);
+      apiParams.start_date_after = minDate;
     }
 
     if (params.filters.country) apiParams.country = params.filters.country;
@@ -384,7 +381,7 @@ const {
         const totalResponse = await eventListService.getEvents({
           page: 1,
           perPage: 1,
-          taxonomies: true,
+          include_relationships: true,
         });
         overallTotalCount.value = totalResponse.totalCount;
       } catch (err) {
@@ -537,7 +534,7 @@ onMounted(() => {
   // Fetch initial set of countries for the dropdown if not persisted
   if (allCountriesSet.value.size === 0) {
     eventListService
-      .getEvents({ perPage: 200, taxonomies: false }) // Fetch a larger set to populate countries
+      .getEvents({ perPage: 200, include_relationships: false }) // Fetch a larger set to populate countries
       .then((response) => {
         response.events.forEach((e) => {
           if (e.country) allCountriesSet.value.add(e.country);
@@ -547,7 +544,7 @@ onMounted(() => {
   }
   // Fetch overall total count initially
   eventListService
-    .getEvents({ page: 1, perPage: 1, taxonomies: true })
+    .getEvents({ page: 1, perPage: 1, include_relationships: true })
     .then((response) => {
       overallTotalCount.value = response.totalCount;
     })
