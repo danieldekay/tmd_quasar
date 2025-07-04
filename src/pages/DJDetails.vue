@@ -280,7 +280,7 @@
                           >
                             <q-item-section>
                               <q-item-label class="text-weight-medium">{{
-                                event.title
+                                getEventTitle(event)
                               }}</q-item-label>
                               <q-item-label caption>
                                 <q-icon name="event" size="xs" class="q-mr-xs" />
@@ -385,6 +385,18 @@ const eventsLoading = ref(false);
 const defaultImage = 'https://cdn.quasar.dev/img/parallax2.jpg';
 
 const { formatDate } = useFormatters();
+
+// Helper function to extract title from V4 API format
+const getEventTitle = (event: BaseEvent): string => {
+  console.log('Processing event title:', event.title);
+  if (typeof event.title === 'string') {
+    return event.title;
+  }
+  if (event.title && typeof event.title === 'object' && 'rendered' in event.title) {
+    return event.title.rendered;
+  }
+  return 'Untitled Event';
+};
 
 const location = computed(() => {
   if (!dj.value) return '';

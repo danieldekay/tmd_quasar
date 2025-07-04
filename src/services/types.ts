@@ -1,6 +1,6 @@
 export interface BaseEntity {
   id: number;
-  title: string;
+  title: string | { rendered: string };
   date: string;
   link: string;
 }
