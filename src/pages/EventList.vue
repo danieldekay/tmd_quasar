@@ -146,8 +146,39 @@
       </q-card>
     </div>
 
+    <!-- View Toggle -->
+    <div class="q-px-lg q-pb-md">
+      <div class="row items-center justify-between">
+        <div class="col-auto">
+          <q-btn-toggle
+            v-model="currentView"
+            :options="viewOptions"
+            flat
+            toggle-color="primary"
+            class="view-toggle"
+          />
+        </div>
+        <div class="col-auto">
+          <div class="text-caption text-grey-6">
+            {{ currentView === 'table' ? 'Table View' : 'Calendar View' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div v-if="currentView === 'calendar'" class="q-px-lg q-pb-lg">
+      <q-card flat bordered class="calendar-card-wrapper">
+        <EventCalendar
+          :events="listState.items"
+          @date-selected="onDateSelected"
+          @event-selected="onEventSelected"
+        />
+      </q-card>
+    </div>
+
     <!-- Events Table -->
-    <div class="q-px-lg q-pb-lg">
+    <div v-if="currentView === 'table'" class="q-px-lg q-pb-lg">
       <q-card flat bordered class="table-card-wrapper">
         <div class="styled-q-table">
           <q-table
@@ -269,6 +300,8 @@ import type { PaginatedEventsResponse } from '../services/eventListService';
 import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
 import { useGenericList, type ListFilters } from '../composables/useGenericList';
+import EventCalendar from '../components/EventCalendar.vue';
+import type { CalendarEvent } from '../composables/useEventCalendar';
 
 interface EventListFilters extends ListFilters {
   country: string | null;
@@ -286,6 +319,13 @@ const { formatDate, getEventCategory, formatText } = useFormatters();
 // State for overall total count (unfiltered)
 const overallTotalCount = ref(0);
 const allCountriesSet = ref<Set<string>>(new Set()); // To populate country dropdown
+
+// View state
+const currentView = ref<'table' | 'calendar'>('table');
+const viewOptions = [
+  { label: 'Table', value: 'table', icon: 'table_rows' },
+  { label: 'Calendar', value: 'calendar', icon: 'calendar_month' }
+];
 
 // --- useGenericList Setup ---
 const {
@@ -464,6 +504,15 @@ const getCategoryLabel = (categoryValue: string | null): string => {
 const handleRowClick = (evt: Event, row: EventListItem) => {
   const eventId = row.id;
   void router.push(`/events/${eventId}`);
+};
+
+// Calendar event handlers
+const onDateSelected = (date: string) => {
+  console.log('Date selected:', date);
+};
+
+const onEventSelected = (event: CalendarEvent) => {
+  void router.push(`/events/${event.id}`);
 };
 
 // Wrapper to satisfy Quasar input typing (string | number | null)
