@@ -2,10 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [Unreleased] - 2025-07-04
+
+### Fixed
+
+- Robust error handling for Apollo token refresh: gracefully handles backend 500 errors and missing/null data, preventing app crashes and infinite refresh loops.
+- Improved event and event series title rendering: all pages now correctly display HTML titles from the new API format, with fallback for legacy string titles.
+- Defensive handling for backend plugin errors: frontend now shows user-friendly messages and clears tokens on refresh failure, even if backend plugin returns a 500 error.
+- TypeScript and Quasar code quality: removed all remaining usages of `any` in token refresh logic, added strict type guards, and ensured all optional properties are handled safely.
+- Cleaned up unused imports and variables (e.g., removed all Leaflet code and related linter errors).
 
 ### Changed
 
+- All authentication and session expiration flows now clear cookies and redirect to login on refresh failure, with optional session-expired notification for users.
 - **BREAKING**: Migrated authentication from REST API to GraphQL
   - Replaced REST endpoints with GraphQL mutations and queries
   - Updated auth service to use Apollo Client instead of axios
