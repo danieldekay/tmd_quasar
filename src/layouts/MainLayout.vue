@@ -302,6 +302,11 @@ const linksList: LinkProps[] = [
           icon: 'bug_report',
           link: '/debug',
         },
+        {
+          title: 'Calendar Test',
+          icon: 'calendar_month',
+          link: '/calendar-test',
+        },
       ]
     : []),
 ];

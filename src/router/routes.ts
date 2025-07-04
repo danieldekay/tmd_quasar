@@ -66,6 +66,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/DebugPage.vue'),
         beforeEnter: requireManageOptions,
       },
+      {
+        path: 'calendar-test',
+        component: () => import('pages/CalendarTest.vue'),
+        beforeEnter: requireAuth,
+      },
     ],
   },
 

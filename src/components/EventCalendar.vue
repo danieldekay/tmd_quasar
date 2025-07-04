@@ -21,25 +21,17 @@
               @click="navigateDate('next')"
               :title="`Next ${currentView}`"
             />
-            <q-btn
-              flat
-              dense
-              label="Today"
-              @click="goToToday"
-              class="q-ml-sm"
-            />
+            <q-btn flat dense label="Today" @click="goToToday" class="q-ml-sm" />
           </div>
         </div>
-        
         <div class="col text-center">
           <div class="text-h6 text-weight-bold">{{ currentViewInfo.title }}</div>
           <div class="text-caption text-grey-6">{{ currentViewInfo.subtitle }}</div>
         </div>
-        
         <div class="col-auto">
           <q-btn-toggle
             v-model="currentView"
-            :options="viewModes.map(vm => ({ label: vm.label, value: vm.mode, icon: vm.icon }))"
+            :options="viewModes.map((vm) => ({ label: vm.label, value: vm.mode, icon: vm.icon }))"
             dense
             flat
             toggle-color="primary"
@@ -48,7 +40,6 @@
         </div>
       </div>
     </div>
-
     <!-- Calendar Content -->
     <div class="calendar-content">
       <!-- Month View -->
@@ -62,53 +53,44 @@
           @click-event="onEventClick"
           animated
         >
-          <template #event="{ event }">
-            <div class="calendar-event-item">
-              <q-badge :color="getEventColor(event)" class="full-width text-left">
-                <div class="calendar-event-content">
-                  <div class="event-title text-caption">{{ event.title }}</div>
-                  <div v-if="event.city" class="event-location text-caption">
-                    {{ event.city }}
-                  </div>
-                </div>
-              </q-badge>
+          <template #event="{ event, outside, today }">
+            <div
+              class="calendar-event-bar flex items-center px-2 py-1 rounded-borders text-white text-xs truncate cursor-pointer"
+              :style="{
+                backgroundColor: getEventColor(event),
+                opacity: outside ? 0.5 : 1,
+                border: today ? '2px solid #1976d2' : 'none',
+                boxShadow: today ? '0 0 0 2px #fff' : 'none',
+              }"
+              :title="event.title + (event.time ? ' - ' + event.time : '')"
+            >
+              <span class="truncate">
+                {{ event.title }}<span v-if="event.time"> - {{ event.time }}</span>
+              </span>
+            </div>
+          </template>
+          <template #day="{ scope }">
+            <div
+              :class="['q-calendar__day', { 'calendar-today': scope.today }]"
+              style="position: relative; width: 100%; height: 100%"
+            >
+              <div
+                v-if="scope.today"
+                class="absolute left-1/2 top-2 -translate-x-1/2 rounded-full border-2 border-primary"
+                style="width: 2em; height: 2em; z-index: 1"
+              ></div>
+              <span class="q-calendar__day-label z-10 relative">{{ scope.day }}</span>
             </div>
           </template>
         </q-calendar-month>
       </div>
-
-      <!-- Week View -->
-      <div v-else-if="currentView === 'week'" class="week-view">
-        <q-calendar-day
-          v-model="currentDate"
-          view="week"
-          :events="calendarEvents"
-          bordered
-          :dark="$q.dark.isActive"
-          @click-date="onDateClick"
-          @click-event="onEventClick"
-          animated
-        >
-          <template #event="{ event }">
-            <div class="calendar-event-item">
-              <q-badge :color="getEventColor(event)" class="full-width text-left">
-                <div class="calendar-event-content">
-                  <div class="event-title text-caption">{{ event.title }}</div>
-                  <div v-if="event.city" class="event-location text-caption">
-                    {{ event.city }}
-                  </div>
-                </div>
-              </q-badge>
-            </div>
-          </template>
-        </q-calendar-day>
-      </div>
-
       <!-- Year View with Heatmap -->
       <div v-else-if="currentView === 'year'" class="year-view">
         <div class="year-heatmap q-pa-md">
-          <div class="text-h6 q-mb-md text-center">Event Distribution for {{ new Date(currentDate || new Date()).getFullYear() }}</div>
-          
+          <div class="text-h6 q-mb-md text-center">
+            Event Distribution for {{ new Date(currentDate || new Date()).getFullYear() }}
+          </div>
+
           <div class="row q-gutter-sm justify-center">
             <div
               v-for="month in 12"
@@ -149,7 +131,6 @@
         </div>
       </div>
     </div>
-
     <!-- Selected Date Events Dialog -->
     <q-dialog v-model="showDateEventsDialog" :maximized="$q.screen.lt.sm">
       <q-card class="date-events-dialog" style="min-width: 400px">
@@ -158,12 +139,10 @@
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
-
         <q-card-section>
           <div v-if="selectedDateEvents.length === 0" class="text-center text-grey-6 q-py-md">
             No events scheduled for this date
           </div>
-          
           <div v-else class="events-list">
             <q-card
               v-for="event in selectedDateEvents"
@@ -175,14 +154,9 @@
             >
               <q-card-section class="q-pa-md">
                 <div class="event-title text-weight-medium">{{ event.title }}</div>
-                <div class="row items-center q-mt-xs">
-                  <q-icon name="place" size="xs" class="q-mr-xs" />
-                  <span class="text-caption">{{ event.city }}, {{ event.country }}</span>
-                  <q-space />
-                  <q-badge v-if="event.category" :color="getEventColor(event)">
-                    {{ event.category }}
-                  </q-badge>
-                </div>
+                <q-badge v-if="event.category" :color="getEventColor(event)">
+                  {{ event.category }}
+                </q-badge>
               </q-card-section>
             </q-card>
           </div>
@@ -194,7 +168,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { QCalendarMonth, QCalendarDay } from '@quasar/quasar-ui-qcalendar';
+import { QCalendarMonth } from '@quasar/quasar-ui-qcalendar';
 import type { EventListItem } from '../services/types';
 import { useEventCalendar, type CalendarEvent } from '../composables/useEventCalendar';
 import { useFormatters } from '../composables/useFormatters';
@@ -222,7 +196,7 @@ const {
   navigateDate,
   goToToday,
   setDate,
-  setView
+  setView,
 } = useEventCalendar();
 
 const { getCategoryColor } = useFormatters();
@@ -265,7 +239,7 @@ const selectedDateFormatted = computed(() => {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 });
 
@@ -284,7 +258,7 @@ const getMonthHeatmapStyle = (month: number) => {
   const count = getMonthEventCount(month);
   const intensity = count / maxEventsInMonth.value;
   return {
-    backgroundColor: getHeatmapColor(intensity)
+    backgroundColor: getHeatmapColor(intensity),
   };
 };
 
@@ -305,8 +279,8 @@ const navigateToMonth = (month: number) => {
 };
 
 // Event color based on category
-const getEventColor = (event: CalendarEvent) => {
-  if (!event.category) return 'primary';
+const getEventColor = (event: CalendarEvent | undefined) => {
+  if (!event?.category) return 'primary';
   const colorConfig = getCategoryColor(event.category);
   return colorConfig.color;
 };
@@ -317,7 +291,7 @@ defineExpose({
   currentView,
   setDate,
   setView,
-  goToToday
+  goToToday,
 });
 </script>
 
@@ -325,7 +299,7 @@ defineExpose({
 .event-calendar {
   .calendar-header {
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    
+
     body.body--dark & {
       border-bottom-color: rgba(255, 255, 255, 0.12);
     }
@@ -337,7 +311,7 @@ defineExpose({
         font-weight: 500;
         line-height: 1.2;
       }
-      
+
       .event-location {
         opacity: 0.8;
         line-height: 1.1;
@@ -348,17 +322,17 @@ defineExpose({
   .year-view {
     .month-tile {
       min-width: 120px;
-      
+
       .month-card {
         transition: all 0.2s ease;
         min-height: 80px;
-        
+
         &:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
         }
       }
-      
+
       &.has-events .month-card {
         border-color: $primary;
       }
@@ -369,7 +343,7 @@ defineExpose({
         width: 12px;
         height: 12px;
         border: 1px solid rgba(0, 0, 0, 0.1);
-        
+
         body.body--dark & {
           border-color: rgba(255, 255, 255, 0.2);
         }
@@ -385,6 +359,21 @@ defineExpose({
   }
 }
 
+.calendar-event-bar {
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.calendar-today {
+  box-shadow: 0 0 0 2px #1976d2;
+  border-radius: 50%;
+}
+
 // Responsive adjustments
 @media (max-width: $breakpoint-sm-max) {
   .event-calendar {
@@ -392,24 +381,24 @@ defineExpose({
       .row {
         flex-direction: column;
         gap: 1rem;
-        
+
         .col-auto:first-child {
           order: 2;
         }
-        
+
         .col {
           order: 1;
         }
-        
+
         .col-auto:last-child {
           order: 3;
         }
       }
     }
-    
+
     .year-view .month-tile {
       min-width: 100px;
-      
+
       .month-card {
         min-height: 60px;
       }

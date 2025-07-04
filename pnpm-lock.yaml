@@ -14,6 +14,9 @@ importers:
       '@quasar/extras':
         specifier: ^1.16.4
         version: 1.17.0
+      '@quasar/quasar-ui-qcalendar':
+        specifier: ^4.1.2
+        version: 4.1.2
       axios:
         specifier: ^1.10.0
         version: 1.10.0
@@ -495,6 +498,9 @@ packages:
 
   '@quasar/extras@1.17.0':
     resolution: {integrity: sha512-KqAHdSJfIDauiR1nJ8rqHWT0diqD0QradZKoVIZJAilHAvgwyPIY7MbyR2z4RIMkUIMUSqBZcbshMpEw+9A30w==}
+
+  '@quasar/quasar-ui-qcalendar@4.1.2':
+    resolution: {integrity: sha512-z4ZesDZbHvA0w6CvB8Sm5rsUhyUNO+7F9fO32wYssjX3m4oBi0OzRxWZRkOD/s7wtx0WxUZEllHP2UEx/whaBg==}
 
   '@quasar/render-ssr-error@1.0.3':
     resolution: {integrity: sha512-A8RF99q6/sOSe1Ighnh5syEIbliD3qUYEJd2HyfFyBPSMF+WYGXon5dmzg4nUoK662NgOggInevkDyBDJcZugg==}
@@ -3402,6 +3408,8 @@ snapshots:
       - yaml
 
   '@quasar/extras@1.17.0': {}
+
+  '@quasar/quasar-ui-qcalendar@4.1.2': {}
 
   '@quasar/render-ssr-error@1.0.3':
     dependencies:
