@@ -12,9 +12,11 @@
         >
           <div class="absolute-full bg-gradient" />
           <div class="hero-content column justify-end q-pa-lg">
-            <div class="text-h4 text-weight-bold text-white">
-              {{ eventSeries.title }}
-            </div>
+            <!-- Main Title -->
+            <h1
+              class="text-h3 text-weight-bold text-white"
+              v-html="getRenderedTitle(eventSeries.title)"
+            ></h1>
             <div class="row items-center q-gutter-sm text-white q-mt-sm">
               <div v-if="location" class="row items-center">
                 <q-icon name="location_on" size="18px" class="q-mr-xs" />
@@ -183,9 +185,9 @@
                     </div>
 
                     <!-- Events List -->
-                    <div v-if="seriesEvents.length > 0" class="row q-col-gutter-md">
+                    <div v-if="sortedEvents.length > 0" class="row q-col-gutter-md">
                       <div
-                        v-for="event in seriesEvents"
+                        v-for="event in sortedEvents"
                         :key="event.id"
                         class="col-12 col-md-6 col-lg-4"
                       >
@@ -196,7 +198,17 @@
                           @click="navigateToEvent(event.id)"
                         >
                           <q-card-section>
-                            <div class="text-h6 text-primary">{{ event.title }}</div>
+                            <div
+                              class="text-h6 text-primary"
+                              v-html="getRenderedTitle(event.title)"
+                            ></div>
+                            <q-badge
+                              v-if="event.edition"
+                              color="primary"
+                              class="q-ml-xs"
+                              size="sm"
+                              >{{ event.edition }}</q-badge
+                            >
                             <div v-if="event.start_date" class="text-caption text-grey-6 q-mt-xs">
                               <q-icon name="event" size="xs" class="q-mr-xs" />
                               {{ formatDate(event.start_date) }}
@@ -255,13 +267,18 @@
                     </div>
 
                     <!-- Loading DJs -->
-                    <div v-if="djsLoading" class="text-center q-pa-md">
+                    <div v-if="false" class="text-center q-pa-md">
                       <q-spinner color="primary" size="40px" />
                       <div class="text-body2 q-mt-md">Loading DJs...</div>
                     </div>
 
                     <!-- DJs Table -->
                     <div v-else-if="djLeaderboard.length > 0">
+                      <q-card class="q-mb-md" style="display: none">
+                        <q-card-section>
+                          <div id="dj-leaderboard-map" style="height: 320px; width: 100%"></div>
+                        </q-card-section>
+                      </q-card>
                       <q-table
                         :rows="djLeaderboard"
                         :columns="djColumns"
@@ -272,11 +289,17 @@
                       >
                         <template #body-cell-name="props">
                           <q-td :props="props">
-                            <div
-                              class="text-weight-medium text-primary cursor-pointer"
-                              @click="navigateToDJ(props.row.id)"
-                            >
-                              {{ props.row.name }}
+                            <div class="row items-center">
+                              <div
+                                class="text-weight-medium text-primary cursor-pointer"
+                                @click="navigateToDJ(props.row.id)"
+                              >
+                                {{ props.row.name }}
+                              </div>
+                              <q-badge color="secondary" class="q-ml-sm" size="sm">
+                                {{ props.row.playCount }}
+                                {{ props.row.playCount === 1 ? 'event' : 'events' }}
+                              </q-badge>
                             </div>
                           </q-td>
                         </template>
@@ -502,24 +525,23 @@ const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
 
+// Helper function to extract rendered title from V4 API responses
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') return title;
+  if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
+  return '';
+};
+
 // State
 const eventSeries = ref<EventSeries | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const tab = ref('overview');
 
-// DJ-related state
-const djsLoading = ref(false);
-const djLeaderboard = ref<
-  Array<{
-    id: number;
-    name: string;
-    location: string;
-    rank: number;
-    playCount: number;
-    years: number[];
-  }>
->([]);
+// Add computed property for DJ leaderboard
+const djLeaderboard = computed(() => {
+  return eventSeries.value?.dj_statistics?.dj_list || [];
+});
 
 // Default image for when no featured image is available
 const defaultImage = 'https://cdn.quasar.dev/img/mountains.jpg';
@@ -557,6 +579,15 @@ const organizer = computed(() => {
 
 const seriesEvents = computed(() => {
   return eventSeries.value?._embedded?.events || [];
+});
+
+const sortedEvents = computed(() => {
+  if (!eventSeries.value?._embedded?.events) return [];
+  return [...eventSeries.value._embedded.events].sort((a, b) => {
+    const aDate = a.start_date || '';
+    const bDate = b.start_date || '';
+    return bDate.localeCompare(aDate); // descending
+  });
 });
 
 const upcomingEventsCount = computed(() => {
@@ -674,113 +705,6 @@ const openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-const loadDJs = async () => {
-  if (!eventSeries.value?._embedded?.events) return;
-
-  djsLoading.value = true;
-
-  try {
-    // Import eventDetailsService to get detailed event data with DJs
-    const { eventDetailsService } = await import('../services');
-
-    // Fetch detailed event data for each event to get DJs
-    const eventPromises = eventSeries.value._embedded.events.map((event) =>
-      eventDetailsService.getEvent(event.id),
-    );
-
-    const detailedEvents = await Promise.all(eventPromises);
-
-    // Aggregate DJ data
-    const djMap = new Map<
-      number,
-      {
-        id: number;
-        name: string;
-        events: Array<{ eventId: number; year: number }>;
-      }
-    >();
-
-    detailedEvents.forEach((event) => {
-      if (event._embedded?.djs && event.start_date && event.id) {
-        const eventYear = new Date(event.start_date).getFullYear();
-
-        event._embedded.djs.forEach((dj: { id: number; title: string }) => {
-          if (!djMap.has(dj.id)) {
-            djMap.set(dj.id, {
-              id: dj.id,
-              name: dj.title,
-              events: [],
-            });
-          }
-
-          const djData = djMap.get(dj.id);
-          if (djData) {
-            djData.events.push({ eventId: event.id, year: eventYear });
-          }
-        });
-      }
-    });
-
-    // Fetch detailed DJ information for location data
-    const { djService } = await import('../services');
-    const djIds = Array.from(djMap.keys());
-    const djDetailsPromises = djIds.map(
-      (djId) => djService.getDJ(djId).catch(() => null), // Handle errors gracefully
-    );
-    const djDetails = await Promise.all(djDetailsPromises);
-
-    // Create leaderboard with rankings and location
-    const leaderboard = Array.from(djMap.values())
-      .map((dj, index) => {
-        const djDetail = djDetails[index];
-        const city = djDetail?.tmd_dj_city || '';
-        const country = djDetail?.tmd_dj_country || '';
-        let location = '';
-
-        if (city && country) {
-          location = `${city}, ${getCountryName(country)}`;
-        } else if (city) {
-          location = city;
-        } else if (country) {
-          location = getCountryName(country);
-        } else {
-          location = 'Unknown';
-        }
-
-        return {
-          id: dj.id,
-          name: dj.name,
-          location,
-          playCount: dj.events.length,
-          years: [...new Set(dj.events.map((e) => e.year))].sort((a, b) => b - a),
-          rank: 0, // Will be set after sorting
-        };
-      })
-      .sort((a, b) => b.playCount - a.playCount || a.name.localeCompare(b.name));
-
-    // Assign ranks (handle ties)
-    let currentRank = 1;
-    leaderboard.forEach((dj, index) => {
-      const previousDJ = leaderboard[index - 1];
-      if (index > 0 && previousDJ && previousDJ.playCount !== dj.playCount) {
-        currentRank = index + 1;
-      }
-      dj.rank = currentRank;
-    });
-
-    djLeaderboard.value = leaderboard;
-  } catch (err) {
-    console.error('Error loading DJs:', err);
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to load DJ information',
-      position: 'top',
-    });
-  } finally {
-    djsLoading.value = false;
-  }
-};
-
 const loadEventSeries = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
@@ -793,9 +717,8 @@ const loadEventSeries = async (done?: () => void) => {
   }
 
   try {
-    eventSeries.value = await eventSeriesService.getEventSeriesById(id);
-    // Load DJs after event series is loaded
-    await loadDJs();
+    eventSeries.value = await eventSeriesService.getEventSeriesById(id, { include_events: true });
+    // No need to load DJs separately
   } catch (err) {
     console.error('Error loading event series:', err);
     error.value = 'Failed to load event series details';
@@ -810,7 +733,9 @@ const loadEventSeries = async (done?: () => void) => {
   }
 };
 
-onMounted(loadEventSeries);
+onMounted(() => {
+  void loadEventSeries();
+});
 </script>
 
 <style scoped lang="scss">

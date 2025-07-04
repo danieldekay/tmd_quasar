@@ -2,6 +2,17 @@ import { computed, ref } from 'vue';
 import type { EventListItem } from '../services/types';
 import { useFormatters } from './useFormatters';
 
+// Helper function to extract rendered title from V4 API responses
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') {
+    return title;
+  }
+  if (title && typeof title === 'object' && 'rendered' in title) {
+    return title.rendered;
+  }
+  return '';
+};
+
 export type CalendarEvent = {
   id: number;
   title: string;
@@ -40,7 +51,7 @@ export const useEventCalendar = () => {
         if (!end) end = start;
         return {
           id: event.id,
-          title: event.title,
+          title: getRenderedTitle(event.title),
           start,
           end,
           allDay: true,

@@ -1,6 +1,17 @@
 import { BaseService } from './baseService';
 import type { EventListItem, Teacher, DJ, Couple, EventSeries } from './types';
 
+// Helper function to extract rendered title from V4 API responses
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') {
+    return title;
+  }
+  if (title && typeof title === 'object' && 'rendered' in title) {
+    return title.rendered;
+  }
+  return '';
+};
+
 export interface ContentItem {
   id: number;
   title: string;
@@ -92,7 +103,7 @@ class ContentService {
 
       return {
         id: response.id,
-        title: response.title,
+        title: getRenderedTitle(response.title),
         type: 'event',
         date: response.start_date,
         start_date: response.start_date,
@@ -115,8 +126,8 @@ class ContentService {
 
       return {
         id: response.id,
-        title: response.title,
-        name: response.title,
+        title: getRenderedTitle(response.title),
+        name: getRenderedTitle(response.title),
         type: 'teacher',
         bio: response.content?.rendered,
         country: response.country,
@@ -134,8 +145,8 @@ class ContentService {
 
       return {
         id: response.id,
-        title: response.title,
-        name: response.title,
+        title: getRenderedTitle(response.title),
+        name: getRenderedTitle(response.title),
         type: 'dj',
         bio: response.content?.rendered,
         country: response.tmd_dj_country,
@@ -153,8 +164,8 @@ class ContentService {
 
       return {
         id: response.id,
-        title: response.title,
-        name: response.title,
+        title: getRenderedTitle(response.title),
+        name: getRenderedTitle(response.title),
         type: 'teacher_couple',
         bio: response.meta_box?.bio_couple,
         country: response.country,
@@ -172,7 +183,7 @@ class ContentService {
 
       return {
         id: response.id,
-        title: response.title,
+        title: getRenderedTitle(response.title),
         type: 'event_series',
         bio: response.content?.rendered,
         country: response.country,

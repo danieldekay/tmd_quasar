@@ -55,6 +55,7 @@
         >
           <template #event="{ event, outside, today }">
             <div
+              v-if="event"
               class="calendar-event-bar flex items-center px-2 py-1 rounded-borders text-white text-xs truncate cursor-pointer"
               :style="{
                 backgroundColor: getEventColor(event),
@@ -62,10 +63,11 @@
                 border: today ? '2px solid #1976d2' : 'none',
                 boxShadow: today ? '0 0 0 2px #fff' : 'none',
               }"
-              :title="event.title + (event.time ? ' - ' + event.time : '')"
+              :title="getRenderedTitle(event.title) + (event.time ? ' - ' + event.time : '')"
             >
               <span class="truncate">
-                {{ event.title }}<span v-if="event.time"> - {{ event.time }}</span>
+                {{ getRenderedTitle(event.title)
+                }}<span v-if="event.time"> - {{ event.time }}</span>
               </span>
             </div>
           </template>
@@ -153,7 +155,9 @@
               @click="$emit('event-selected', event)"
             >
               <q-card-section class="q-pa-md">
-                <div class="event-title text-weight-medium">{{ event.title }}</div>
+                <div class="event-title text-weight-medium">
+                  {{ getRenderedTitle(event.title) }}
+                </div>
                 <q-badge v-if="event.category" :color="getEventColor(event)">
                   {{ event.category }}
                 </q-badge>
@@ -172,6 +176,17 @@ import { QCalendarMonth } from '@quasar/quasar-ui-qcalendar';
 import type { EventListItem } from '../services/types';
 import { useEventCalendar, type CalendarEvent } from '../composables/useEventCalendar';
 import { useFormatters } from '../composables/useFormatters';
+
+// Helper function to extract rendered title from V4 API responses
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') {
+    return title;
+  }
+  if (title && typeof title === 'object' && 'rendered' in title) {
+    return title.rendered;
+  }
+  return '';
+};
 
 interface Props {
   events: EventListItem[];

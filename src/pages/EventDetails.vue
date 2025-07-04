@@ -12,10 +12,11 @@
         >
           <div class="absolute-full bg-gradient" />
           <div class="hero-content column justify-end q-pa-lg">
-            <div class="text-h4 text-weight-bold text-white">
-              <template v-if="editionOrdinal">{{ editionOrdinal }}&nbsp;</template
-              >{{ event.event_name || event.title }}
-            </div>
+            <!-- Main Title -->
+            <h1
+              class="text-h3 text-weight-bold text-white"
+              v-html="getRenderedTitle(event.event_name || event.title)"
+            ></h1>
             <div class="row items-center q-gutter-sm text-white q-mt-sm">
               <div class="row items-center">
                 <q-icon name="event" size="18px" class="q-mr-xs" />
@@ -117,6 +118,45 @@
                         </q-item>
                       </template>
                     </q-list>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <!-- Event Series Links -->
+              <div v-if="eventSeriesLinks.length > 0" class="col-12 col-md-4">
+                <q-card flat bordered>
+                  <q-card-section>
+                    <div class="text-h6 q-mb-md">
+                      <q-icon name="event_repeat" class="q-mr-sm" />
+                      Event Series
+                    </div>
+                    <div class="event-series-links">
+                      <div
+                        v-for="seriesLink in eventSeriesLinks"
+                        :key="seriesLink.href"
+                        class="series-link-item q-pa-md q-mb-sm rounded-borders bg-purple-1 cursor-pointer"
+                        @click="navigateToEventSeries(seriesLink.href)"
+                      >
+                        <div class="row items-center">
+                          <div class="col">
+                            <div class="text-weight-medium">
+                              <q-icon name="event_repeat" size="sm" class="q-mr-sm" />
+                              {{
+                                seriesLink.title ||
+                                `Series #${extractEventSeriesIdFromLink(seriesLink.href)}`
+                              }}
+                            </div>
+                            <div class="text-caption text-grey-6">
+                              <q-icon name="link" size="xs" class="q-mr-xs" />
+                              Click to view series
+                            </div>
+                          </div>
+                          <div class="col-auto">
+                            <q-icon name="chevron_right" size="sm" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </q-card-section>
                 </q-card>
               </div>
@@ -604,7 +644,10 @@ const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
 
-const event = ref<EventDetails>({} as EventDetails);
+const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
+
+// State
+const event = ref<EventDetails | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const tab = ref<'overview' | 'details' | 'djs' | 'venue' | 'contact'>('overview');
@@ -627,13 +670,31 @@ const interactions = useInteractions(Number(route.params.id), 'tmd_event');
 
 const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
-const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
-
+// Computed properties
 const formattedDates = computed(() => {
-  if (!event.value) return '';
-  const { start_date, end_date } = event.value;
-  return end_date ? `${formatDate(start_date)} - ${formatDate(end_date)}` : formatDate(start_date);
+  if (!event.value) return { start: '', end: '' };
+
+  const start = formatDate(event.value.start_date);
+  const end = formatDate(event.value.end_date);
+  return { start, end };
 });
+
+// Helper function to get display name from title
+const getDisplayName = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') {
+    return title;
+  }
+  if (title && typeof title === 'object' && 'rendered' in title) {
+    return title.rendered;
+  }
+  return '';
+};
+
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') return title;
+  if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
+  return '';
+};
 
 const location = computed(() =>
   [event.value?.city, event.value?.country].filter(Boolean).join(', '),
@@ -782,6 +843,13 @@ const eventInfoItems = computed(() => [
     color: 'amber',
     label: 'Edition',
     value: editionOrdinal.value,
+  },
+  {
+    show: !!eventSeriesLinks.value.length,
+    icon: 'event_repeat',
+    color: 'purple',
+    label: 'Event Series',
+    value: `${eventSeriesLinks.value.length} series`,
   },
 ]);
 
@@ -943,7 +1011,11 @@ const venueDetails = computed(() => [
     action: {
       icon: 'map',
       title: 'Open in Maps',
-      handler: () => openInMaps(event.value.lat!, event.value.lon!),
+      handler: () => {
+        if (event.value?.lat && event.value?.lon) {
+          openInMaps(event.value.lat, event.value.lon);
+        }
+      },
     },
   },
 ]);
@@ -951,6 +1023,12 @@ const venueDetails = computed(() => [
 const hasVenueDetails = computed(
   () => !!(fullAddress.value || event.value?.type_of_floor || event.value?.venue_features),
 );
+
+// Event series links
+const eventSeriesLinks = computed(() => {
+  if (!event.value?._links?.event_series) return [];
+  return Array.isArray(event.value._links.event_series) ? event.value._links.event_series : [];
+});
 
 // Contact methods
 const contactMethods = computed(() => [
@@ -1124,7 +1202,7 @@ const djsWithDetails = computed(() =>
 
     return {
       ...dj,
-      displayName: dj.tmd_dj_name || dj.title,
+      displayName: dj.tmd_dj_name || getDisplayName(dj.title),
       location: [dj.tmd_dj_city, dj.tmd_dj_country].filter(Boolean).join(', '),
       activities,
       yearsSince: yearsSinceItems.length > 0 ? yearsSinceItems.join(', ') : '',
@@ -1239,6 +1317,26 @@ const openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
+// Event series navigation methods
+const navigateToEventSeries = (href: string) => {
+  // Extract event series ID from the href and navigate to the event series
+  const seriesId = extractEventSeriesIdFromLink(href);
+  if (seriesId) {
+    void router.push(`/event-series/${seriesId}`);
+  } else {
+    // Fallback: open the link directly
+    window.open(href, '_blank', 'noopener,noreferrer');
+  }
+};
+
+const extractEventSeriesIdFromLink = (href: string): number | null => {
+  // Extract event series ID from URLs like:
+  // http://localhost:10014/wp-json/tmd/v4/event-series/51405
+  const match = href.match(/\/event-series\/(\d+)/);
+  return match && match[1] ? parseInt(match[1], 10) : null;
+};
+
+// Load event data
 const loadEvent = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;

@@ -59,13 +59,25 @@ export class AuthService {
         jwtRefreshToken: refreshToken,
       };
 
-      const { data } = await apolloClient.mutate<{ refreshJwtAuthToken: RefreshTokenResponse }>({
+      const { data, errors } = await apolloClient.mutate<{
+        refreshJwtAuthToken: RefreshTokenResponse;
+      }>({
         mutation: REFRESH_TOKEN_MUTATION,
         variables: { input },
       });
 
+      // Defensive: If backend returns 500, data may be undefined
       if (!data?.refreshJwtAuthToken) {
-        throw new Error('Token refresh failed - no response data');
+        // Try to extract GraphQL error message
+        const errorMessage =
+          errors?.[0]?.message ||
+          (typeof data === 'object' &&
+            data &&
+            'errors' in data &&
+            Array.isArray((data as { errors: unknown[] }).errors) &&
+            (data as { errors: { message?: string }[] }).errors[0]?.message) ||
+          'Token refresh failed - no response data';
+        throw new Error(errorMessage);
       }
 
       const { authToken } = data.refreshJwtAuthToken;
@@ -75,9 +87,23 @@ export class AuthService {
         refreshToken, // Keep the same refresh token
         user: null, // User data not returned in refresh response
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      // Defensive: Handle network/500 errors gracefully
+      let message = 'Token refresh failed - please log in again';
+      if (typeof error === 'object' && error !== null) {
+        // Apollo network error
+        const networkError = (error as { networkError?: { statusCode?: number } }).networkError;
+        if (networkError && networkError.statusCode === 500) {
+          message = 'Server error during token refresh. Please log in again.';
+        } else if (
+          'message' in error &&
+          typeof (error as { message: unknown }).message === 'string'
+        ) {
+          message = (error as { message: string }).message;
+        }
+      }
       console.error('Token refresh error:', error);
-      throw new Error('Token refresh failed - please log in again');
+      throw new Error(message);
     }
   }
 

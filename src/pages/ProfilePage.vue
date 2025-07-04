@@ -227,7 +227,7 @@
                   @click="viewEvent(event.id)"
                 >
                   <q-item-section>
-                    <q-item-label>{{ event.title }}</q-item-label>
+                    <q-item-label>{{ getRenderedTitle(event.title) }}</q-item-label>
                     <q-item-label caption>
                       {{ event.start_date ? formatDate(event.start_date) : '' }}
                       {{ event.city && event.country ? ` • ${event.city}, ${event.country}` : '' }}
@@ -257,7 +257,7 @@
                   @click="viewTeacher(teacher.id)"
                 >
                   <q-item-section>
-                    <q-item-label>{{ teacher.title }}</q-item-label>
+                    <q-item-label>{{ getRenderedTitle(teacher.title) }}</q-item-label>
                     <q-item-label caption>
                       {{
                         teacher.city && teacher.country ? `${teacher.city}, ${teacher.country}` : ''
@@ -285,7 +285,7 @@
                   @click="viewDJ(dj.id)"
                 >
                   <q-item-section>
-                    <q-item-label>{{ dj.title }}</q-item-label>
+                    <q-item-label>{{ getRenderedTitle(dj.title) }}</q-item-label>
                     <q-item-label caption>
                       {{ dj.city && dj.country ? `${dj.city}, ${dj.country}` : '' }}
                     </q-item-label>
@@ -318,7 +318,7 @@
                   @click="viewEventSeries(series.id)"
                 >
                   <q-item-section>
-                    <q-item-label>{{ series.title }}</q-item-label>
+                    <q-item-label>{{ getRenderedTitle(series.title) }}</q-item-label>
                     <q-item-label caption>
                       {{ series.city && series.country ? `${series.city}, ${series.country}` : '' }}
                     </q-item-label>
@@ -483,6 +483,12 @@ const formatDate = (dateString: string): string => {
   } catch {
     return dateString;
   }
+};
+
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') return title;
+  if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
+  return '';
 };
 
 const viewEvent = (id: number) => {

@@ -92,9 +92,19 @@ export interface EventDetails extends BaseEvent {
   _embedded?: {
     djs?: DJ[];
     teachers?: Teacher[];
+    event_series?: EventSeries[];
     author?: unknown[];
     'wp:featuredmedia'?: unknown[];
     'wp:term'?: unknown[][];
+  };
+  // Links to related entities (V4 API)
+  _links?: {
+    self?: Array<{ href: string }>;
+    collection?: Array<{ href: string }>;
+    event_series?: Array<{ href: string; title?: string; type?: string; embeddable?: boolean }>;
+    djs?: Array<{ href: string; title?: string; type?: string; embeddable?: boolean }>;
+    teachers?: Array<{ href: string; title?: string; type?: string; embeddable?: boolean }>;
+    author?: Array<{ href: string; embeddable: boolean }>;
   };
   content: Content;
   excerpt: Excerpt;
@@ -291,6 +301,18 @@ export interface EventSeries extends BaseEntity {
     description?: string;
     website?: string;
     logo?: string;
+  };
+  dj_statistics?: {
+    total_djs: number;
+    unique_djs: number;
+    dj_list: Array<{
+      id: number;
+      name: string;
+      city?: string;
+      country?: string;
+      appearances: number;
+      years: string[];
+    }>;
   };
   // Embedded related data
   _embedded?: {

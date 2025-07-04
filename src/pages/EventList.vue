@@ -202,7 +202,7 @@
                     <q-badge v-if="props.row.edition" color="primary" class="q-mr-sm">
                       {{ Number(props.row.edition) || props.row.edition }}
                     </q-badge>
-                    {{ formatText(props.row.title) }}
+                    {{ getRenderedTitle(props.row.title) }}
                   </div>
                   <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
                     {{ formatText(props.row.subtitle) }}
@@ -495,6 +495,12 @@ const getCategoryLabel = (categoryValue: string | null): string => {
   if (!categoryValue) return '';
   const option = categoryOptions.value.find((opt) => opt.value === categoryValue);
   return option ? option.label : categoryValue;
+};
+
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') return title;
+  if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
+  return '';
 };
 
 // Event handlers

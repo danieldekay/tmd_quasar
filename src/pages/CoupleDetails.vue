@@ -236,7 +236,9 @@
                   class="q-pa-sm rounded-borders"
                 >
                   <q-item-section>
-                    <q-item-label class="text-body2">{{ event.title }}</q-item-label>
+                    <q-item-label class="text-body2">{{
+                      getRenderedTitle(event.title)
+                    }}</q-item-label>
                   </q-item-section>
                   <q-item-section side>
                     <q-icon name="arrow_forward_ios" size="xs" />
@@ -268,6 +270,17 @@ import { useCountries } from '../composables/useCountries';
 const route = useRoute();
 const { getCountryName } = useCountries();
 
+// Helper function to extract rendered title from V4 API responses
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+  if (typeof title === 'string') {
+    return title;
+  }
+  if (title && typeof title === 'object' && 'rendered' in title) {
+    return title.rendered;
+  }
+  return '';
+};
+
 // State
 const couple = ref<Couple | null>(null);
 const loading = ref(false);
@@ -275,35 +288,41 @@ const error = ref<string | null>(null);
 
 // Computed properties
 const leader = computed(() => {
-  if (!couple.value?._embedded?.teachers) return null;
-  return couple.value._embedded.teachers.find((t) => t.role === 'leader') || null;
+  if (couple.value?._embedded?.teachers) {
+    return couple.value._embedded.teachers.find((t) => t.role === 'leader');
+  }
+  return null;
 });
 
 const follower = computed(() => {
-  if (!couple.value?._embedded?.teachers) return null;
-  return couple.value._embedded.teachers.find((t) => t.role === 'follower') || null;
+  if (couple.value?._embedded?.teachers) {
+    return couple.value._embedded.teachers.find((t) => t.role === 'follower');
+  }
+  return null;
 });
 
 const events = computed(() => {
   return couple.value?._embedded?.events || [];
 });
 
-// Helper functions
+// Helper function to get couple names
 const getCoupleNames = (couple: Couple): string => {
   if (couple._embedded?.teachers) {
     const teachers = couple._embedded.teachers;
-    const leaderName = teachers.find((t) => t.role === 'leader')?.title || 'Unknown';
-    const followerName = teachers.find((t) => t.role === 'follower')?.title || 'Unknown';
-    return `${followerName} & ${leaderName}`;
-  }
+    const leaderName = teachers.find((t) => t.role === 'leader')?.title || '';
+    const followerName = teachers.find((t) => t.role === 'follower')?.title || '';
 
-  // Fallback to leader_name and follower_name if available
-  if (couple.leader_name && couple.follower_name) {
-    return `${couple.follower_name} & ${couple.leader_name}`;
+    if (leaderName && followerName) {
+      return `${leaderName} & ${followerName}`;
+    } else if (leaderName) {
+      return leaderName;
+    } else if (followerName) {
+      return followerName;
+    }
   }
 
   // Last resort: decode HTML entities from title
-  return decodeHtmlEntities(couple.title || 'Unknown Partnership');
+  return decodeHtmlEntities(getRenderedTitle(couple.title) || 'Unknown Partnership');
 };
 
 const getLocationText = (couple: Couple): string => {
