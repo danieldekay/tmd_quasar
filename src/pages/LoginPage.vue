@@ -14,8 +14,11 @@
               label="Username or Email"
               type="text"
               outlined
-              :rules="[(val) => !!val || 'Username is required']"
+              :rules="[(val) => !!val || 'Username is required', validateUsernameRule]"
               :disable="isLoading"
+              autocomplete="username"
+              spellcheck="false"
+              @input="onUsernameInput"
             >
               <template #prepend>
                 <q-icon name="person" />
@@ -27,8 +30,10 @@
               label="Password"
               :type="showPassword ? 'text' : 'password'"
               outlined
-              :rules="[(val) => !!val || 'Password is required']"
+              :rules="[(val) => !!val || 'Password is required', validatePasswordRule]"
               :disable="isLoading"
+              autocomplete="current-password"
+              @input="onPasswordInput"
             >
               <template #prepend>
                 <q-icon name="lock" />
@@ -98,23 +103,11 @@
               <div class="debug-grid">
                 <div class="debug-item">
                   <span class="debug-label">API_BASE_URL:</span>
-                  <span class="debug-value">{{ envInfo.apiBaseUrl }}</span>
-                </div>
-                <div class="debug-item">
-                  <span class="debug-label">GRAPHQL_ENDPOINT:</span>
-                  <span class="debug-value">{{ envInfo.graphqlEndpoint }}</span>
-                </div>
-                <div class="debug-item">
-                  <span class="debug-label">WORDPRESS_URL:</span>
-                  <span class="debug-value">{{ envInfo.wordpressUrl }}</span>
+                  <span class="debug-value">{{ sanitizeDebugValue(envInfo.apiBaseUrl) }}</span>
                 </div>
                 <div class="debug-item">
                   <span class="debug-label">NODE_ENV:</span>
-                  <span class="debug-value">{{ envInfo.nodeEnv }}</span>
-                </div>
-                <div class="debug-item">
-                  <span class="debug-label">VUE_ROUTER_MODE:</span>
-                  <span class="debug-value">{{ envInfo.routerMode }}</span>
+                  <span class="debug-value">{{ sanitizeDebugValue(envInfo.nodeEnv) }}</span>
                 </div>
               </div>
 
@@ -122,11 +115,7 @@
               <div class="debug-grid">
                 <div class="debug-item">
                   <span class="debug-label">Current URL:</span>
-                  <span class="debug-value">{{ currentUrl }}</span>
-                </div>
-                <div class="debug-item">
-                  <span class="debug-label">User Agent:</span>
-                  <span class="debug-value">{{ userAgent }}</span>
+                  <span class="debug-value">{{ sanitizeDebugValue(currentUrl) }}</span>
                 </div>
               </div>
             </q-card-section>
@@ -142,6 +131,7 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Notify } from 'quasar';
 import { useAuthStore } from '../stores/authStore';
+import { escapeHtml } from '../utils/security';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - JSON import for version reading
 import pkg from '../../package.json';
@@ -161,9 +151,51 @@ const form = reactive({
 const showPassword = ref(false);
 const isLoading = ref(false);
 
+// Input validation state
+const usernameError = ref<string | null>(null);
+const passwordError = ref<string | null>(null);
+
 // Debug flag
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const debug = ref(true);
+
+// Input validation functions
+const validateUsernameRule = (val: string): boolean | string => {
+  if (!val) return 'Username is required';
+  if (val.length > 100) return 'Username too long';
+  return true;
+};
+
+const validatePasswordRule = (val: string): boolean | string => {
+  if (!val) return 'Password is required';
+  if (val.length > 128) return 'Password too long';
+  return true;
+};
+
+// Sanitize user inputs
+const onUsernameInput = (val: string) => {
+  // Basic length check - more validation happens in store
+  if (val.length > 100) {
+    form.username = val.substring(0, 100);
+  }
+  usernameError.value = null;
+};
+
+const onPasswordInput = (val: string) => {
+  // Basic length check
+  if (val.length > 128) {
+    form.password = val.substring(0, 128);
+  }
+  passwordError.value = null;
+};
+
+// Sanitize debug output to prevent information disclosure
+const sanitizeDebugValue = (value: string): string => {
+  if (typeof value !== 'string') return 'N/A';
+  
+  // Remove sensitive information
+  return escapeHtml(value.replace(/[a-z0-9]{20,}/gi, '[REDACTED]'));
+};
 
 // Debug information
 const isLocalhost = computed(() => {
@@ -177,10 +209,7 @@ const isLocalhost = computed(() => {
 
 const envInfo = computed(() => ({
   apiBaseUrl: process.env.API_BASE_URL || 'Not set',
-  graphqlEndpoint: process.env.GRAPHQL_ENDPOINT || 'Not set',
-  wordpressUrl: process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'Not set',
   nodeEnv: process.env.NODE_ENV || 'development',
-  routerMode: process.env.VUE_ROUTER_MODE || 'hash',
 }));
 
 const currentUrl = computed(() => {
@@ -188,9 +217,12 @@ const currentUrl = computed(() => {
   return window.location.href;
 });
 
+// Sanitize user agent strings to prevent potential XSS
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const userAgent = computed(() => {
   if (typeof window === 'undefined') return 'Server-side rendering';
-  return `${window.navigator.userAgent.substring(0, 50)}...`;
+  // Sanitize user agent to prevent potential XSS
+  return escapeHtml(window.navigator.userAgent.substring(0, 50)) + '...';
 });
 
 // Redirect functions for password reset and sign-up
