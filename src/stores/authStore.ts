@@ -9,6 +9,8 @@ import {
   clearJWTTokens,
 } from '../utils/cookies';
 import { getJwtExpiration } from '../utils/jwt';
+import { validateUsername, validatePassword, authRateLimiter } from '../utils/security';
+import { initCSRFProtection, clearCSRFToken } from '../utils/csrf';
 
 export interface User {
   id: number;
@@ -104,7 +106,38 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
 
     try {
-      const response = await authService.login(credentials);
+      // Validate input before sending to server
+      const usernameValidation = validateUsername(credentials.username);
+      if (!usernameValidation.isValid) {
+        error.value = usernameValidation.error || 'Invalid username';
+        return false;
+      }
+
+      const passwordValidation = validatePassword(credentials.password);
+      if (!passwordValidation.isValid) {
+        error.value = passwordValidation.error || 'Invalid password';
+        return false;
+      }
+
+      // Check rate limiting
+      const clientId = typeof navigator !== 'undefined' 
+        ? navigator.userAgent.substring(0, 50) + window.location.hostname
+        : 'unknown';
+        
+      if (!authRateLimiter.isAllowed(clientId)) {
+        const remainingTime = Math.ceil(authRateLimiter.getRemainingTime(clientId) / 1000 / 60);
+        error.value = `Too many login attempts. Please try again in ${remainingTime} minutes.`;
+        return false;
+      }
+
+      // Use sanitized credentials
+      const sanitizedCredentials = {
+        username: usernameValidation.sanitized,
+        password: credentials.password, // Don't sanitize password, just validate
+        remember: credentials.remember,
+      };
+
+      const response = await authService.login(sanitizedCredentials);
 
       token.value = response.token;
       user.value = response.user;
@@ -115,7 +148,14 @@ export const useAuthStore = defineStore('auth', () => {
         setRefreshToken(response.refreshToken, credentials.remember);
       }
 
+      // Initialize CSRF protection
+      initCSRFProtection();
+
       scheduleRefresh(response.token);
+      
+      // Reset rate limiting on successful login
+      authRateLimiter.reset(clientId);
+      
       return true;
     } catch (err) {
       console.error('Login error:', err);
@@ -142,6 +182,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Clear stored tokens
       clearJWTTokens();
+      
+      // Clear CSRF token
+      clearCSRFToken();
 
       if (refreshTimeout) {
         clearTimeout(refreshTimeout);

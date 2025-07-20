@@ -2,6 +2,7 @@ import { boot } from 'quasar/wrappers';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 import { getJWTToken } from '../utils/cookies';
+import { getCSRFHeaders } from '../utils/csrf';
 
 // Extend axios config to include metadata
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -31,8 +32,10 @@ const api = axios.create({
       : 'https://www.tangomarathons.com/wp-json/tmd/v3'),
   headers: {
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest', // CSRF protection
   },
   timeout: 30000, // 30 second timeout
+  withCredentials: false, // Don't send cookies automatically for CSRF protection
 });
 
 // --- auto-relogin state -----------------------------------
@@ -51,6 +54,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF protection headers
+    const csrfHeaders = getCSRFHeaders();
+    Object.assign(config.headers, csrfHeaders);
 
     return config;
   },
