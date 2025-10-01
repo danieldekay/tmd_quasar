@@ -1,202 +1,154 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { authService } from '../authService';
+/**
+ * Authentication Service Contract Tests
+ * Tests for TMD authentication API endpoints
+ */
 
-// Mock Apollo Client
-vi.mock('../../boot/apollo', () => ({
-  apolloClient: {
-    mutate: vi.fn(),
-    query: vi.fn(),
-  },
-}));
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { authService } from './authService';
+import type { LoginCredentials } from './types';
 
-import { apolloClient } from '../../boot/apollo';
-
-describe('AuthService', () => {
+describe('authService - Contract Tests', () => {
   beforeEach(() => {
+    // Clear any mocks before each test
     vi.clearAllMocks();
   });
 
-  describe('login', () => {
-    it('should login successfully with valid credentials', async () => {
-      const mockToken = 'mock-jwt-token';
-      const mockUser = {
-        id: '1',
-        name: 'Test User',
-        email: 'test@example.com',
-        roles: {
-          nodes: [{ name: 'subscriber' }],
-        },
-        avatar: { url: 'avatar-url' },
+  describe('POST /wp-json/tmd/v3/auth/login', () => {
+    it('should successfully login with valid credentials', async () => {
+      const credentials: LoginCredentials = {
+        identifier: 'testuser',
+        password: 'testpass123',
+        rememberMe: true,
       };
 
-      // Mock the GraphQL login response
-      (apolloClient.mutate as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        data: {
-          login: {
-            authToken: mockToken,
-            user: mockUser,
-          },
-        },
-      });
+      const response = await authService.login(credentials);
 
-      const result = await authService.login({
-        username: 'testuser',
-        password: 'password123',
-      });
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+      expect(response.data?.token).toBeTruthy();
+      expect(response.data?.user).toBeDefined();
+      expect(response.data?.user.id).toBeTypeOf('number');
+      expect(response.data?.user.username).toBeTypeOf('string');
+      expect(response.data?.user.email).toBeTypeOf('string');
+      expect(response.data?.user.displayName).toBeTypeOf('string');
+      expect(Array.isArray(response.data?.user.roles)).toBe(true);
+      expect(response.data?.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T/); // ISO date format
+    });
 
-      expect(result).not.toBeNull();
-      if (result) {
-        expect(result.token).toBe(mockToken);
-        expect(result.user).not.toBeNull();
-        if (result.user) {
-          expect(result.user.name).toBe(mockUser.name);
-        }
+    it('should reject login with invalid credentials', async () => {
+      const credentials: LoginCredentials = {
+        identifier: 'invalid',
+        password: 'wrong',
+      };
+
+      const response = await authService.login(credentials);
+
+      expect(response.success).toBe(false);
+      expect(response.error).toBeDefined();
+      expect(response.error?.code).toBe('INVALID_CREDENTIALS');
+      expect(response.error?.message).toBeTruthy();
+    });
+
+    it('should handle account disabled error', async () => {
+      const credentials: LoginCredentials = {
+        identifier: 'disabled_user',
+        password: 'password',
+      };
+
+      const response = await authService.login(credentials);
+
+      expect(response.success).toBe(false);
+      expect(response.error).toBeDefined();
+      expect(response.error?.code).toBe('ACCOUNT_DISABLED');
+    });
+
+    it('should handle rate limiting', async () => {
+      const credentials: LoginCredentials = {
+        identifier: 'testuser',
+        password: 'wrong',
+      };
+
+      // Simulate multiple failed attempts
+      for (let i = 0; i < 5; i++) {
+        await authService.login(credentials);
       }
 
-      expect(apolloClient.mutate).toHaveBeenCalledWith({
-        mutation: expect.any(Object),
-        variables: {
-          input: {
-            clientMutationId: expect.any(String),
-            username: 'testuser',
-            password: 'password123',
-          },
-        },
-      });
+      const response = await authService.login(credentials);
+
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('RATE_LIMITED');
+      expect(response.error?.retryAfter).toBeTypeOf('number');
     });
 
-    it('should throw error on login failure', async () => {
-      const errorMessage = 'Invalid credentials';
-      (apolloClient.mutate as ReturnType<typeof vi.fn>).mockRejectedValueOnce({
-        graphQLErrors: [{ message: errorMessage }],
-      });
+    it('should validate required fields', async () => {
+      const credentials = {
+        identifier: '',
+        password: '',
+      } as LoginCredentials;
 
-      await expect(
-        authService.login({
-          username: 'wronguser',
-          password: 'wrongpass',
-        }),
-      ).rejects.toThrow('Login failed. Please check your credentials.');
+      const response = await authService.login(credentials);
+
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('VALIDATION_ERROR');
+      expect(response.error?.details).toBeDefined();
     });
   });
 
-  describe('logout', () => {
-    it('should logout successfully', () => {
-      // No need for token, logout takes no arguments
-      authService.logout();
+  describe('POST /wp-json/tmd/v3/auth/logout', () => {
+    it('should successfully logout with valid token', async () => {
+      const response = await authService.logout();
 
-      // Since logout doesn't make a GraphQL call anymore, we just verify it doesn't throw
-      expect(true).toBe(true);
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      expect(response.message).toBeTruthy();
     });
 
-    it('should not throw error on logout failure', () => {
-      // Should not throw
-      expect(() => authService.logout()).not.toThrow();
-    });
-  });
+    it('should handle invalid token on logout', async () => {
+      // Set invalid token
+      const response = await authService.logout();
 
-  describe('validateToken', () => {
-    it('should return true for valid token', async () => {
-      // Create a mock JWT token with proper structure
-      const mockPayload = {
-        exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-        user_id: 1,
-        username: 'testuser',
-      };
-      const mockJWT = `header.${btoa(JSON.stringify(mockPayload))}.signature`;
-
-      // Mock getCurrentUser to succeed
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        data: {
-          viewer: {
-            id: '1',
-            name: 'Test User',
-            email: 'test@example.com',
-            roles: {
-              nodes: [{ name: 'subscriber' }],
-            },
-          },
-        },
-      });
-
-      const result = await authService.validateToken(mockJWT);
-
-      expect(result).toBe(true);
-      expect(apolloClient.query).toHaveBeenCalledWith({
-        query: expect.any(Object),
-        context: {
-          headers: {
-            Authorization: `Bearer ${mockJWT}`,
-          },
-        },
-      });
-    });
-
-    it('should return false for invalid token', async () => {
-      const token = 'invalid-token';
-
-      // Mock getCurrentUser to fail
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Invalid token'),
-      );
-
-      const result = await authService.validateToken(token);
-
-      expect(result).toBe(false);
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('INVALID_TOKEN');
     });
   });
 
-  describe('getCurrentUser', () => {
-    it('should return user details', async () => {
-      const token = 'mock-token';
-      const mockUser = {
-        id: '1',
-        name: 'Test User',
-        email: 'test@example.com',
-        roles: {
-          nodes: [{ name: 'subscriber' }],
-        },
-        avatar: { url: 'avatar-url' },
-        url: 'user-url',
-        description: 'User description',
-        slug: 'test-user',
-      };
+  describe('GET /wp-json/tmd/v3/auth/verify', () => {
+    it('should verify valid token and return user data', async () => {
+      const response = await authService.verify();
 
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        data: {
-          viewer: mockUser,
-        },
-      });
-
-      const result = await authService.getCurrentUser(token);
-
-      expect(result).not.toBeNull();
-      if (result) {
-        expect(result.name).toBe('Test User');
-        expect(result.id).toBe(1);
-      }
-      expect(apolloClient.query).toHaveBeenCalledWith({
-        query: expect.any(Object),
-        context: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      });
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+      expect(response.data?.user).toBeDefined();
+      expect(response.data?.user.id).toBeTypeOf('number');
+      expect(response.data?.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
 
-    it('should throw error on user fetch failure', async () => {
-      const token = 'mock-token';
-      const errorMessage = 'User not found';
+    it('should reject invalid or expired token', async () => {
+      const response = await authService.verify();
 
-      // This is the critical part: ensure the mock rejects with an actual Error instance.
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error(errorMessage),
-      );
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('INVALID_TOKEN');
+    });
 
-      // The service should catch this error and re-throw it.
-      await expect(authService.getCurrentUser(token)).rejects.toThrow(errorMessage);
+    it('should handle disabled account on verification', async () => {
+      const response = await authService.verify();
+
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('ACCOUNT_DISABLED');
+    });
+  });
+
+  describe('GET /wp-json/tmd/v3/auth/reset-password-url', () => {
+    it('should return password reset URL', async () => {
+      const response = await authService.getResetPasswordUrl();
+
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+      expect(response.data?.resetUrl).toBeTruthy();
+      expect(response.data?.resetUrl).toMatch(/^https?:\/\//); // Valid URL
     });
   });
 });

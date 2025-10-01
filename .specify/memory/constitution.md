@@ -1,10 +1,11 @@
 <!--
 Sync Impact Report:
-- Version change: N/A → 1.0.0
-- Initial constitution creation for TMD Quasar project
-- Added sections: Core Principles (5), Quality Standards, Development Workflow, Governance
-- Templates requiring updates: All aligned with constitution principles
-- Follow-up TODOs: None - all placeholders filled
+- Version change: 1.0.0 → 1.0.1
+- Amendment: Test location clarification (PATCH version bump)
+- Modified principles: Principle IV - Test-First Development (test location specification)
+- Added guidance: Tests MUST be placed in __tests__ folders per Quasar conventions
+- Templates requiring updates: ✅ tasks-template.md will reference __tests__ pattern
+- Follow-up TODOs: None
 -->
 
 # TMD Quasar Constitution
@@ -45,13 +46,18 @@ Rationale: Consistent structure improves code readability, maintainability, and 
 ### IV. Test-First Development
 
 - All new functionality MUST have tests written before implementation
-- Tests are colocated: `service.ts` → `service.test.ts`
+- Tests MUST be placed in `__tests__` folders following Quasar conventions
+  - Services: `src/services/__tests__/`
+  - Stores: `src/stores/__tests__/`
+  - Composables: `src/composables/__tests__/`
+  - Components: `src/components/*/__tests__/`
+  - Integration: `tests/integration/__tests__/`
 - Use Vitest for all testing with "Start Simple, Build Up" philosophy
 - Import validation tests MUST be written first
 - Tests MUST verify behavior, not implementation details
 - Run tests with `pnpm test --run` for CI compatibility
 
-Rationale: Prevents regressions, ensures code quality, and provides confidence during refactoring and feature additions.
+Rationale: Prevents regressions, ensures code quality, and provides confidence during refactoring and feature additions. The `__tests__` folder convention is a Quasar framework standard that improves test discoverability and organization.
 
 ### V. Mobile-First & Accessibility
 
@@ -129,4 +135,4 @@ Amendment process requires:
 
 Use `.github/copilot-instructions.md` for detailed runtime development guidance and implementation specifics.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-01 | **Last Amended**: 2025-10-01
+**Version**: 1.0.1 | **Ratified**: 2025-10-01 | **Last Amended**: 2025-10-01

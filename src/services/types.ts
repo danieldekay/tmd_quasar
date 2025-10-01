@@ -403,3 +403,111 @@ export interface Excerpt {
   rendered: string;
   protected: boolean;
 }
+
+// ============================================================================
+// Authentication and Session Management Types
+// ============================================================================
+
+/**
+ * Represents an authenticated TMD user
+ */
+export type User = {
+  id: number;
+  username: string;
+  email: string;
+  displayName: string;
+  roles: readonly string[];
+  avatar?: string;
+  lastLogin?: string; // ISO date string
+  isActive: boolean;
+};
+
+/**
+ * Represents an active user session with JWT token
+ */
+export type Session = {
+  token: string;
+  userId: number;
+  expiresAt: string; // ISO date string
+  createdAt: string; // ISO date string
+  deviceInfo?: {
+    userAgent: string;
+    platform: string;
+  };
+  isValid: boolean;
+};
+
+/**
+ * Represents current authentication status in application
+ */
+export type AuthState = {
+  user: User | null;
+  session: Session | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  loginAttempts: number;
+  lastLoginAttempt?: string; // ISO date string
+};
+
+/**
+ * Login credentials
+ */
+export type LoginCredentials = {
+  identifier: string; // username or email
+  password: string;
+  rememberMe?: boolean; // defaults to true for 30-day sessions
+};
+
+/**
+ * Authentication API response wrapper
+ */
+export type AuthApiResponse<T> = {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, string>;
+    retryAfter?: number;
+  };
+};
+
+/**
+ * Login response data
+ */
+export type LoginResponse = {
+  token: string;
+  user: User;
+  expiresAt: string;
+};
+
+/**
+ * Verify response data
+ */
+export type VerifyResponse = {
+  user: User;
+  expiresAt: string;
+};
+
+/**
+ * Reset password URL response
+ */
+export type ResetPasswordUrlResponse = {
+  resetUrl: string;
+};
+
+/**
+ * Error codes for authentication
+ */
+export const AuthErrorCodes = {
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  ACCOUNT_DISABLED: 'ACCOUNT_DISABLED',
+  RATE_LIMITED: 'RATE_LIMITED',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INVALID_TOKEN: 'INVALID_TOKEN',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+} as const;
+
+export type AuthErrorCode = (typeof AuthErrorCodes)[keyof typeof AuthErrorCodes];

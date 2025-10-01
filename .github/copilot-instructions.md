@@ -5,6 +5,7 @@
 You are working on the **TMD (Tango Marathons) Quasar Frontend**, a Vue 3 + TypeScript application built with the Quasar framework. This is a frontend for a headless WordPress site (tangomarathons.com) that uses custom post types and fields.
 
 ### Key Technologies
+
 - **Framework**: Quasar (Vue 3 + TypeScript)
 - **Package Manager**: pnpm
 - **Testing**: Vitest for unit and component testing
@@ -16,19 +17,23 @@ You are working on the **TMD (Tango Marathons) Quasar Frontend**, a Vue 3 + Type
 ## Quasar Framework Best Practices
 
 ### Component Development
+
 - **Always use Quasar's built-in components** when available before creating custom solutions
 - Use `q-` prefixed components (QBtn, QCard, QTable, etc.)
 - Leverage Quasar's responsive utilities and breakpoint system
 - Use Quasar's color palette and theming system
 
 ### Page Creation Workflow
+
 When creating new pages:
+
 1. Create the Vue component in `src/pages/`
 2. Add the route to `src/router/routes.ts`
 3. Update navigation components if needed
 4. Run linter after changes: `pnpm lint`
 
 ### Layout and Navigation
+
 - Use Quasar's layout system (QLayout, QHeader, QDrawer, QPageContainer)
 - Follow existing navigation patterns in the project
 - Implement responsive design with mobile-first approach
@@ -36,6 +41,7 @@ When creating new pages:
 ## Vue 3 + TypeScript Standards
 
 ### Composition API Structure
+
 Always use `<script setup lang="ts">` syntax with this structure:
 
 ```typescript
@@ -82,6 +88,7 @@ onMounted(() => {
 ```
 
 ### TypeScript Strict Compliance
+
 - **Use TypeScript for all code; prefer `type` over `interface`**
 - **Avoid enums; use const objects instead**
 - **Always handle undefined values** when dealing with optional properties
@@ -104,6 +111,7 @@ return `tmd_${type}` as ContentType;
 ```
 
 ### Template Best Practices
+
 ```vue
 <template>
   <!-- Use semantic HTML -->
@@ -112,21 +120,18 @@ return `tmd_${type}` as ContentType;
     <div v-if="loading" class="loading-skeleton">
       <q-skeleton type="rect" />
     </div>
-    
+
     <!-- Error states -->
     <div v-else-if="error" class="error-message">
       <q-banner type="negative">
         {{ error }}
       </q-banner>
     </div>
-    
+
     <!-- Content -->
     <div v-else class="event-content">
       <!-- Accessible interactions -->
-      <q-btn
-        @click="handleEventSelect"
-        :aria-label="`View details for ${event.title}`"
-      >
+      <q-btn @click="handleEventSelect" :aria-label="`View details for ${event.title}`">
         {{ event.title }}
       </q-btn>
     </div>
@@ -137,16 +142,24 @@ return `tmd_${type}` as ContentType;
 ## Testing Guidelines
 
 ### Testing Philosophy
+
 **Start Simple, Build Up**: Begin with basic tests that don't require extensive mocking, then progressively add complexity.
 
 ### Testing Framework
+
 - Use **Vitest** for all testing
-- Tests are colocated: `service.ts` → `service.test.ts`
+- Tests MUST be placed in `__tests__` folders per Quasar conventions:
+  - Services: `src/services/__tests__/serviceName.test.ts`
+  - Stores: `src/stores/__tests__/storeName.test.ts`
+  - Composables: `src/composables/__tests__/composableName.test.ts`
+  - Components: `src/components/path/__tests__/ComponentName.test.ts`
+  - Integration: `tests/integration/__tests__/featureName.test.ts`
 - Run tests with: `pnpm test --run` (no watch mode for CI)
 
 ### Critical Testing Rules
 
 #### 1. Import Validation First
+
 ```typescript
 describe('Module Import Validation', () => {
   it('should import without errors', () => {
@@ -156,6 +169,7 @@ describe('Module Import Validation', () => {
 ```
 
 #### 2. Simple Mock Strategy
+
 ```typescript
 // ✅ Good: Mock entire modules
 vi.mock('../services/complexService', () => ({
@@ -172,6 +186,7 @@ vi.mock('boot/axios', () => ({
 ```
 
 #### 3. Test Public API Behavior
+
 ```typescript
 // ✅ Good: Test outputs
 it('should return correctly formatted data', () => {
@@ -187,6 +202,7 @@ expect(internalHelper).toHaveBeenCalledWith(specificArgs);
 ```
 
 #### 4. Flexible Mock Assertions
+
 ```typescript
 // ✅ Good: Flexible matching
 expect(mockFn).toHaveBeenCalledWith(
@@ -199,6 +215,7 @@ expect(mockFn).toHaveBeenCalledWith(
 ```
 
 #### 5. Minimal Test Structure
+
 ```typescript
 describe('ServiceName', () => {
   // Start here
@@ -221,13 +238,16 @@ describe('ServiceName', () => {
 ## Code Style and Quality
 
 ### Naming Conventions
+
 - **Directories**: lowercase with dashes (`components/auth-wizard`)
 - **Components**: PascalCase (`AuthWizard.vue`)
 - **Composables**: camelCase (`useAuthState.ts`)
 - **Variables**: camelCase with auxiliary verbs (`isLoading`, `hasError`)
 
 ### File Structure
+
 Organize files in this order:
+
 1. Exported component
 2. Composables
 3. Helpers
@@ -235,6 +255,7 @@ Organize files in this order:
 5. Types
 
 ### ESLint Compliance
+
 - Run `pnpm lint` frequently to check for errors
 - Follow the strict ESLint configuration in `eslint.config.js`
 - Key rules enforced:
@@ -245,6 +266,7 @@ Organize files in this order:
   - `prefer-const`: 'error'
 
 ### Syntax Preferences
+
 - Use arrow functions for methods and computed properties
 - Avoid unnecessary curly braces in conditionals
 - Use template syntax for declarative rendering
@@ -253,17 +275,20 @@ Organize files in this order:
 ## API and Data Management
 
 ### GraphQL with Apollo Client
+
 - Use Apollo Client for GraphQL operations
 - Implement proper error handling for API calls
 - Use typed GraphQL queries and mutations
 
 ### REST API Integration
+
 - Primary API: TMD/V3 endpoints
 - Local development API: `http://localhost:10014`
 - Use proper authentication with JWT tokens
 - Test API endpoints with curl before making assumptions
 
 ### State Management
+
 - Use Pinia for global state management
 - Keep component state local when possible
 - Use composables for shared reactive logic
@@ -271,23 +296,27 @@ Organize files in this order:
 ## Development Workflow
 
 ### Git Workflow
+
 - Use git-flow methodology
 - Start and close new features properly
 - Don't automatically check in code - do code reviews first
 - Write descriptive commit messages following conventional commit format
 
 ### Package Management
+
 - Use `pnpm` exclusively
 - Install dependencies with `pnpm install`
 - Run scripts with `pnpm <script-name>`
 
 ### Development Commands
+
 - `pnpm lint` - Run ESLint
 - `pnpm test --run` - Run tests without watch mode
 - `pnpm test` - Run tests in watch mode (development only)
 - `pnpm dev` - Start development server
 
 ### Performance and Optimization
+
 - Implement lazy loading for routes and components
 - Use Suspense for asynchronous components
 - Optimize images: use WebP format, include size data
@@ -296,18 +325,21 @@ Organize files in this order:
 ## Project-Specific Guidelines
 
 ### Documentation Maintenance
+
 - **DESIGN.md**: Contains overall project architecture
 - **TODO.md**: Contains mid- to long-term tasks
 - **CHANGELOG.md**: Maintain using git history
 - **README.md**: Updated less frequently for major changes
 
 ### API Integration
+
 - Local dev environment available at `http://localhost:10014`
 - Test with credentials from `credentials.local.json`
 - Use GraphQL for JWT token retrieval
 - Primarily use TMD/V3 endpoints
 
 ### Error Handling
+
 - Always implement proper error states in UI
 - Use Quasar's notification system for user feedback
 - Handle network errors gracefully
@@ -316,6 +348,7 @@ Organize files in this order:
 ## Code Quality Checklist
 
 Before submitting code:
+
 - [ ] Run `pnpm lint` and fix all errors
 - [ ] Write tests for new functionality
 - [ ] Ensure TypeScript types are correct
@@ -326,27 +359,113 @@ Before submitting code:
 - [ ] Test on different screen sizes
 - [ ] Update documentation if needed
 
+## Authentication Development Guidelines
+
+### TMD Authentication System
+
+- **Backend Integration**: Use WPGraphQL with JWT Authentication plugin
+- **GraphQL Endpoint**: `/graphql` for login, token refresh, and user verification
+- **Session Management**: 30-day persistent sessions using JWT tokens in localStorage
+- **User Scope**: Existing TMD users only (no registration functionality)
+- **Password Reset**: Redirect to main TMD site, don't implement locally
+
+### Authentication Patterns
+
+```typescript
+// Use Apollo Client for GraphQL authentication
+import { apolloClient } from 'boot/apollo';
+import {
+  LOGIN_MUTATION,
+  REFRESH_TOKEN_MUTATION,
+  GET_CURRENT_USER_QUERY,
+} from 'services/graphql/auth';
+
+// Login mutation
+const { data } = await apolloClient.mutate({
+  mutation: LOGIN_MUTATION,
+  variables: {
+    input: {
+      clientMutationId: 'tmd-frontend',
+      username: credentials.username,
+      password: credentials.password,
+    },
+  },
+});
+
+// Store tokens
+localStorage.setItem('authToken', data.login.authToken);
+localStorage.setItem('refreshToken', data.login.refreshToken);
+
+// Authenticated requests - Apollo automatically adds Authorization header
+// when authToken is present in Apollo context
+
+// Refresh token when authToken expires
+const { data } = await apolloClient.mutate({
+  mutation: REFRESH_TOKEN_MUTATION,
+  variables: {
+    input: {
+      clientMutationId: 'tmd-frontend',
+      jwtRefreshToken: refreshToken,
+    },
+  },
+});
+```
+
+### Route Protection
+
+```typescript
+// Use navigation guards for protected routes
+const authGuard = (to: RouteLocationNormalized) => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated.value && to.meta.requiresAuth) {
+    return { name: 'Login', query: { redirect: to.fullPath } };
+  }
+};
+
+// Apply guards in router setup
+router.beforeEach(authGuard);
+```
+
+### Security Best Practices
+
+- Always use HTTPS in production
+- Validate JWT tokens on sensitive operations
+- Clear auth data on logout or token expiration
+- Implement proper CORS handling for API requests
+- Never store passwords in client-side code
+
 ## Anti-Patterns to Avoid
 
+### Authentication
+
+- Don't store passwords in localStorage or any client storage
+- Don't implement custom JWT validation (trust the backend)
+- Don't skip token expiration checks
+- Don't allow infinite login attempts without delays
+
 ### TypeScript
+
 - Don't use `any` type
 - Don't ignore TypeScript errors
 - Don't use type assertions unnecessarily
 - Don't mix interfaces and types inconsistently
 
 ### Vue/Quasar
+
 - Don't use Options API (use Composition API only)
 - Don't create custom components when Quasar has equivalent
 - Don't ignore responsive design principles
 - Don't skip error and loading states
 
 ### Testing
+
 - Don't test implementation details
 - Don't write overly complex mocks
 - Don't ignore failing tests
 - Don't test without proper TypeScript typing
 
 ### General
+
 - Don't commit without linting
 - Don't delete large portions of existing code unless outdated
 - Don't work on multiple features simultaneously
