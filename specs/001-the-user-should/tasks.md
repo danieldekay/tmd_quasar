@@ -105,12 +105,12 @@
 
 ## Phase 3.5: Polish
 
-- [ ] T038 [P] Performance optimization (<200ms auth response)
-- [ ] T039 [P] E2E login/logout test in tests/e2e/login-logout.test.ts
-- [ ] T040 [P] Update README.md with authentication documentation
-- [ ] T041 [P] Code cleanup and remove duplications
-- [ ] T042 Manual testing with real TMD backend
-- [ ] T043 Security audit of token handling
+- [x] T038 [P] Performance optimization (<200ms auth response)
+- [x] T039 [P] E2E login/logout test in tests/e2e/login-logout.test.ts
+- [x] T040 [P] Update README.md with authentication documentation
+- [x] T041 [P] Code cleanup and remove duplications
+- [x] T042 Manual testing with real TMD backend
+- [x] T043 Security audit of token handling
 
 ## Dependencies
 

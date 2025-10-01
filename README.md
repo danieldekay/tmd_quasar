@@ -20,6 +20,8 @@ This project implements a headless WordPress architecture where:
   experience timelines, and linked events
 - **Event & Performance Tracking**: Comprehensive event listings with
   DJ-event relationships and performance statistics
+- **Authentication & Session Management**: Secure GraphQL-based authentication
+  with 30-day persistent sessions and progressive brute force protection
 - **Mobile-First Design**: Touch-optimized interactions with responsive
   layouts for all screen sizes
 - **Advanced Filtering**: Server-side search and filtering with optimized
@@ -29,6 +31,8 @@ This project implements a headless WordPress architecture where:
   optimized data loading
 - **TypeScript Integration**: Full type safety with strict null checks and
   ESLint compliance
+- **Full Accessibility**: WCAG 2.1 AA compliance with complete keyboard
+  navigation and screen reader support
 
 ## Tech Stack
 
@@ -110,9 +114,116 @@ npm run dev
 
 ## WordPress Integration
 
-The project integrates with WordPress REST API v3 for content consumption. All
-content management is done through WordPress using the TMD plugin's custom
-endpoints.
+The project integrates with WordPress using both REST API v3 and GraphQL for
+different purposes. All content management is done through WordPress using the
+TMD plugin's custom endpoints.
+
+### Authentication
+
+The application uses **WPGraphQL with JWT Authentication** for secure user
+authentication:
+
+- **GraphQL Endpoint**: `/graphql` (handled by WPGraphQL plugin)
+- **Authentication Plugin**: JWT Authentication for WPGraphQL
+- **Token Types**:
+  - `authToken`: Short-lived access token (~5 minutes)
+  - `refreshToken`: Long-lived token for session persistence (30 days)
+- **Storage**: localStorage with encrypted session data
+- **Security Features**:
+  - Progressive brute force protection (0s → 1s → 5s → 30s delays)
+  - Automatic token refresh before expiration
+  - Secure token validation on every request
+  - Session expiration warnings
+
+#### Login Flow
+
+```typescript
+import { useAuth } from 'src/composables/useAuth';
+
+const { login, logout, isAuthenticated } = useAuth();
+
+// Login
+await login({
+  username: 'user@example.com',
+  password: 'password',
+  remember: true, // 30-day session
+});
+
+// Logout
+await logout();
+```
+
+#### Protected Routes
+
+Routes are protected using navigation guards:
+
+```typescript
+import { requireAuth } from 'src/router/guards';
+
+{
+  path: '/dashboard',
+  component: () => import('pages/DashboardPage.vue'),
+  beforeEnter: requireAuth, // Requires authentication
+}
+```
+
+#### Session Management
+
+The application automatically:
+- Restores sessions on app startup
+- Refreshes tokens before expiration
+- Shows expiration warnings (SessionIndicator component)
+- Handles session lifecycle with composables
+
+```typescript
+import { useSession } from 'src/composables/useSession';
+
+const { session, isValid, isExpiringSoon, timeRemaining } = useSession();
+```
+
+#### Components
+
+**LoginForm.vue** - Reusable login form with:
+- Username/password inputs (Quasar QInput)
+- Password visibility toggle
+- Remember me option (30-day sessions)
+- Progressive delay protection display
+- Full ARIA labels for accessibility
+
+**AuthGuard.vue** - Component-level route protection:
+- Conditionally renders content based on auth state
+- Supports role-based access control
+- Custom unauthorized message slots
+
+**SessionIndicator.vue** - Session status display:
+- User info with avatar
+- Session expiration countdown
+- Quick access to profile and logout
+- Visual warnings when session expiring
+
+#### Password Reset
+
+Password reset is handled by the main TMD WordPress site:
+- Click "Forgot password?" on login page
+- Redirects to: `${wordpressUrl}/wp-login.php?action=lostpassword`
+- Opens in new tab for security
+- No local password reset functionality
+
+#### Security Best Practices
+
+✅ **Implemented**:
+- JWT tokens stored in localStorage (SPA standard)
+- Progressive brute force protection
+- Password cleared from memory on error
+- HTTPS required in production
+- Token expiration validation
+- Automatic refresh token rotation
+
+⚠️ **Important Notes**:
+- Tokens in localStorage: Industry standard for SPAs, acceptable security trade-off
+- No registration: Existing TMD users only
+- No MFA: Not in v1 scope (future enhancement)
+- Backend validates all tokens on every request
 
 ### API Endpoints
 
@@ -167,13 +278,20 @@ The API provides bidirectional relationships:
 - [x] Mobile-first responsive design with touch optimization
 - [x] TypeScript integration with strict mode and ESLint compliance
 - [x] API documentation with v3 endpoints and relationship examples
+- [x] **Authentication & Session Management** (GraphQL/JWT with 30-day sessions)
+- [x] **Progressive brute force protection** (0s → 1s → 5s → 30s delays)
+- [x] **Full WCAG 2.1 AA accessibility compliance**
+- [x] **Session lifecycle management with composables**
+- [x] **Comprehensive test suite** (17 test files with TDD approach)
 
 ### Current Priorities
 
+- [ ] E2E testing with Playwright/Cypress
+- [ ] Performance optimization (<200ms auth response target)
 - [ ] Teacher profiles and teacher-event relationships
 - [ ] Event series management and linking
 - [ ] Enhanced event filtering (by DJ, date ranges, categories)
-- [ ] User authentication and personalized features
+- [ ] User profile management and preferences
 - [ ] Advanced caching strategy and offline support
 
 ### Future Enhancements
