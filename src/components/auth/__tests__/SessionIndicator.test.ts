@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar, QBadge, QTooltip, QIcon } from 'quasar';
-import SessionIndicator from './SessionIndicator.vue';
+import SessionIndicator from '../SessionIndicator.vue';
 
 describe('SessionIndicator component', () => {
   const mountComponent = (props = {}) => {

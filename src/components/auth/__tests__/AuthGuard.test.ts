@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar } from 'quasar';
-import AuthGuard from './AuthGuard.vue';
+import AuthGuard from '../AuthGuard.vue';
 
 describe('AuthGuard component', () => {
   const mountComponent = (props = {}, slots = {}) => {

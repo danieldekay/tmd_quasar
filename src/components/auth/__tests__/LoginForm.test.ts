@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { Quasar, QBtn, QInput, QForm, QBanner } from 'quasar';
-import LoginForm from './LoginForm.vue';
+import LoginForm from '../LoginForm.vue';
 
 describe('LoginForm component', () => {
   const mountComponent = (props = {}) => {
