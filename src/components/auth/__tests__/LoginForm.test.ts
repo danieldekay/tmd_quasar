@@ -89,7 +89,7 @@ describe('LoginForm component', () => {
       const wrapper = mountComponent();
 
       // Set values through exposed refs
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       if (wrapper.vm) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (wrapper.vm as any).username = 'testuser';

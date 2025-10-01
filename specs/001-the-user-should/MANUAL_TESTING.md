@@ -15,6 +15,7 @@ as production-ready.
 ## Prerequisites
 
 ### Backend Setup
+
 - [ ] TMD WordPress backend running at `http://localhost:10014`
 - [ ] WPGraphQL plugin installed and activated
 - [ ] JWT Authentication for WPGraphQL plugin installed and activated
@@ -22,12 +23,14 @@ as production-ready.
 - [ ] CORS configured to allow frontend origin
 
 ### Frontend Setup
+
 - [ ] Quasar dev server running: `pnpm dev`
 - [ ] Browser DevTools open (Console + Network tabs)
 - [ ] localStorage inspector ready
 - [ ] Test credentials available
 
 ### Test Credentials
+
 ```json
 {
   "username": "testuser",
@@ -41,9 +44,11 @@ as production-ready.
 ## Test Suite 1: Login Flow
 
 ### TC001: Successful Login
+
 **Objective**: Verify user can login with valid credentials
 
 **Steps**:
+
 1. Navigate to `/auth/login`
 2. Enter valid username
 3. Enter valid password
@@ -51,6 +56,7 @@ as production-ready.
 5. Click "Sign In" button
 
 **Expected Results**:
+
 - [ ] Loading indicator shown during authentication
 - [ ] Success notification appears
 - [ ] User redirected to home page (`/`)
@@ -60,27 +66,31 @@ as production-ready.
 - [ ] No errors in console
 
 **Verification**:
+
 ```javascript
 // In browser console:
-JSON.parse(localStorage.getItem('tmd_session'))
+JSON.parse(localStorage.getItem('tmd_session'));
 // Should show: { token, refreshToken, expiresAt, ... }
 
-JSON.parse(localStorage.getItem('tmd_user'))
+JSON.parse(localStorage.getItem('tmd_user'));
 // Should show: { id, username, email, displayName, roles, ... }
 ```
 
 ---
 
 ### TC002: Failed Login - Invalid Credentials
+
 **Objective**: Verify proper error handling for wrong credentials
 
 **Steps**:
+
 1. Navigate to `/auth/login`
 2. Enter invalid username
 3. Enter invalid password
 4. Click "Sign In" button
 
 **Expected Results**:
+
 - [ ] Loading indicator shown
 - [ ] Error notification appears
 - [ ] Error message: "Invalid username or password" (or similar)
@@ -92,9 +102,11 @@ JSON.parse(localStorage.getItem('tmd_user'))
 ---
 
 ### TC003: Progressive Delay Protection
+
 **Objective**: Verify brute force protection works
 
 **Steps**:
+
 1. Attempt login with wrong credentials (1st attempt)
 2. Note delay: should be 0 seconds
 3. Attempt login with wrong credentials (2nd attempt)
@@ -105,6 +117,7 @@ JSON.parse(localStorage.getItem('tmd_user'))
 8. Note delay: should be 30 seconds
 
 **Expected Results**:
+
 - [ ] 1st attempt: immediate submission
 - [ ] 2nd attempt: 1 second delay message shown
 - [ ] 3rd attempt: 5 second delay message shown
@@ -114,24 +127,28 @@ JSON.parse(localStorage.getItem('tmd_user'))
 - [ ] Progressive delays persist across page reload
 
 **Verification**:
+
 ```javascript
 // Check authStore state:
-useAuthStore().loginAttempts // Should increment
-useAuthStore().getProgressiveDelay() // Should return delay in ms
+useAuthStore().loginAttempts; // Should increment
+useAuthStore().getProgressiveDelay(); // Should return delay in ms
 ```
 
 ---
 
 ### TC004: Form Validation
+
 **Objective**: Verify client-side validation
 
 **Steps**:
+
 1. Navigate to `/auth/login`
 2. Leave username empty, click "Sign In"
 3. Fill username, leave password empty, click "Sign In"
 4. Fill both fields with whitespace only, click "Sign In"
 
 **Expected Results**:
+
 - [ ] Empty username shows validation error
 - [ ] Empty password shows validation error
 - [ ] Whitespace-only fields treated as empty
@@ -143,15 +160,18 @@ useAuthStore().getProgressiveDelay() // Should return delay in ms
 ## Test Suite 2: Session Management
 
 ### TC005: Session Restoration on Page Reload
+
 **Objective**: Verify session persists across page reloads
 
 **Steps**:
+
 1. Login successfully
 2. Navigate to `/events`
 3. Reload page (F5)
 4. Wait for app to load
 
 **Expected Results**:
+
 - [ ] User remains authenticated
 - [ ] No redirect to login
 - [ ] SessionIndicator shows user info
@@ -159,18 +179,21 @@ useAuthStore().getProgressiveDelay() // Should return delay in ms
 - [ ] No re-login required
 
 **Verification**:
+
 ```javascript
 // Check session restoration:
-useAuthStore().isAuthenticated // Should be true
-useAuthStore().user // Should have user data
+useAuthStore().isAuthenticated; // Should be true
+useAuthStore().user; // Should have user data
 ```
 
 ---
 
 ### TC006: Session Expiration Handling
+
 **Objective**: Verify expired session handling
 
 **Steps**:
+
 1. Login successfully
 2. Manually expire session in localStorage:
    ```javascript
@@ -181,6 +204,7 @@ useAuthStore().user // Should have user data
 3. Reload page or navigate to protected route
 
 **Expected Results**:
+
 - [ ] Session detected as expired
 - [ ] Attempt to refresh token
 - [ ] If refresh fails, redirect to login
@@ -190,14 +214,17 @@ useAuthStore().user // Should have user data
 ---
 
 ### TC007: Token Refresh Before Expiration
+
 **Objective**: Verify automatic token refresh
 
 **Steps**:
+
 1. Login successfully
 2. Wait until token is close to expiration (simulate by setting expiresAt soon)
 3. Observe SessionIndicator component
 
 **Expected Results**:
+
 - [ ] Expiration warning shown when < 5 minutes remaining
 - [ ] Yellow/orange indicator color
 - [ ] Countdown timer visible
@@ -208,14 +235,17 @@ useAuthStore().user // Should have user data
 ---
 
 ### TC008: Manual Logout
+
 **Objective**: Verify logout clears session
 
 **Steps**:
+
 1. Login successfully
 2. Click on SessionIndicator (user avatar/name)
 3. Click "Sign Out" in menu
 
 **Expected Results**:
+
 - [ ] Confirmation (optional)
 - [ ] Session cleared from localStorage
 - [ ] User redirected to `/auth/login`
@@ -224,12 +254,13 @@ useAuthStore().user // Should have user data
 - [ ] Success notification shown
 
 **Verification**:
+
 ```javascript
 // After logout:
-localStorage.getItem('tmd_session') // Should be null
-localStorage.getItem('tmd_user') // Should be null
-useAuthStore().isAuthenticated // Should be false
-useAuthStore().user // Should be null
+localStorage.getItem('tmd_session'); // Should be null
+localStorage.getItem('tmd_user'); // Should be null
+useAuthStore().isAuthenticated; // Should be false
+useAuthStore().user; // Should be null
 ```
 
 ---
@@ -237,9 +268,11 @@ useAuthStore().user // Should be null
 ## Test Suite 3: Route Protection
 
 ### TC009: Protected Routes Redirect to Login
+
 **Objective**: Verify unauthenticated users can't access protected content
 
 **Steps**:
+
 1. Ensure logged out
 2. Try to access `/events`
 3. Try to access `/djs`
@@ -247,6 +280,7 @@ useAuthStore().user // Should be null
 5. Try to access `/dashboard`
 
 **Expected Results**:
+
 - [ ] Redirected to `/auth/login` for each route
 - [ ] `redirect` query parameter contains intended route
 - [ ] Error message or info notification (optional)
@@ -255,13 +289,16 @@ useAuthStore().user // Should be null
 ---
 
 ### TC010: Authenticated Users Can't Access Login
+
 **Objective**: Verify logged-in users redirected away from login
 
 **Steps**:
+
 1. Login successfully
 2. Navigate to `/auth/login`
 
 **Expected Results**:
+
 - [ ] Immediately redirected to home (`/`)
 - [ ] Or redirected to `redirect` query param if present
 - [ ] Login form not shown
@@ -270,13 +307,16 @@ useAuthStore().user // Should be null
 ---
 
 ### TC011: Role-Based Access Control
+
 **Objective**: Verify role-specific routes protected
 
 **Steps**:
+
 1. Login as regular user
 2. Try to access `/debug` (admin-only route)
 
 **Expected Results**:
+
 - [ ] Redirected to `/auth/unauthorized`
 - [ ] Unauthorized message shown
 - [ ] Option to go back or logout
@@ -287,13 +327,16 @@ useAuthStore().user // Should be null
 ## Test Suite 4: Password Reset
 
 ### TC012: Password Reset Redirect
+
 **Objective**: Verify password reset redirects to WordPress
 
 **Steps**:
+
 1. Navigate to `/auth/login`
 2. Click "Forgot password?" link
 
 **Expected Results**:
+
 - [ ] Opens in new tab/window
 - [ ] URL: `http://localhost:10014/wp-login.php?action=lostpassword`
 - [ ] WordPress password reset page shown
@@ -305,9 +348,11 @@ useAuthStore().user // Should be null
 ## Test Suite 5: Accessibility
 
 ### TC013: Keyboard Navigation
+
 **Objective**: Verify full keyboard accessibility
 
 **Steps**:
+
 1. Navigate to `/auth/login`
 2. Tab through form elements
 3. Use Enter to submit
@@ -315,6 +360,7 @@ useAuthStore().user // Should be null
 5. Navigate SessionIndicator menu with keyboard
 
 **Expected Results**:
+
 - [ ] All elements reachable via Tab
 - [ ] Clear focus indicators
 - [ ] Enter submits form
@@ -325,16 +371,19 @@ useAuthStore().user // Should be null
 ---
 
 ### TC014: Screen Reader Compatibility
+
 **Objective**: Verify screen reader accessibility
 
 **Requirements**: Enable screen reader (VoiceOver on Mac, NVDA on Windows)
 
 **Steps**:
+
 1. Navigate login form with screen reader
 2. Listen to field labels and error announcements
 3. Submit form and listen to feedback
 
 **Expected Results**:
+
 - [ ] All labels announced correctly
 - [ ] Field descriptions clear
 - [ ] Error messages announced
@@ -347,14 +396,17 @@ useAuthStore().user // Should be null
 ## Test Suite 6: Mobile Testing
 
 ### TC015: Mobile Login Flow
+
 **Objective**: Verify authentication works on mobile devices
 
 **Devices to Test**:
+
 - [ ] iPhone (Safari)
 - [ ] Android (Chrome)
 - [ ] Tablet (iPad Safari or Android Chrome)
 
 **Steps**:
+
 1. Open app on mobile device
 2. Navigate to login
 3. Complete login flow
@@ -362,6 +414,7 @@ useAuthStore().user // Should be null
 5. Test logout
 
 **Expected Results**:
+
 - [ ] Form responsive and usable
 - [ ] Touch targets adequate (44x44px minimum)
 - [ ] No keyboard issues
@@ -374,15 +427,18 @@ useAuthStore().user // Should be null
 ## Test Suite 7: Error Scenarios
 
 ### TC016: Network Errors
+
 **Objective**: Verify graceful handling of network issues
 
 **Steps**:
+
 1. Enable offline mode in DevTools
 2. Try to login
 3. Disable offline mode
 4. Retry login
 
 **Expected Results**:
+
 - [ ] Network error message shown
 - [ ] No unhandled exceptions
 - [ ] User can retry
@@ -392,13 +448,16 @@ useAuthStore().user // Should be null
 ---
 
 ### TC017: Malformed Backend Responses
+
 **Objective**: Verify handling of unexpected API responses
 
 **Steps**: (Requires backend manipulation or mocking)
+
 1. Configure backend to return malformed GraphQL response
 2. Attempt login
 
 **Expected Results**:
+
 - [ ] Error caught and handled
 - [ ] Generic error message shown
 - [ ] No app crash
@@ -410,15 +469,18 @@ useAuthStore().user // Should be null
 ## Test Suite 8: Performance
 
 ### TC018: Login Performance
+
 **Objective**: Verify authentication meets performance targets
 
 **Steps**:
+
 1. Open browser DevTools Performance tab
 2. Start recording
 3. Login with valid credentials
 4. Stop recording when redirected
 
 **Expected Results**:
+
 - [ ] Total time < 2 seconds (including network)
 - [ ] Client-side processing < 200ms
 - [ ] No long tasks (>50ms) blocking UI
@@ -426,6 +488,7 @@ useAuthStore().user // Should be null
 - [ ] No jank or lag
 
 **Verification**:
+
 ```javascript
 // Measure in browser console:
 performance.mark('login-start');
@@ -438,14 +501,17 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 ---
 
 ### TC019: Session Restoration Performance
+
 **Objective**: Verify fast session restoration
 
 **Steps**:
+
 1. Login and ensure session stored
 2. Reload page with DevTools Performance recording
 3. Measure time to restore session
 
 **Expected Results**:
+
 - [ ] Session restoration < 100ms
 - [ ] No UI blocking
 - [ ] No flash of login screen
@@ -456,14 +522,17 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 ## Test Suite 9: Security Validation
 
 ### TC020: Token Not Exposed in Console
+
 **Objective**: Verify tokens aren't logged
 
 **Steps**:
+
 1. Clear console
 2. Login successfully
 3. Review all console logs
 
 **Expected Results**:
+
 - [ ] No JWT tokens in console
 - [ ] No refresh tokens visible
 - [ ] No password echoed
@@ -472,14 +541,17 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 ---
 
 ### TC021: Token Not in URL
+
 **Objective**: Verify tokens not in URL parameters
 
 **Steps**:
+
 1. Login successfully
 2. Navigate through app
 3. Check URL bar
 
 **Expected Results**:
+
 - [ ] No tokens in URL
 - [ ] No sensitive data in query parameters
 - [ ] Clean URLs throughout
@@ -487,13 +559,16 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 ---
 
 ### TC022: HTTPS Enforcement (Production Only)
+
 **Objective**: Verify HTTPS required in production
 
 **Steps**: (In production environment)
+
 1. Try to access `http://` URL
 2. Check redirect to `https://`
 
 **Expected Results**:
+
 - [ ] Automatic redirect to HTTPS
 - [ ] Secure connection indicator in browser
 - [ ] No mixed content warnings
@@ -503,6 +578,7 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 ## Checklist Summary
 
 ### Critical Tests (Must Pass)
+
 - [ ] TC001: Successful Login
 - [ ] TC002: Failed Login - Invalid Credentials
 - [ ] TC005: Session Restoration
@@ -511,6 +587,7 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 - [ ] TC020: Token Not Exposed
 
 ### Important Tests (Should Pass)
+
 - [ ] TC003: Progressive Delay Protection
 - [ ] TC006: Session Expiration Handling
 - [ ] TC010: Authenticated Users Can't Access Login
@@ -519,6 +596,7 @@ performance.getEntriesByName('login')[0].duration; // Should be < 200ms (client-
 - [ ] TC018: Login Performance
 
 ### Nice-to-Have Tests (Recommended)
+
 - [ ] TC007: Token Refresh
 - [ ] TC011: Role-Based Access Control
 - [ ] TC014: Screen Reader Compatibility
@@ -539,22 +617,20 @@ If you encounter issues during testing, use this template:
 **Environment**: [Browser, OS, Device]
 
 **Steps to Reproduce**:
-1. 
-2. 
-3. 
+
+1.
+2.
+3.
 
 **Expected Result**:
 
-
 **Actual Result**:
-
 
 **Screenshots/Videos**: [Attach if applicable]
 
 **Console Errors**: [Paste relevant console output]
 
 **Additional Notes**:
-
 ```
 
 ---
@@ -563,18 +639,17 @@ If you encounter issues during testing, use this template:
 
 After completing all test cases:
 
-**Tester Name**: ___________________________  
-**Date**: ___________________________  
-**Critical Tests Passed**: ___/6  
-**Important Tests Passed**: ___/6  
-**Nice-to-Have Tests Passed**: ___/6  
+**Tester Name**: ************\_\_\_************  
+**Date**: ************\_\_\_************  
+**Critical Tests Passed**: **_/6  
+**Important Tests Passed**: _**/6  
+**Nice-to-Have Tests Passed**: \_\_\_/6
 
-**Overall Result**: [ ] PASS  [ ] FAIL  [ ] PASS WITH MINOR ISSUES
+**Overall Result**: [ ] PASS [ ] FAIL [ ] PASS WITH MINOR ISSUES
 
 **Notes**:
 
-
-**Approved for Production**: [ ] YES  [ ] NO
+**Approved for Production**: [ ] YES [ ] NO
 
 ---
 
@@ -585,4 +660,4 @@ After completing all test cases:
 3. **If Critical Issues**: Fix immediately before deployment
 4. **Performance Issues**: Profile and optimize before production
 
-**Recommendation**: _______________________
+**Recommendation**: **********\_\_\_**********

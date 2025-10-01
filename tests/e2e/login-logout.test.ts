@@ -1,9 +1,9 @@
 /**
  * E2E Login/Logout Test
- * 
+ *
  * End-to-end test for complete authentication flow.
  * This test simulates real user interaction with the authentication system.
- * 
+ *
  * @requires Real TMD backend or mock GraphQL server
  */
 
@@ -18,7 +18,7 @@ import routes from 'src/router/routes';
 
 /**
  * E2E Test Suite: Complete Authentication Flow
- * 
+ *
  * Tests the full user journey:
  * 1. User visits protected page → redirected to login
  * 2. User enters credentials and submits
@@ -185,14 +185,7 @@ describe('E2E: Login and Logout Flow', () => {
 
   describe('Navigation Guards', () => {
     it('should protect all authenticated routes', async () => {
-      const protectedRoutes = [
-        '/',
-        '/events',
-        '/djs',
-        '/teachers',
-        '/profile',
-        '/dashboard',
-      ];
+      const protectedRoutes = ['/', '/events', '/djs', '/teachers', '/profile', '/dashboard'];
 
       for (const route of protectedRoutes) {
         await router.push(route);
@@ -245,17 +238,17 @@ describe('E2E: Login and Logout Flow', () => {
 
 /**
  * Performance Tests
- * 
+ *
  * These tests verify authentication performance meets requirements.
  */
 describe('E2E: Authentication Performance', () => {
   it('should complete login in under 200ms (excluding network)', async () => {
     // Test local authentication logic performance
     const startTime = performance.now();
-    
+
     // Simulate authentication without network call
     // (Test the client-side processing time)
-    
+
     const endTime = performance.now();
     const duration = endTime - startTime;
 
@@ -265,9 +258,9 @@ describe('E2E: Authentication Performance', () => {
   it('should restore session in under 100ms', async () => {
     // Test session restoration performance
     const startTime = performance.now();
-    
+
     // Simulate session restoration from localStorage
-    
+
     const endTime = performance.now();
     const duration = endTime - startTime;
 
@@ -277,9 +270,9 @@ describe('E2E: Authentication Performance', () => {
   it('should check route guards in under 50ms', async () => {
     // Test route guard performance
     const startTime = performance.now();
-    
+
     // Simulate route guard check
-    
+
     const endTime = performance.now();
     const duration = endTime - startTime;
 
@@ -289,7 +282,7 @@ describe('E2E: Authentication Performance', () => {
 
 /**
  * Security Tests
- * 
+ *
  * These tests verify security measures are working correctly.
  */
 describe('E2E: Security Validation', () => {
@@ -316,7 +309,7 @@ describe('E2E: Security Validation', () => {
 
 /**
  * NOTE: E2E Testing Best Practices
- * 
+ *
  * For complete E2E testing, consider:
  * 1. Use Playwright or Cypress for real browser testing
  * 2. Mock GraphQL responses with MSW (Mock Service Worker)
@@ -325,7 +318,7 @@ describe('E2E: Security Validation', () => {
  * 5. Test across different browsers and devices
  * 6. Include visual regression testing
  * 7. Test with different network conditions (slow 3G, offline, etc.)
- * 
+ *
  * This file provides a foundation using Vitest for component-level E2E tests.
  * For production, integrate with Playwright/Cypress for full browser automation.
  */

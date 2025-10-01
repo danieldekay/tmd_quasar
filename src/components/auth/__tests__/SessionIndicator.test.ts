@@ -7,7 +7,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { Quasar, QBadge, QTooltip, QIcon, QBtn, QMenu, QList, QItem, QItemSection, QItemLabel, QSeparator } from 'quasar';
+import {
+  Quasar,
+  QBadge,
+  QTooltip,
+  QIcon,
+  QBtn,
+  QMenu,
+  QList,
+  QItem,
+  QItemSection,
+  QItemLabel,
+  QSeparator,
+} from 'quasar';
 import SessionIndicator from '../SessionIndicator.vue';
 
 // Mock the composables

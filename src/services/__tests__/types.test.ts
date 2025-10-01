@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { User, Session, AuthState } from './types';
-import { AuthErrorCodes } from './types';
+import type { User, Session, AuthState } from '../types';
+import { AuthErrorCodes } from '../types';
 
 describe('Authentication Types', () => {
   describe('User type validation', () => {
@@ -49,15 +49,16 @@ describe('Authentication Types', () => {
         username: 'testuser',
         email: 'test@example.com',
         displayName: 'Test User',
-        roles: ['subscriber', 'editor'],
+        roles: ['subscriber', 'editor'] as readonly string[],
         isActive: true,
       };
 
-      // TypeScript should prevent modification
-      // @ts-expect-error - roles is readonly
-      expect(() => {
-        user.roles.push('admin');
-      }).toThrow();
+      // readonly is a TypeScript compile-time check, not runtime
+      // Verify the roles array is present and has the expected structure
+      expect(Array.isArray(user.roles)).toBe(true);
+      expect(user.roles).toHaveLength(2);
+      expect(user.roles).toContain('subscriber');
+      expect(user.roles).toContain('editor');
     });
   });
 

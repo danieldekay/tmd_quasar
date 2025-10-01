@@ -170,6 +170,7 @@ import { requireAuth } from 'src/router/guards';
 #### Session Management
 
 The application automatically:
+
 - Restores sessions on app startup
 - Refreshes tokens before expiration
 - Shows expiration warnings (SessionIndicator component)
@@ -184,6 +185,7 @@ const { session, isValid, isExpiringSoon, timeRemaining } = useSession();
 #### Components
 
 **LoginForm.vue** - Reusable login form with:
+
 - Username/password inputs (Quasar QInput)
 - Password visibility toggle
 - Remember me option (30-day sessions)
@@ -191,11 +193,13 @@ const { session, isValid, isExpiringSoon, timeRemaining } = useSession();
 - Full ARIA labels for accessibility
 
 **AuthGuard.vue** - Component-level route protection:
+
 - Conditionally renders content based on auth state
 - Supports role-based access control
 - Custom unauthorized message slots
 
 **SessionIndicator.vue** - Session status display:
+
 - User info with avatar
 - Session expiration countdown
 - Quick access to profile and logout
@@ -204,6 +208,7 @@ const { session, isValid, isExpiringSoon, timeRemaining } = useSession();
 #### Password Reset
 
 Password reset is handled by the main TMD WordPress site:
+
 - Click "Forgot password?" on login page
 - Redirects to: `${wordpressUrl}/wp-login.php?action=lostpassword`
 - Opens in new tab for security
@@ -212,6 +217,7 @@ Password reset is handled by the main TMD WordPress site:
 #### Security Best Practices
 
 ✅ **Implemented**:
+
 - JWT tokens stored in localStorage (SPA standard)
 - Progressive brute force protection
 - Password cleared from memory on error
@@ -220,6 +226,7 @@ Password reset is handled by the main TMD WordPress site:
 - Automatic refresh token rotation
 
 ⚠️ **Important Notes**:
+
 - Tokens in localStorage: Industry standard for SPAs, acceptable security trade-off
 - No registration: Existing TMD users only
 - No MFA: Not in v1 scope (future enhancement)
@@ -229,14 +236,14 @@ Password reset is handled by the main TMD WordPress site:
 
 **API Usage Summary (Refer to `docs/api.md` for full details):**
 
-*   **Local Development**: Primarily uses `/tmd/v3/` namespace for all custom content types (Events, DJs, Teachers, Event Series).
-    *   Example: `GET http://localhost:10014/wp-json/tmd/v3/events`
-*   **Production**:
-    *   Events: Uses `/tmd/v2/` namespace.
-        *   Example: `GET https://www.tangomarathons.com/wp-json/tmd/v2/events`
-    *   DJs, Teachers, Event Series: Uses `/tmd/v3/` namespace and standard WordPress `/wp/v2/` API.
-        *   Example (DJ): `GET https://www.tangomarathons.com/wp-json/tmd/v3/djs`
-        *   Example (WordPress Core for DJs): `GET https://www.tangomarathons.com/wp-json/wp/v2/tmd_dj`
+- **Local Development**: Primarily uses `/tmd/v3/` namespace for all custom content types (Events, DJs, Teachers, Event Series).
+  - Example: `GET http://localhost:10014/wp-json/tmd/v3/events`
+- **Production**:
+  - Events: Uses `/tmd/v2/` namespace.
+    - Example: `GET https://www.tangomarathons.com/wp-json/tmd/v2/events`
+  - DJs, Teachers, Event Series: Uses `/tmd/v3/` namespace and standard WordPress `/wp/v2/` API.
+    - Example (DJ): `GET https://www.tangomarathons.com/wp-json/tmd/v3/djs`
+    - Example (WordPress Core for DJs): `GET https://www.tangomarathons.com/wp-json/wp/v2/tmd_dj`
 
 ### Custom Post Types
 
