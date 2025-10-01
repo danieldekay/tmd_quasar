@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { authService } from './authService';
+import { authService } from '../authService';
 import type { LoginCredentials } from './types';
 
 describe('authService - Contract Tests', () => {

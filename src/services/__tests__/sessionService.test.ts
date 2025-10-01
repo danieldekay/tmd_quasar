@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { sessionService } from './sessionService';
+import { sessionService } from '../sessionService';
 import type { Session, User } from './types';
 
 describe('sessionService', () => {

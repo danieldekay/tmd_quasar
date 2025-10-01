@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
-import { useAuthStore } from './authStore';
+import { useAuthStore } from '../authStore';
 import type { User, Session } from '../services/types';
 
 describe('useAuthStore', () => {

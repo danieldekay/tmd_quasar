@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useAuth } from './useAuth';
+import { useAuth } from '../useAuth';
 
 describe('useAuth composable', () => {
   beforeEach(() => {

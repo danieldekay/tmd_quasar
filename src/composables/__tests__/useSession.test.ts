@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useSession } from './useSession';
+import { useSession } from '../useSession';
 
 describe('useSession composable', () => {
   beforeEach(() => {
