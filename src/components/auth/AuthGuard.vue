@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isAuthenticated" class="auth-guard-content">
+  <div v-if="canAccessContent" class="auth-guard-content">
     <slot />
   </div>
   <div v-else-if="!redirectOnFailure" class="auth-guard-unauthorized">
