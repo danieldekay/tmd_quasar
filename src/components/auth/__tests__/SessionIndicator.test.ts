@@ -276,7 +276,8 @@ describe('SessionIndicator component', () => {
         isAuthenticated: false,
       });
 
-      await wrapper.setProps({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (wrapper.setProps as any)({
         isAuthenticated: true,
         user: {
           id: 1,
