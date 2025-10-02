@@ -139,7 +139,7 @@
           class="event-series-table"
         >
           <!-- Custom Cell Templates -->
-                    <!-- Custom Cell Templates -->
+          <!-- Custom Cell Templates -->
           <template #body-cell-series_name="props">
             <q-td :props="props" class="series-name-cell cursor-pointer">
               <span class="text-weight-medium">{{ formatText(props.row.title) }}</span>
@@ -148,7 +148,9 @@
 
           <template #body-cell-city="props">
             <q-td :props="props" class="city-cell cursor-pointer">
-              <span class="text-weight-medium">{{ formatText(capitalizeCity(props.row.city)) }}</span>
+              <span class="text-weight-medium">{{
+                formatText(capitalizeCity(props.row.city))
+              }}</span>
             </q-td>
           </template>
 

@@ -14,12 +14,14 @@ Completed the second phase of table standardization by updating cell templates t
 ### Files Modified
 
 1. **TeachersPage.vue** (6 columns)
+
    - Replaced templates: `teacher_type`, `status` → `role`, `teaching_since`, `specialization`
    - Added helpers: `getRoleColor()`, `getTeacherTypeLabel()`
    - Removed helpers: `getStatusLabel()`, `getTeacherTypeColor()`, `getTeacherTypeIcon()`
    - Template updates: Role badges with colors, centered years, teaching style display
 
 2. **CouplesPage.vue** (6 columns)
+
    - Replaced templates: `name` → `couple_name`, added `leader_name`, `follower_name`, `type`
    - Uses helpers: `getLeaderName()`, `getFollowerName()` (extract from embedded data)
    - Removed helpers: `getStatusLabel()`
@@ -47,15 +49,17 @@ Completed the second phase of table standardization by updating cell templates t
 ### Helper Functions Added
 
 1. **TeachersPage.vue**:
+
    ```typescript
    getRoleColor(role: string): string
    // Maps role to badge colors: leader→blue-6, follower→pink-6, both→purple-6, double-role→orange-6
-   
+
    getTeacherTypeLabel(type: string | null): string
    // Maps role values to display labels for filter chips
    ```
 
 2. **CouplesPage.vue**:
+
    ```typescript
    // Already had getLeaderName() and getFollowerName()
    // No new helpers added, existing ones used in new templates
@@ -70,14 +74,11 @@ Completed the second phase of table standardization by updating cell templates t
 ### Template Patterns
 
 #### Role Badges (TeachersPage)
+
 ```vue
 <template v-slot:body-cell-role="props">
   <q-td :props="props">
-    <q-chip
-      :color="getRoleColor(props.row.role)"
-      text-color="white"
-      dense
-    >
+    <q-chip :color="getRoleColor(props.row.role)" text-color="white" dense>
       {{ formatText(props.row.role) }}
     </q-chip>
   </q-td>
@@ -85,6 +86,7 @@ Completed the second phase of table standardization by updating cell templates t
 ```
 
 #### Embedded Data Extraction (CouplesPage)
+
 ```vue
 <template v-slot:body-cell-leader_name="props">
   <q-td :props="props">
@@ -94,6 +96,7 @@ Completed the second phase of table standardization by updating cell templates t
 ```
 
 #### Computed Statistics (EventSeriesPage)
+
 ```vue
 <template v-slot:body-cell-latest_edition="props">
   <q-td :props="props">
@@ -119,17 +122,20 @@ Completed the second phase of table standardization by updating cell templates t
 ## Validation
 
 ### Lint Status
+
 - ✅ TeachersPage.vue: Zero errors
-- ✅ CouplesPage.vue: Zero errors  
+- ✅ CouplesPage.vue: Zero errors
 - ✅ EventSeriesPage.vue: Zero errors
 
 ### Contract Compliance
+
 - ✅ All templates match column definitions from contracts/table-columns.json
 - ✅ All helper functions are used (no unused code)
 - ✅ TypeScript strict mode compliance maintained
 - ✅ Embedded data patterns properly handled
 
 ### Code Quality
+
 - ✅ Removed 9 unused helper functions (cleaner codebase)
 - ✅ Simplified templates (removed decorative icons, focused on data)
 - ✅ Proper null handling in all templates
@@ -149,19 +155,23 @@ Completed the second phase of table standardization by updating cell templates t
 ### Immediate (Detail Pages T022-T026)
 
 1. **T022: EventDetails** (65% → 95%+)
+
    - ISO date formatting already using `formatDate()`
    - Check HTML sanitization
    - Validate all fields displayed correctly
 
 2. **T023: DJDetails** (79% → 95%+)
+
    - Review data display patterns
    - Ensure consistent formatting
 
 3. **T024: TeacherDetails** (73% → 95%+)
+
    - Similar to DJDetails pattern
    - Validate embedded data handling
 
 4. **T025: CoupleDetails** (85% → 100%)
+
    - Already high quality
    - Final polish and validation
 
