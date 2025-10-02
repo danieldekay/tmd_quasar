@@ -177,56 +177,39 @@
 
             <template #body-cell-country="props">
               <q-td :props="props" class="country-cell cursor-pointer">
-                <div class="country-content">
-                  <q-icon name="flag" size="xs" class="q-mr-xs" />
-                  <span class="text-weight-medium">{{
-                    getCountryName(props.row.tmd_dj_country || '')
-                  }}</span>
+                <span class="text-weight-medium">{{
+                  getCountryName(props.row.tmd_dj_country || '')
+                }}</span>
+              </q-td>
+            </template>
+
+            <template #body-cell-real_name="props">
+              <q-td :props="props" class="real-name-cell cursor-pointer">
+                <span class="text-grey-7">{{ formatText(props.row.tmd_dj_real_name) }}</span>
+              </q-td>
+            </template>
+
+            <template #body-cell-activity_types="props">
+              <q-td :props="props" class="activity-types-cell cursor-pointer">
+                <div class="activity-badges">
+                  <q-chip
+                    v-for="activity in getActivityTypes(props.row)"
+                    :key="activity"
+                    dense
+                    size="sm"
+                    :color="getActivityColor(activity)"
+                    text-color="white"
+                    class="q-ma-xs"
+                  >
+                    {{ activity }}
+                  </q-chip>
                 </div>
               </q-td>
             </template>
 
-            <template #body-cell-tmd_dj_activity_marathons="props">
-              <q-td :props="props" class="activity-cell cursor-pointer text-center">
-                <q-checkbox
-                  :model-value="props.row.tmd_dj_activity_marathons === '1'"
-                  disable
-                  dense
-                  color="red-7"
-                />
-              </q-td>
-            </template>
-
-            <template #body-cell-tmd_dj_activity_festivals="props">
-              <q-td :props="props" class="activity-cell cursor-pointer text-center">
-                <q-checkbox
-                  :model-value="props.row.tmd_dj_activity_festivals === '1'"
-                  disable
-                  dense
-                  color="purple-6"
-                />
-              </q-td>
-            </template>
-
-            <template #body-cell-tmd_dj_activity_encuentros="props">
-              <q-td :props="props" class="activity-cell cursor-pointer text-center">
-                <q-checkbox
-                  :model-value="props.row.tmd_dj_activity_encuentros === '1'"
-                  disable
-                  dense
-                  color="blue-6"
-                />
-              </q-td>
-            </template>
-
-            <template #body-cell-tmd_dj_activity_milongas="props">
-              <q-td :props="props" class="activity-cell cursor-pointer text-center">
-                <q-checkbox
-                  :model-value="props.row.tmd_dj_activity_milongas === '1'"
-                  disable
-                  dense
-                  color="teal-6"
-                />
+            <template #body-cell-years_active="props">
+              <q-td :props="props" class="years-active-cell cursor-pointer text-center">
+                <span class="text-weight-medium">{{ getYearsActive(props.row) }}</span>
               </q-td>
             </template>
 
@@ -385,59 +368,86 @@ const activityTypeOptions = computed(() => [
 ]);
 
 // Table columns
+// Helper to compute activity types from boolean fields
+const getActivityTypes = (dj: DJ): string[] => {
+  const activities = [];
+  if (dj.tmd_dj_activity_marathons === '1') activities.push('Marathon');
+  if (dj.tmd_dj_activity_festivals === '1') activities.push('Festival');
+  if (dj.tmd_dj_activity_encuentros === '1') activities.push('Encuentro');
+  if (dj.tmd_dj_activity_milongas === '1') activities.push('Milonga');
+  return activities;
+};
+
+// Helper to compute years active range
+const getYearsActive = (dj: DJ): string => {
+  const years = [
+    dj.tmd_dj_activity_marathons_since,
+    dj.tmd_dj_activity_festivals_since,
+    dj.tmd_dj_activity_encuentros_since,
+    dj.tmd_dj_activity_milongas_since,
+  ].filter(Boolean);
+  if (years.length === 0) return '';
+  const earliest = Math.min(...years.map(Number));
+  return earliest ? `${earliest}` : '';
+};
+
+// Helper to get activity badge color
+const getActivityColor = (activity: string): string => {
+  const colorMap: Record<string, string> = {
+    Marathon: 'red-7',
+    Festival: 'purple-6',
+    Encuentro: 'blue-6',
+    Milonga: 'teal-6',
+  };
+  return colorMap[activity] || 'grey-6';
+};
+
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
     name: 'name',
     label: 'DJ Name',
-    field: (row: DJ) => row.tmd_dj_name || row.title, // Handles potential missing tmd_dj_name
+    field: (row: DJ) => row.tmd_dj_name || row.title,
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 250px',
+    style: 'min-width: 200px',
+  },
+  {
+    name: 'real_name',
+    label: 'Real Name',
+    field: 'tmd_dj_real_name',
+    align: 'left' as const,
+    sortable: false,
+    style: 'min-width: 150px',
   },
   {
     name: 'city',
     label: 'City',
-    field: (row: DJ) => row.tmd_dj_city || '',
+    field: 'tmd_dj_city',
     align: 'left' as const,
-    sortable: true, // Consider if API supports sorting by city
+    sortable: true,
     style: 'min-width: 120px',
   },
   {
     name: 'country',
     label: 'Country',
-    field: (row: DJ) => row.tmd_dj_country || '',
+    field: 'tmd_dj_country',
     align: 'left' as const,
-    sortable: true, // Consider if API supports sorting by country
+    sortable: true,
     style: 'min-width: 120px',
   },
   {
-    name: 'tmd_dj_activity_marathons',
-    label: 'Marathon',
-    field: 'tmd_dj_activity_marathons',
-    align: 'center' as const,
-    sortable: false, // Typically not sortable
-    style: 'min-width: 90px; text-align: center;',
-  },
-  {
-    name: 'tmd_dj_activity_festivals',
-    label: 'Festival',
-    field: 'tmd_dj_activity_festivals',
-    align: 'center' as const,
+    name: 'activity_types',
+    label: 'Activity',
+    field: (row: DJ) => getActivityTypes(row),
+    align: 'left' as const,
     sortable: false,
-    style: 'min-width: 90px; text-align: center;',
+    style: 'min-width: 150px',
   },
   {
-    name: 'tmd_dj_activity_encuentros',
-    label: 'Encuentro',
-    field: 'tmd_dj_activity_encuentros',
-    align: 'center' as const,
-    sortable: false,
-    style: 'min-width: 90px; text-align: center;',
-  },
-  {
-    name: 'tmd_dj_activity_milongas',
-    label: 'Milonga',
-    field: 'tmd_dj_activity_milongas',
+    name: 'years_active',
+    label: 'Active Since',
+    field: (row: DJ) => getYearsActive(row),
     align: 'center' as const,
     sortable: false,
     style: 'min-width: 90px; text-align: center;',
@@ -546,14 +556,6 @@ watch(
   font-size: 13px;
   .q-icon {
     opacity: 0.8;
-  }
-}
-
-// .activity-cell is a new common class for all activity columns for consistency
-.activity-cell {
-  // text-align: center; // This is in column definition style
-  .q-checkbox {
-    // No specific margin needed if dense and text-align center are used
   }
 }
 
