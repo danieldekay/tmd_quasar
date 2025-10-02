@@ -11,6 +11,7 @@ import {
   clearJWTTokens,
 } from '../utils/cookies';
 import { getJwtExpiration } from '../utils/jwt';
+import { useTokenRefresh } from '../composables/useTokenRefresh';
 
 // Re-export User type for backward compatibility
 export interface User {
@@ -52,6 +53,9 @@ export const useAuthStore = defineStore('auth', () => {
   // Progressive delay protection for brute force
   const loginAttempts = ref(0);
   const lastFailedLoginTime = ref<number | null>(null);
+
+  // Initialize token refresh composable
+  const { initializeTokenState, clearTokenState } = useTokenRefresh();
 
   // Computed
   const isAuthenticated = computed(() => Boolean(token.value && user.value));
@@ -164,6 +168,10 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.refreshToken) {
         setRefreshToken(response.refreshToken, credentials.remember);
         sessionService.saveRefreshToken(response.refreshToken);
+        
+        // Initialize proactive token refresh
+        const expiresAt = new Date(Date.now() + (response.expires_in || 30 * 60) * 1000);
+        initializeTokenState(response.token, response.refreshToken, expiresAt);
       }
 
       scheduleRefresh(response.token);
@@ -195,6 +203,9 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = null;
       isLoadingStoredAuth.value = false;
       hasAttemptedStoredAuth.value = false;
+
+      // Clear token refresh state
+      clearTokenState();
 
       // Reset login attempt tracking
       loginAttempts.value = 0;

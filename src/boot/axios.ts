@@ -2,6 +2,8 @@ import { boot } from 'quasar/wrappers';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 import { getJWTToken } from '../utils/cookies';
+import { useMetrics } from '../composables/useMetrics';
+import { useTokenRefresh } from '../composables/useTokenRefresh';
 
 // Extend axios config to include metadata
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -40,14 +42,29 @@ const MAX_RELOGIN_ATTEMPTS = 3;
 let reloginAttempts = 0;
 let isAttemptingRelogin = false;
 
+// --- metrics and token refresh instances -------------------
+// Initialize outside interceptors to avoid recreation on each request
+const { recordRequest } = useMetrics();
+const { tokenState, shouldRefresh, refreshToken } = useTokenRefresh();
+
 // Request interceptor to add request metadata and auth token
 api.interceptors.request.use(
-  (config: ExtendedAxiosRequestConfig) => {
+  async (config: ExtendedAxiosRequestConfig) => {
     // Add timestamp for request tracking
     config.metadata = { startTime: Date.now() };
 
+    // Check if proactive token refresh is needed
+    if (shouldRefresh.value && !isAttemptingRelogin) {
+      try {
+        console.info('Proactive token refresh triggered before request');
+        await refreshToken();
+      } catch (error) {
+        console.warn('Proactive token refresh failed, continuing with existing token', error);
+      }
+    }
+
     // Add authentication token if available
-    const token = getJWTToken();
+    const token = tokenState.value.token || getJWTToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -63,12 +80,37 @@ api.interceptors.response.use(
     // Calculate request duration for monitoring
     const duration =
       Date.now() - ((response.config as ExtendedAxiosRequestConfig).metadata?.startTime || 0);
+    
+    // Record successful request metrics
+    const endpoint = response.config.url || 'unknown';
+    recordRequest(endpoint, duration, true, response.status);
+    
+    // Warn about slow requests
     if (duration > 5000) {
-      console.warn(`Slow API request: ${response.config.url} took ${duration}ms`);
+      console.warn(`Slow API request: ${endpoint} took ${duration}ms`);
     }
+    
     return response;
   },
   async (error: AxiosError) => {
+    // Calculate request duration for failed requests
+    const duration =
+      Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
+    const endpoint = error.config?.url || 'unknown';
+    
+    // Determine error type for metrics
+    let errorType: 'network' | 'server' | 'client' | undefined;
+    if (!error.response) {
+      errorType = 'network';
+    } else if (error.response.status >= 500) {
+      errorType = 'server';
+    } else if (error.response.status >= 400) {
+      errorType = 'client';
+    }
+    
+    // Record failed request metrics
+    recordRequest(endpoint, duration, false, error.response?.status, errorType);
+    
     // Create enhanced error with additional context
     const enhancedError: APIError = new Error() as APIError;
     enhancedError.name = 'APIError';

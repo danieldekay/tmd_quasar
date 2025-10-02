@@ -1,0 +1,145 @@
+openapi: 3.0.0
+info:
+  title: Error Types Contract
+  description: Contract defining error categorization and handling behavior
+  version: 1.0.0
+
+components:
+  schemas:
+    ErrorCategory:
+      type: object
+      required:
+        - name
+        - httpStatusCodes
+        - retryable
+        - userMessage
+        - requiredActions
+      properties:
+        name:
+          type: string
+          enum:
+            - NetworkError
+            - APIUnavailable
+            - ServerError
+            - NotFoundError
+            - UnauthorizedError
+            - APIError
+          description: Error classification identifier
+        
+        httpStatusCodes:
+          type: array
+          items:
+            type: integer
+          description: HTTP status codes that map to this category
+          example: [500, 502, 503, 504]
+        
+        retryable:
+          type: boolean
+          description: Whether automatic retry should be attempted
+          example: true
+        
+        userMessage:
+          type: string
+          description: Default user-friendly message for this category
+          example: "The API is currently unavailable. Please try again later."
+        
+        requiredActions:
+          type: array
+          items:
+            type: string
+            enum:
+              - display_error
+              - show_retry
+              - mark_offline
+              - mark_api_unavailable
+              - increment_failures
+              - attempt_reauth
+              - log_error
+          description: Actions to take when this error occurs
+        
+        displayStyle:
+          type: string
+          enum:
+            - banner_red        # Critical: offline
+            - banner_amber      # Warning: API unavailable
+            - card_grey         # Info: general error
+          description: UI style for displaying this error
+          example: "banner_amber"
+
+  examples:
+    NetworkError:
+      value:
+        name: NetworkError
+        httpStatusCodes: []
+        retryable: true
+        userMessage: "You appear to be offline. Please check your internet connection."
+        requiredActions:
+          - display_error
+          - mark_offline
+          - mark_api_unavailable
+          - increment_failures
+          - log_error
+        displayStyle: banner_red
+    
+    APIUnavailable:
+      value:
+        name: APIUnavailable
+        httpStatusCodes: [500, 502, 503, 504]
+        retryable: true
+        userMessage: "The API is currently unavailable. Please try again later."
+        requiredActions:
+          - display_error
+          - show_retry
+          - mark_api_unavailable
+          - increment_failures
+          - log_error
+        displayStyle: banner_amber
+    
+    ServerError:
+      value:
+        name: ServerError
+        httpStatusCodes: [500, 501, 502, 503, 504, 505]
+        retryable: true
+        userMessage: "The service is experiencing issues. Please try again shortly."
+        requiredActions:
+          - display_error
+          - show_retry
+          - increment_failures
+          - log_error
+        displayStyle: card_grey
+    
+    NotFoundError:
+      value:
+        name: NotFoundError
+        httpStatusCodes: [404]
+        retryable: true  # Retry once in case of transient routing issue
+        userMessage: "The requested resource was not found."
+        requiredActions:
+          - display_error
+          - log_error
+        displayStyle: card_grey
+    
+    UnauthorizedError:
+      value:
+        name: UnauthorizedError
+        httpStatusCodes: [401]
+        retryable: false  # Retry handled by re-authentication flow
+        userMessage: "Authentication required. Please log in."
+        requiredActions:
+          - display_error
+          - attempt_reauth
+          - log_error
+        displayStyle: card_grey
+    
+    GenericAPIError:
+      value:
+        name: APIError
+        httpStatusCodes: [400, 403, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 422, 423, 424, 426, 428, 429, 431]
+        retryable: false  # Client errors generally not retryable
+        userMessage: "Something went wrong. Please try again."
+        requiredActions:
+          - display_error
+          - log_error
+        displayStyle: card_grey
+
+paths: {}  # This is a behavioral contract, not an API endpoint

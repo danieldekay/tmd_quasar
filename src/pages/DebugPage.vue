@@ -243,6 +243,153 @@
       </q-card-section>
     </q-card>
 
+    <!-- API Metrics -->
+    <q-card class="q-mb-md">
+      <q-card-section>
+        <div class="row items-center q-mb-md">
+          <div class="text-h6 col">API Metrics</div>
+          <q-btn
+            flat
+            dense
+            round
+            icon="refresh"
+            @click="refreshMetrics"
+            class="q-ml-auto"
+          >
+            <q-tooltip>Refresh Metrics</q-tooltip>
+          </q-btn>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row q-col-gutter-md q-mb-md">
+          <div class="col-12 col-sm-6 col-md-3">
+            <q-card flat bordered>
+              <q-card-section class="text-center">
+                <div class="text-h4 text-primary">{{ metrics.totalRequests }}</div>
+                <div class="text-caption text-grey-7">Total Requests</div>
+              </q-card-section>
+            </q-card>
+          </div>
+          <div class="col-12 col-sm-6 col-md-3">
+            <q-card flat bordered>
+              <q-card-section class="text-center">
+                <div class="text-h4 text-positive">{{ metrics.successRate }}%</div>
+                <div class="text-caption text-grey-7">Success Rate</div>
+              </q-card-section>
+            </q-card>
+          </div>
+          <div class="col-12 col-sm-6 col-md-3">
+            <q-card flat bordered>
+              <q-card-section class="text-center">
+                <div class="text-h4 text-negative">{{ metrics.errorRate }}%</div>
+                <div class="text-caption text-grey-7">Error Rate</div>
+              </q-card-section>
+            </q-card>
+          </div>
+          <div class="col-12 col-sm-6 col-md-3">
+            <q-card flat bordered>
+              <q-card-section class="text-center">
+                <div class="text-h4 text-info">{{ metrics.avgResponseTime }}ms</div>
+                <div class="text-caption text-grey-7">Avg Response</div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
+
+        <!-- Response Time Percentiles -->
+        <div class="q-mb-md">
+          <div class="text-subtitle2 q-mb-sm">Response Time Percentiles</div>
+          <q-list bordered separator>
+            <q-item>
+              <q-item-section>
+                <q-item-label>P50 (Median)</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip size="sm" color="grey-3" text-color="grey-9">{{ metrics.p50 }}ms</q-chip>
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-item-label>P95</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip size="sm" color="grey-3" text-color="grey-9">{{ metrics.p95 }}ms</q-chip>
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-item-label>P99</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip size="sm" color="grey-3" text-color="grey-9">{{ metrics.p99 }}ms</q-chip>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
+
+        <!-- Error Breakdown -->
+        <div class="q-mb-md">
+          <div class="text-subtitle2 q-mb-sm">Error Breakdown</div>
+          <q-list bordered separator>
+            <q-item>
+              <q-item-section>
+                <q-item-label>Network Errors</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip size="sm" color="negative" text-color="white"
+                  >{{ metrics.networkErrors }}</q-chip
+                >
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-item-label>Server Errors (5xx)</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip size="sm" color="warning" text-color="white"
+                  >{{ metrics.serverErrors }}</q-chip
+                >
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-item-label>Client Errors (4xx)</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip size="sm" color="orange" text-color="white"
+                  >{{ metrics.clientErrors }}</q-chip
+                >
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
+
+        <!-- Top Endpoints -->
+        <div class="q-mb-md">
+          <div class="text-subtitle2 q-mb-sm">Top 5 Endpoints by Request Volume</div>
+          <q-table
+            flat
+            bordered
+            :rows="topEndpoints"
+            :columns="endpointColumns"
+            row-key="endpoint"
+            :pagination="{ rowsPerPage: 5 }"
+            :rows-per-page-options="[5]"
+            dense
+          />
+        </div>
+
+        <!-- Time Window Information -->
+        <div class="text-caption text-grey-7">
+          <q-icon name="info" size="sm" class="q-mr-xs" />
+          Metrics collected over {{ metrics.timeWindowMinutes }} minute rolling window ({{
+            metrics.windowSize
+          }}
+          samples)
+        </div>
+      </q-card-section>
+    </q-card>
+
     <!-- Actions -->
     <q-card>
       <q-card-section>
@@ -269,6 +416,8 @@
             :loading="testingApi"
           />
           <q-btn color="secondary" label="Clear Storage" @click="clearStorage" />
+          <q-btn color="info" label="Reset Metrics" @click="resetMetrics" />
+          <q-btn color="accent" label="Export Metrics" @click="exportMetrics" />
         </div>
       </q-card-section>
     </q-card>
@@ -281,10 +430,141 @@ import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
 import { api } from '../boot/axios';
 import { useAuthStore } from '../stores/authStore';
+import {
+  getMetrics,
+  getTopEndpoints,
+  resetMetrics as resetMetricsService,
+  exportMetricsJSON,
+} from '../services/metricsService';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const testingApi = ref(false);
+
+// Metrics state
+const metricsData = ref(getMetrics());
+
+// Computed metrics for display
+const metrics = computed(() => {
+  const data = metricsData.value;
+  return {
+    totalRequests: data.requestMetrics.totalRequests,
+    successRate: data.requestMetrics.successRate.toFixed(1),
+    errorRate: (data.errorMetrics.errorRate * 100).toFixed(1),
+    avgResponseTime: Math.round(data.performanceMetrics.averageResponseTime),
+    p50: Math.round(data.performanceMetrics.p50ResponseTime),
+    p95: Math.round(data.performanceMetrics.p95ResponseTime),
+    p99: Math.round(data.performanceMetrics.p99ResponseTime),
+    networkErrors: data.errorMetrics.networkErrors,
+    serverErrors: data.errorMetrics.serverErrors,
+    clientErrors: data.errorMetrics.clientErrors,
+    timeWindowMinutes: Math.round(data.timeWindow.windowSizeMinutes),
+    windowSize: data.timeWindow.currentSampleCount,
+  };
+});
+
+const topEndpoints = computed(() => {
+  return getTopEndpoints(5).map((ep) => ({
+    endpoint: ep.endpoint,
+    requests: ep.totalRequests,
+    success: ep.successCount,
+    failures: ep.failureCount,
+    errorRate: `${(ep.errorRate * 100).toFixed(1)}%`,
+    avgTime: `${Math.round(ep.averageResponseTime)}ms`,
+  }));
+});
+
+const endpointColumns = [
+  {
+    name: 'endpoint',
+    label: 'Endpoint',
+    field: 'endpoint',
+    align: 'left' as const,
+    sortable: true,
+  },
+  {
+    name: 'requests',
+    label: 'Requests',
+    field: 'requests',
+    align: 'center' as const,
+    sortable: true,
+  },
+  {
+    name: 'success',
+    label: 'Success',
+    field: 'success',
+    align: 'center' as const,
+    sortable: true,
+  },
+  {
+    name: 'failures',
+    label: 'Failures',
+    field: 'failures',
+    align: 'center' as const,
+    sortable: true,
+  },
+  {
+    name: 'errorRate',
+    label: 'Error Rate',
+    field: 'errorRate',
+    align: 'center' as const,
+    sortable: true,
+  },
+  {
+    name: 'avgTime',
+    label: 'Avg Time',
+    field: 'avgTime',
+    align: 'center' as const,
+    sortable: true,
+  },
+];
+
+// Metrics actions
+const refreshMetrics = () => {
+  metricsData.value = getMetrics();
+  Notify.create({
+    type: 'info',
+    message: 'Metrics refreshed',
+    position: 'top',
+    timeout: 1000,
+  });
+};
+
+const resetMetrics = () => {
+  resetMetricsService();
+  metricsData.value = getMetrics();
+  Notify.create({
+    type: 'positive',
+    message: 'Metrics reset successfully',
+    position: 'top',
+  });
+};
+
+const exportMetrics = () => {
+  try {
+    const json = exportMetricsJSON();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tmd-metrics-${new Date().toISOString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    Notify.create({
+      type: 'positive',
+      message: 'Metrics exported successfully',
+      position: 'top',
+    });
+  } catch {
+    Notify.create({
+      type: 'negative',
+      message: 'Error exporting metrics',
+      position: 'top',
+    });
+  }
+};
 
 // Environment variables
 const apiBaseUrl = ref(api.defaults.baseURL || 'Not configured');

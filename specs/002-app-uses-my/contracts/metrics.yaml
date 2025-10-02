@@ -1,0 +1,253 @@
+openapi: 3.0.0
+info:
+  title: Operational Metrics Contract
+  description: Contract for standard operational metrics tracking and exposure
+  version: 1.0.0
+
+components:
+  schemas:
+    OperationalMetrics:
+      type: object
+      required:
+        - requestMetrics
+        - errorMetrics
+        - performanceMetrics
+        - endpointMetrics
+        - timeWindow
+      properties:
+        requestMetrics:
+          $ref: '#/components/schemas/RequestMetrics'
+        
+        errorMetrics:
+          $ref: '#/components/schemas/ErrorMetrics'
+        
+        performanceMetrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        
+        endpointMetrics:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/EndpointStats'
+          description: Per-endpoint statistics (keyed by endpoint path)
+          example:
+            "/tmd/v3/events":
+              requests: 150
+              successes: 145
+              failures: 5
+              avgResponseTime: 250
+        
+        timeWindow:
+          $ref: '#/components/schemas/TimeWindow'
+    
+    RequestMetrics:
+      type: object
+      required:
+        - totalRequests
+        - successfulRequests
+        - failedRequests
+      properties:
+        totalRequests:
+          type: integer
+          minimum: 0
+          description: Total number of API requests made
+          example: 1523
+        
+        successfulRequests:
+          type: integer
+          minimum: 0
+          description: Requests with 2xx responses
+          example: 1498
+        
+        failedRequests:
+          type: integer
+          minimum: 0
+          description: Requests with non-2xx responses
+          example: 25
+    
+    ErrorMetrics:
+      type: object
+      required:
+        - errorRate
+        - errorsByType
+      properties:
+        errorRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of failed requests
+          example: 1.64
+        
+        errorsByType:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Count of errors by error category
+          example:
+            NetworkError: 5
+            APIUnavailable: 12
+            ServerError: 8
+            NotFoundError: 0
+            UnauthorizedError: 0
+            APIError: 0
+    
+    PerformanceMetrics:
+      type: object
+      required:
+        - responseTimeP50
+        - responseTimeP95
+        - responseTimeP99
+        - avgResponseTime
+        - timeoutCount
+        - timeoutRate
+      properties:
+        responseTimeP50:
+          type: number
+          format: float
+          minimum: 0
+          description: Median response time in milliseconds
+          example: 245.5
+        
+        responseTimeP95:
+          type: number
+          format: float
+          minimum: 0
+          description: 95th percentile response time in milliseconds
+          example: 892.3
+        
+        responseTimeP99:
+          type: number
+          format: float
+          minimum: 0
+          description: 99th percentile response time in milliseconds
+          example: 2134.7
+        
+        avgResponseTime:
+          type: number
+          format: float
+          minimum: 0
+          description: Average response time in milliseconds
+          example: 312.8
+        
+        timeoutCount:
+          type: integer
+          minimum: 0
+          description: Number of requests exceeding 30s timeout
+          example: 2
+        
+        timeoutRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of requests that timed out
+          example: 0.13
+    
+    EndpointStats:
+      type: object
+      required:
+        - requests
+        - successes
+        - failures
+        - avgResponseTime
+      properties:
+        requests:
+          type: integer
+          minimum: 0
+          description: Total requests to this endpoint
+          example: 150
+        
+        successes:
+          type: integer
+          minimum: 0
+          description: Successful requests (2xx)
+          example: 145
+        
+        failures:
+          type: integer
+          minimum: 0
+          description: Failed requests (non-2xx)
+          example: 5
+        
+        avgResponseTime:
+          type: number
+          format: float
+          minimum: 0
+          description: Average response time for this endpoint in ms
+          example: 250.3
+    
+    TimeWindow:
+      type: object
+      required:
+        - windowStart
+        - windowEnd
+        - durationSeconds
+      properties:
+        windowStart:
+          type: string
+          format: date-time
+          description: Start of metrics collection window
+          example: "2025-10-02T13:30:00.000Z"
+        
+        windowEnd:
+          type: string
+          format: date-time
+          description: End of metrics collection window (rolling)
+          example: "2025-10-02T14:30:00.000Z"
+        
+        durationSeconds:
+          type: integer
+          minimum: 0
+          description: Length of collection window in seconds
+          example: 3600
+
+paths:
+  /api/metrics:
+    get:
+      summary: Get current operational metrics
+      description: Returns operational metrics for the current time window
+      responses:
+        '200':
+          description: Successful response with metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalMetrics'
+              example:
+                requestMetrics:
+                  totalRequests: 1523
+                  successfulRequests: 1498
+                  failedRequests: 25
+                errorMetrics:
+                  errorRate: 1.64
+                  errorsByType:
+                    NetworkError: 5
+                    APIUnavailable: 12
+                    ServerError: 8
+                performanceMetrics:
+                  responseTimeP50: 245.5
+                  responseTimeP95: 892.3
+                  responseTimeP99: 2134.7
+                  avgResponseTime: 312.8
+                  timeoutCount: 2
+                  timeoutRate: 0.13
+                endpointMetrics:
+                  "/tmd/v3/events":
+                    requests: 850
+                    successes: 842
+                    failures: 8
+                    avgResponseTime: 289.2
+                  "/tmd/v3/djs":
+                    requests: 345
+                    successes: 340
+                    failures: 5
+                    avgResponseTime: 312.5
+                  "/tmd/v3/teachers":
+                    requests: 213
+                    successes: 210
+                    failures: 3
+                    avgResponseTime: 301.8
+                timeWindow:
+                  windowStart: "2025-10-02T13:30:00.000Z"
+                  windowEnd: "2025-10-02T14:30:00.000Z"
+                  durationSeconds: 3600
