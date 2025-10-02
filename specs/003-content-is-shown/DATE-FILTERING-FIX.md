@@ -54,6 +54,7 @@ interface EventListFilters extends ListFilters {
 - **Registration To** - Filter by registration opening date (to)
 
 **Features:**
+
 - QInput with mask `YYYY-MM-DD` for manual entry
 - QDate calendar popup on icon click
 - Clear button to remove filter
@@ -63,11 +64,10 @@ interface EventListFilters extends ListFilters {
 ### 3. Server-Side Filtering (Performance Optimized)
 
 API parameters passed to backend:
+
 ```typescript
-if (params.filters.startDateFrom) 
-  apiParams.start_date_from = params.filters.startDateFrom;
-if (params.filters.startDateTo) 
-  apiParams.start_date_to = params.filters.startDateTo;
+if (params.filters.startDateFrom) apiParams.start_date_from = params.filters.startDateFrom;
+if (params.filters.startDateTo) apiParams.start_date_to = params.filters.startDateTo;
 if (params.filters.registrationDateFrom)
   apiParams.registration_start_date_from = params.filters.registrationDateFrom;
 if (params.filters.registrationDateTo)
@@ -75,6 +75,7 @@ if (params.filters.registrationDateTo)
 ```
 
 **Why This Is Fast:**
+
 - ✅ Filtering done on backend (WordPress REST API)
 - ✅ Database-level queries (MySQL WHERE clauses)
 - ✅ Only filtered results transferred over network
@@ -84,10 +85,15 @@ if (params.filters.registrationDateTo)
 ### 4. Active Filter Chips
 
 Visual feedback for active date filters:
+
 ```vue
-<q-chip v-if="listFilters.startDateFrom" removable 
-        @remove="updateFilter('startDateFrom', null)"
-        size="sm" icon="event">
+<q-chip
+  v-if="listFilters.startDateFrom"
+  removable
+  @remove="updateFilter('startDateFrom', null)"
+  size="sm"
+  icon="event"
+>
   Start From: {{ listFilters.startDateFrom }}
 </q-chip>
 ```
@@ -110,6 +116,7 @@ TypeScript strict mode compliance - no type assertions, proper type guards.
 ### 6. Filter Persistence
 
 Filters automatically persist to cookies via `useGenericList`:
+
 - Cookie name: `eventListState`
 - Expiry: 30 days
 - Includes all date range filters
@@ -124,22 +131,27 @@ Filters automatically persist to cookies via `useGenericList`:
 **Modified:** `src/pages/EventList.vue` (+182 lines)
 
 1. **Interface Extension** (lines ~313-320)
+
    - Added 4 date range filter fields
 
 2. **UI Components** (lines ~84-218)
+
    - Date Range Filters Row (new section)
    - 4 QInput + QDate picker combinations
    - Responsive grid layout
 
 3. **Filter Chips** (lines ~272-314)
+
    - 4 new chips for date filters
    - Removable with proper icons
 
 4. **API Integration** (lines ~374-381)
+
    - Date parameters added to API call
    - Server-side filtering enabled
 
 5. **Type Handlers** (lines ~721-725)
+
    - handleDateInput helper function
    - Type-safe value conversion
 
@@ -160,12 +172,14 @@ Filters automatically persist to cookies via `useGenericList`:
 ## User Experience Improvements
 
 ### Before (Broken State)
+
 - ❌ No date filtering UI visible
 - ❌ Cannot filter by date ranges
 - ❌ Cannot find events in specific time periods
 - ❌ Must scroll through all 2989 events
 
 ### After (Fixed State)
+
 - ✅ Four date range filters available
 - ✅ Calendar popup for easy date selection
 - ✅ Manual entry with YYYY-MM-DD mask
@@ -182,12 +196,13 @@ Filters automatically persist to cookies via `useGenericList`:
 
 **Dataset:** 2989 total events
 
-| Filter Type | Method | Estimated Time | Load on Client |
-|-------------|--------|----------------|----------------|
-| Client-side | Array.filter() | ~500-2000ms | High (full dataset) |
-| **Server-side** | **MySQL WHERE** | **~50-200ms** | **Low (filtered only)** |
+| Filter Type     | Method          | Estimated Time | Load on Client          |
+| --------------- | --------------- | -------------- | ----------------------- |
+| Client-side     | Array.filter()  | ~500-2000ms    | High (full dataset)     |
+| **Server-side** | **MySQL WHERE** | **~50-200ms**  | **Low (filtered only)** |
 
 **Benefits:**
+
 1. **10x faster** - Database indexing on date fields
 2. **Less bandwidth** - Only matching events transferred
 3. **No UI freezing** - Client doesn't process large arrays
@@ -197,11 +212,11 @@ Filters automatically persist to cookies via `useGenericList`:
 
 ```typescript
 // Find events in Q1 2026 with open registration
-startDateFrom: "2026-01-01"
-startDateTo: "2026-03-31"
-registrationDateFrom: "2025-10-01"
-registrationDateTo: "2026-03-31"
-country: "DE"
+startDateFrom: '2026-01-01';
+startDateTo: '2026-03-31';
+registrationDateFrom: '2025-10-01';
+registrationDateTo: '2026-03-31';
+country: 'DE';
 
 // API Query:
 // GET /wp-json/tmd/v4/events?
@@ -236,11 +251,13 @@ country: "DE"
 ### Edge Cases Tested
 
 1. **Date Range Validation**
+
    - From date > To date: ✅ Works (backend handles)
    - Invalid date format: ✅ Prevented by mask
    - Null values: ✅ Handled properly
 
 2. **Filter Combinations**
+
    - Date + Country + Category: ✅ All work together
    - Multiple date ranges active: ✅ Combines correctly
    - Clear all filters: ✅ Resets all dates
@@ -256,12 +273,12 @@ country: "DE"
 
 ### Supported Date Parameters
 
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `start_date_from` | string | Events starting on/after this date | `2026-01-01` |
-| `start_date_to` | string | Events starting on/before this date | `2026-12-31` |
-| `registration_start_date_from` | string | Registration opens on/after | `2025-10-01` |
-| `registration_start_date_to` | string | Registration opens on/before | `2026-06-30` |
+| Parameter                      | Type   | Description                         | Example      |
+| ------------------------------ | ------ | ----------------------------------- | ------------ |
+| `start_date_from`              | string | Events starting on/after this date  | `2026-01-01` |
+| `start_date_to`                | string | Events starting on/before this date | `2026-12-31` |
+| `registration_start_date_from` | string | Registration opens on/after         | `2025-10-01` |
+| `registration_start_date_to`   | string | Registration opens on/before        | `2026-06-30` |
 
 **Date Format:** ISO 8601 (YYYY-MM-DD)
 
@@ -283,7 +300,9 @@ GET /wp-json/tmd/v4/events?start_date_from=2026-01-01&start_date_to=2026-03-31&c
 ## Future Enhancements (Optional)
 
 ### Quick Date Presets
+
 Could add convenience buttons:
+
 - "Next 3 Months"
 - "Next 6 Months"
 - "Next Year"
@@ -292,13 +311,17 @@ Could add convenience buttons:
 Implementation would use existing `applyQuickStartDateFilter()` pattern from `useEventFilters` composable.
 
 ### Date Range Validation
+
 Could add client-side validation:
+
 - Warn if "from" > "to"
 - Highlight overlapping ranges
 - Suggest corrections
 
 ### Advanced Filtering
+
 Could extend to support:
+
 - End date ranges
 - Duration filters (events > 3 days)
 - Relative dates ("next month", "this quarter")
@@ -308,15 +331,18 @@ Could extend to support:
 ## Related Files
 
 ### Modified
+
 - `src/pages/EventList.vue` - Main implementation (+182 lines)
 
 ### Referenced (Not Modified)
+
 - `src/composables/useGenericList.ts` - State management
 - `src/composables/useEventFilters.ts` - Original date filter logic (unused now)
 - `src/services/eventListService.ts` - API service (already supported date params)
 - `src/services/v3MetaFilters.ts` - API filter builder utilities
 
 ### Documentation
+
 - `specs/003-content-is-shown/DATE-FILTERING-FIX.md` - This file
 - `specs/003-content-is-shown/tasks.md` - Updated with completion status
 
@@ -325,6 +351,7 @@ Could extend to support:
 ## Lessons Learned
 
 ### What Went Well
+
 1. ✅ Server-side filtering from the start (no refactoring needed)
 2. ✅ TypeScript caught all type mismatches early
 3. ✅ Quasar QDate component was perfect fit
@@ -332,12 +359,14 @@ Could extend to support:
 5. ✅ Zero lint errors on first commit
 
 ### What Could Be Better
+
 1. ⚠️ Date filtering should have been in initial useGenericList migration
 2. ⚠️ useEventFilters composable became dead code (should remove)
 3. ⚠️ Could add preset date ranges for better UX
 4. ⚠️ Input validation could be more explicit
 
 ### Development Time
+
 - **Investigation:** 15 minutes (git history, code search)
 - **Implementation:** 25 minutes (UI + API + types)
 - **Testing:** 10 minutes (manual validation)
@@ -351,6 +380,7 @@ Could extend to support:
 ✅ **Date filtering is now fully functional, fast, and user-friendly.**
 
 The implementation:
+
 - Uses server-side filtering for optimal performance
 - Provides intuitive UI with calendar pickers
 - Maintains TypeScript strict compliance

@@ -69,7 +69,7 @@ describe('useAuth composable', () => {
 
       // Mock login to fail
       const authService = await import('../../services/authService');
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       const mockLogin = vi.mocked(authService.authService.login);
       mockLogin.mockRejectedValueOnce(new Error('Login failed'));
 

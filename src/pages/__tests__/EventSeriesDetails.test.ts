@@ -44,7 +44,7 @@ vi.mock('src/services/eventSeriesService', () => ({
 
 // Mock vue-router
 vi.mock('vue-router', async () => {
-  const actual = await vi.importActual<typeof import('vue-router')>('vue-router');
+  const actual = await vi.importActual('vue-router');
   return {
     ...actual,
     useRoute: () => ({

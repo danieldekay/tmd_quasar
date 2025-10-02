@@ -91,9 +91,9 @@ describe('LoginForm component', () => {
       // Set values through exposed refs
 
       if (wrapper.vm) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (wrapper.vm as any).username = 'testuser';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (wrapper.vm as any).password = 'password123';
       }
 
@@ -112,11 +112,11 @@ describe('LoginForm component', () => {
 
       // Set values through exposed refs
       if (wrapper.vm) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (wrapper.vm as any).username = 'testuser';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (wrapper.vm as any).password = 'password123';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (wrapper.vm as any).remember = true;
       }
 
@@ -128,7 +128,7 @@ describe('LoginForm component', () => {
       await flushPromises();
 
       expect(wrapper.emitted('submit')).toBeTruthy();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const emittedData = wrapper.emitted('submit')?.[0]?.[0] as any;
       expect(emittedData).toEqual({
         username: 'testuser',
@@ -153,7 +153,7 @@ describe('LoginForm component', () => {
 
       // Set password
       if (wrapper.vm) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (wrapper.vm as any).password = 'wrongpassword';
       }
       await wrapper.vm.$nextTick();
@@ -163,7 +163,7 @@ describe('LoginForm component', () => {
       await flushPromises();
 
       // Password should be cleared
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       expect((wrapper.vm as any).password).toBe('');
     });
   });

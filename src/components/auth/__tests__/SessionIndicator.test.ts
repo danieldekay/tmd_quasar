@@ -24,9 +24,9 @@ import SessionIndicator from '../SessionIndicator.vue';
 
 // Mock the composables
 const mockIsAuthenticated = ref(false);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const mockUser = ref<any>(null);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const mockSession = ref<any>(null);
 const mockLogout = vi.fn();
 const mockRouter = {

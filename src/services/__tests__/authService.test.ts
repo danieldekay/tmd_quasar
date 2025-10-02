@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/unbound-method */
+ 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { authService } from '../authService';
 import type { LoginCredentials } from '../../stores/authStore';
