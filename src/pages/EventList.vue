@@ -79,7 +79,133 @@
                 </template>
               </q-select>
             </div>
+          </div>
 
+          <!-- Date Range Filters Row -->
+          <div class="row q-gutter-md q-mt-sm items-center">
+            <!-- Start Date From -->
+            <div class="col-12 col-md-3">
+              <q-input
+                :model-value="listFilters.startDateFrom"
+                @update:model-value="handleDateInput('startDateFrom', $event)"
+                label="Start Date From"
+                dense
+                outlined
+                clearable
+                mask="####-##-##"
+                placeholder="YYYY-MM-DD"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date
+                        :model-value="listFilters.startDateFrom"
+                        @update:model-value="handleDateInput('startDateFrom', $event)"
+                        mask="YYYY-MM-DD"
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn v-close-popup label="Close" color="primary" flat />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+
+            <!-- Start Date To -->
+            <div class="col-12 col-md-3">
+              <q-input
+                :model-value="listFilters.startDateTo"
+                @update:model-value="handleDateInput('startDateTo', $event)"
+                label="Start Date To"
+                dense
+                outlined
+                clearable
+                mask="####-##-##"
+                placeholder="YYYY-MM-DD"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date
+                        :model-value="listFilters.startDateTo"
+                        @update:model-value="handleDateInput('startDateTo', $event)"
+                        mask="YYYY-MM-DD"
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn v-close-popup label="Close" color="primary" flat />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+
+            <!-- Registration Date From -->
+            <div class="col-12 col-md-3">
+              <q-input
+                :model-value="listFilters.registrationDateFrom"
+                @update:model-value="handleDateInput('registrationDateFrom', $event)"
+                label="Registration From"
+                dense
+                outlined
+                clearable
+                mask="####-##-##"
+                placeholder="YYYY-MM-DD"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="how_to_reg" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date
+                        :model-value="listFilters.registrationDateFrom"
+                        @update:model-value="handleDateInput('registrationDateFrom', $event)"
+                        mask="YYYY-MM-DD"
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn v-close-popup label="Close" color="primary" flat />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+
+            <!-- Registration Date To -->
+            <div class="col-12 col-md-3">
+              <q-input
+                :model-value="listFilters.registrationDateTo"
+                @update:model-value="handleDateInput('registrationDateTo', $event)"
+                label="Registration To"
+                dense
+                outlined
+                clearable
+                mask="####-##-##"
+                placeholder="YYYY-MM-DD"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="how_to_reg" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date
+                        :model-value="listFilters.registrationDateTo"
+                        @update:model-value="handleDateInput('registrationDateTo', $event)"
+                        mask="YYYY-MM-DD"
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn v-close-popup label="Close" color="primary" flat />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Past Events Toggle + Clear Filters -->
+          <div class="row q-gutter-md q-mt-sm items-center">
             <!-- Past Events Toggle -->
             <div class="col-12 col-md-auto">
               <q-toggle
@@ -140,6 +266,42 @@
               icon="search"
             >
               Search: "{{ listFilters.searchQuery }}"
+            </q-chip>
+            <q-chip
+              v-if="listFilters.startDateFrom"
+              removable
+              @remove="updateFilter('startDateFrom', null)"
+              size="sm"
+              icon="event"
+            >
+              Start From: {{ listFilters.startDateFrom }}
+            </q-chip>
+            <q-chip
+              v-if="listFilters.startDateTo"
+              removable
+              @remove="updateFilter('startDateTo', null)"
+              size="sm"
+              icon="event"
+            >
+              Start To: {{ listFilters.startDateTo }}
+            </q-chip>
+            <q-chip
+              v-if="listFilters.registrationDateFrom"
+              removable
+              @remove="updateFilter('registrationDateFrom', null)"
+              size="sm"
+              icon="how_to_reg"
+            >
+              Reg From: {{ listFilters.registrationDateFrom }}
+            </q-chip>
+            <q-chip
+              v-if="listFilters.registrationDateTo"
+              removable
+              @remove="updateFilter('registrationDateTo', null)"
+              size="sm"
+              icon="how_to_reg"
+            >
+              Reg To: {{ listFilters.registrationDateTo }}
             </q-chip>
           </div>
         </q-card-section>
@@ -309,6 +471,10 @@ interface EventListFilters extends ListFilters {
   country: string | null;
   category: string | null;
   showPastEvents: boolean;
+  startDateFrom: string | null;
+  startDateTo: string | null;
+  registrationDateFrom: string | null;
+  registrationDateTo: string | null;
 }
 
 const router = useRouter();
@@ -372,6 +538,12 @@ const {
     if (params.filters.country) apiParams.country = params.filters.country;
     if (params.filters.category) apiParams.category = params.filters.category;
     if (params.filters.searchQuery) apiParams.search = params.filters.searchQuery;
+    if (params.filters.startDateFrom) apiParams.start_date_from = params.filters.startDateFrom;
+    if (params.filters.startDateTo) apiParams.start_date_to = params.filters.startDateTo;
+    if (params.filters.registrationDateFrom)
+      apiParams.registration_start_date_from = params.filters.registrationDateFrom;
+    if (params.filters.registrationDateTo)
+      apiParams.registration_start_date_to = params.filters.registrationDateTo;
     if (params.forceReload) apiParams._t = Date.now();
 
     const response: PaginatedEventsResponse = await eventListService.getEvents(apiParams);
@@ -411,6 +583,10 @@ const {
     country: null,
     category: null,
     showPastEvents: false,
+    startDateFrom: null,
+    startDateTo: null,
+    registrationDateFrom: null,
+    registrationDateTo: null,
   },
   defaultPagination: {
     sortBy: 'start_date',
@@ -539,6 +715,12 @@ const onEventSelected = (event: CalendarEvent) => {
 // Wrapper to satisfy Quasar input typing (string | number | null)
 const handleSearchInput = (value: string | number | null) => {
   updateSearch(typeof value === 'string' ? value : '');
+};
+
+// Date filter handlers (convert QInput/QDate values to string | null)
+const handleDateInput = (filterKey: keyof EventListFilters, value: string | number | null) => {
+  const dateValue = typeof value === 'string' ? value : null;
+  updateFilter(filterKey, dateValue);
 };
 
 // Watch for listState items to update allCountriesSet for the dropdown
