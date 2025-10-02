@@ -199,9 +199,6 @@
               <q-td :props="props" class="event-title-cell cursor-pointer">
                 <div class="event-title-content">
                   <div class="event-title text-weight-medium">
-                    <q-badge v-if="props.row.edition" color="primary" class="q-mr-sm">
-                      {{ Number(props.row.edition) || props.row.edition }}
-                    </q-badge>
                     {{ getRenderedTitle(props.row.title) }}
                   </div>
                   <div v-if="props.row.subtitle" class="event-subtitle text-caption text-grey-6">
@@ -213,38 +210,43 @@
 
             <template #body-cell-start_date="props">
               <q-td :props="props" class="date-cell cursor-pointer">
-                <div class="date-content">
-                  <q-icon name="event" size="xs" class="q-mr-xs" />
-                  <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
-                </div>
+                <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
+              </q-td>
+            </template>
+
+            <template #body-cell-end_date="props">
+              <q-td :props="props" class="date-cell cursor-pointer">
+                <span class="text-weight-medium">{{ formatDate(props.row.end_date) }}</span>
               </q-td>
             </template>
 
             <template #body-cell-city="props">
               <q-td :props="props" class="city-cell cursor-pointer">
-                <div class="city-content">
-                  <q-icon name="place" size="xs" class="q-mr-xs" />
-                  <span class="text-weight-medium">{{
-                    formatText(capitalizeCity(props.row.city))
-                  }}</span>
-                </div>
+                <span class="text-weight-medium">{{
+                  formatText(capitalizeCity(props.row.city))
+                }}</span>
               </q-td>
             </template>
 
             <template #body-cell-country="props">
               <q-td :props="props" class="country-cell cursor-pointer">
-                <div class="country-content">
-                  <q-icon name="flag" size="xs" class="q-mr-xs" />
-                  <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
-                </div>
+                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
               </q-td>
             </template>
 
-            <template #body-cell-category="props">
-              <q-td :props="props" class="category-cell cursor-pointer">
-                <span v-if="getEventCategory(props.row.taxonomies)">
-                  {{ getEventCategory(props.row.taxonomies) }}
-                </span>
+            <template #body-cell-registration_start_date="props">
+              <q-td :props="props" class="date-cell cursor-pointer">
+                <span class="text-weight-medium">{{
+                  formatDate(props.row.registration_start_date)
+                }}</span>
+              </q-td>
+            </template>
+
+            <template #body-cell-edition="props">
+              <q-td :props="props" class="edition-cell cursor-pointer text-center">
+                <q-badge v-if="props.row.edition" color="primary">
+                  {{ Number(props.row.edition) || props.row.edition }}
+                </q-badge>
                 <span v-else class="text-grey-5">—</span>
               </q-td>
             </template>
@@ -314,7 +316,7 @@ const $q = useQuasar();
 
 // Composables
 const { getCountryName, getCountryOptionsFromCodes } = useCountries();
-const { formatDate, getEventCategory, formatText } = useFormatters();
+const { formatDate, formatText } = useFormatters();
 
 // State for overall total count (unfiltered)
 const overallTotalCount = ref(0);
@@ -438,23 +440,31 @@ const categoryOptions = computed(() => [
   { label: 'Tango Holiday', value: 'tango-holiday' },
 ]);
 
-// Table columns
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
     name: 'title',
-    label: 'Event',
+    label: 'Event Name',
     field: 'title',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 300px',
+    style: 'min-width: 250px',
   },
   {
     name: 'start_date',
-    label: 'Dates',
+    label: 'Start Date',
     field: 'start_date',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 120px',
+    style: 'min-width: 110px',
+  },
+  {
+    name: 'end_date',
+    label: 'End Date',
+    field: 'end_date',
+    align: 'left' as const,
+    sortable: true,
+    style: 'min-width: 110px',
   },
   {
     name: 'city',
@@ -462,7 +472,7 @@ const columns = [
     field: 'city',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 120px',
+    style: 'min-width: 110px',
   },
   {
     name: 'country',
@@ -470,15 +480,23 @@ const columns = [
     field: 'country',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 120px',
+    style: 'min-width: 110px',
   },
   {
-    name: 'category',
-    label: 'Category',
-    field: (row: EventListItem) => getEventCategory(row.taxonomies) || '', // Use getter for sorting/display
+    name: 'registration_start_date',
+    label: 'Registration',
+    field: 'registration_start_date',
+    align: 'left' as const,
+    sortable: true,
+    style: 'min-width: 110px',
+  },
+  {
+    name: 'edition',
+    label: 'Edition',
+    field: 'edition',
     align: 'center' as const,
     sortable: true,
-    style: 'min-width: 100px',
+    style: 'min-width: 80px',
   },
 ];
 
