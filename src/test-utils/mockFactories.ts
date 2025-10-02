@@ -9,7 +9,7 @@
  *   const mockEvents = createMockEventList(5); // Creates 5 mock events
  */
 
-import type { Event, DJ, Teacher, Couple, EventSeries, BaseEvent } from 'src/services/types';
+import type { DJ, Teacher, Couple, EventSeries } from 'src/services/types';
 import type { PaginatedEventsResponse } from '../services/eventListService';
 
 /**
