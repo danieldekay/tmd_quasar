@@ -139,48 +139,42 @@
           class="couples-table"
         >
           <!-- Custom Cell Templates -->
-          <template #body-cell-name="props">
+                    <!-- Custom Cell Templates -->
+          <template #body-cell-couple_name="props">
             <q-td :props="props" class="couple-name-cell cursor-pointer">
-              <div class="couple-name-content">
-                <div class="couple-name text-weight-medium">
-                  {{ formatText(props.row.title) }}
-                </div>
-                <div
-                  v-if="
-                    props.row.meta_box?.nickname && props.row.meta_box.nickname !== props.row.title
-                  "
-                  class="couple-real-name text-caption text-grey-6"
-                >
-                  {{ formatText(props.row.meta_box.nickname) }}
-                </div>
-              </div>
+              <span class="text-weight-medium">{{ formatText(props.row.title) }}</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-leader_name="props">
+            <q-td :props="props" class="leader-name-cell cursor-pointer">
+              <span class="text-grey-7">{{ getLeaderName(props.row) || '—' }}</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-follower_name="props">
+            <q-td :props="props" class="follower-name-cell cursor-pointer">
+              <span class="text-grey-7">{{ getFollowerName(props.row) || '—' }}</span>
             </q-td>
           </template>
 
           <template #body-cell-city="props">
             <q-td :props="props" class="city-cell cursor-pointer">
-              <div class="city-content">
-                <q-icon name="place" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{
-                  formatText(capitalizeCity(props.row.city))
-                }}</span>
-              </div>
+              <span class="text-weight-medium">{{ formatText(capitalizeCity(props.row.city)) }}</span>
             </q-td>
           </template>
 
           <template #body-cell-country="props">
             <q-td :props="props" class="country-cell cursor-pointer">
-              <div class="country-content">
-                <q-icon name="flag" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
-              </div>
+              <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
             </q-td>
           </template>
 
-          <template #body-cell-couple_type="props">
-            <q-td :props="props" class="couple-type-cell cursor-pointer">
+          <template #body-cell-type="props">
+            <q-td :props="props" class="type-cell cursor-pointer text-center">
               <q-chip
                 v-if="props.row.couple_type"
+                dense
                 size="sm"
                 :color="getCoupleTypeColor(props.row.couple_type)"
                 text-color="white"
@@ -189,12 +183,6 @@
                 {{ getCoupleTypeLabel(props.row.couple_type) }}
               </q-chip>
               <span v-else class="text-grey-5">—</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-status="props">
-            <q-td :props="props" class="cursor-pointer">
-              <span>{{ getStatusLabel(props.row.status) }}</span>
             </q-td>
           </template>
 
@@ -364,19 +352,6 @@ const capitalizeCity = (city: string): string => {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-};
-
-const getStatusLabel = (status: string): string => {
-  switch (status?.toLowerCase()) {
-    case 'publish':
-      return 'Published';
-    case 'draft':
-      return 'Draft';
-    case 'private':
-      return 'Private';
-    default:
-      return 'Unknown';
-  }
 };
 
 const getCoupleTypeLabel = (coupleType: string): string => {
