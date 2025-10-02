@@ -280,22 +280,43 @@ const hasActiveFilters = computed(() => {
 });
 
 // Table columns
+// Helper to get latest edition from embedded events
+const getLatestEdition = (series: EventSeries): string => {
+  const events = series._embedded?.events || [];
+  if (events.length === 0) return '';
+  // Find most recent event by start_date
+  const sorted = [...events].sort((a, b) => 
+    new Date(b.start_date || '').getTime() - new Date(a.start_date || '').getTime()
+  );
+  return sorted[0]?.edition || '';
+};
+
+// Helper to get total events count
+const getTotalEvents = (series: EventSeries): number => {
+  return series._embedded?.events?.length || 0;
+};
+
+// Helper to get earliest active year from embedded events
+const getActiveSince = (series: EventSeries): string => {
+  const events = series._embedded?.events || [];
+  if (events.length === 0) return '';
+  // Find earliest event by start_date
+  const sorted = [...events].sort((a, b) => 
+    new Date(a.start_date || '').getTime() - new Date(b.start_date || '').getTime()
+  );
+  const earliestDate = sorted[0]?.start_date;
+  return earliestDate ? new Date(earliestDate).getFullYear().toString() : '';
+};
+
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
-    name: 'name',
+    name: 'series_name',
     label: 'Series Name',
     field: 'title',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 250px',
-  },
-  {
-    name: 'start_date',
-    label: 'Start Date',
-    field: 'start_date',
-    align: 'left' as const,
-    sortable: true,
-    style: 'min-width: 120px',
+    style: 'min-width: 200px',
   },
   {
     name: 'city',
@@ -314,12 +335,28 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'series_type',
-    label: 'Series Type',
-    field: 'series_type',
+    name: 'latest_edition',
+    label: 'Latest Edition',
+    field: (row: EventSeries) => getLatestEdition(row),
     align: 'center' as const,
-    sortable: true,
+    sortable: false,
     style: 'min-width: 120px',
+  },
+  {
+    name: 'total_events',
+    label: 'Total Events',
+    field: (row: EventSeries) => getTotalEvents(row),
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
+  },
+  {
+    name: 'active_since',
+    label: 'Active Since',
+    field: (row: EventSeries) => getActiveSince(row),
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
   },
 ];
 

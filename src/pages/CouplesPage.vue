@@ -279,14 +279,47 @@ const hasActiveFilters = computed(() => {
 });
 
 // Table columns
+// Helper to get leader name from embedded data
+const getLeaderName = (couple: Couple): string => {
+  const leader = couple._embedded?.leader?.[0];
+  if (!leader) return '';
+  const title = typeof leader.title === 'string' ? leader.title : leader.title?.rendered || '';
+  return formatText(title);
+};
+
+// Helper to get follower name from embedded data
+const getFollowerName = (couple: Couple): string => {
+  const follower = couple._embedded?.follower?.[0];
+  if (!follower) return '';
+  const title = typeof follower.title === 'string' ? follower.title : follower.title?.rendered || '';
+  return formatText(title);
+};
+
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
-    name: 'name',
+    name: 'couple_name',
     label: 'Couple Name',
     field: 'title',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 250px',
+    style: 'min-width: 200px',
+  },
+  {
+    name: 'leader_name',
+    label: 'Leader',
+    field: (row: Couple) => getLeaderName(row),
+    align: 'left' as const,
+    sortable: false,
+    style: 'min-width: 150px',
+  },
+  {
+    name: 'follower_name',
+    label: 'Follower',
+    field: (row: Couple) => getFollowerName(row),
+    align: 'left' as const,
+    sortable: false,
+    style: 'min-width: 150px',
   },
   {
     name: 'city',
@@ -305,20 +338,12 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'couple_type',
-    label: 'Couple Type',
+    name: 'type',
+    label: 'Type',
     field: 'couple_type',
     align: 'center' as const,
     sortable: true,
     style: 'min-width: 120px',
-  },
-  {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
-    align: 'center' as const,
-    sortable: true,
-    style: 'min-width: 100px',
   },
 ];
 

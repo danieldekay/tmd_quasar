@@ -279,6 +279,7 @@ const hasActiveFilters = computed(() => {
 });
 
 // Table columns
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
     name: 'name',
@@ -286,7 +287,15 @@ const columns = [
     field: 'title',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 250px',
+    style: 'min-width: 200px',
+  },
+  {
+    name: 'role',
+    label: 'Role',
+    field: 'role',
+    align: 'center' as const,
+    sortable: true,
+    style: 'min-width: 100px',
   },
   {
     name: 'city',
@@ -305,20 +314,20 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'teacher_type',
-    label: 'Teacher Type',
-    field: 'teacher_type',
-    align: 'center' as const,
-    sortable: true,
-    style: 'min-width: 120px',
-  },
-  {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
+    name: 'teaching_since',
+    label: 'Teaching Since',
+    field: 'teaching_since',
     align: 'center' as const,
     sortable: true,
     style: 'min-width: 100px',
+  },
+  {
+    name: 'specialization',
+    label: 'Specialization',
+    field: 'teaching_style',
+    align: 'left' as const,
+    sortable: false,
+    style: 'min-width: 150px',
   },
 ];
 
