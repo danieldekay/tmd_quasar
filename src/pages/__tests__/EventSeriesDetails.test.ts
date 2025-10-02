@@ -27,7 +27,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { VueWrapper } from '@vue/test-utils';
+import type { VueWrapper } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 
 import EventSeriesDetails from '../EventSeriesDetails.vue';
