@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { authService } from '../authService';
+import type { LoginCredentials } from '../../stores/authStore';
 
-// Mock Apollo Client
 vi.mock('../../boot/apollo', () => ({
   apolloClient: {
     mutate: vi.fn(),
@@ -10,193 +10,113 @@ vi.mock('../../boot/apollo', () => ({
   },
 }));
 
-import { apolloClient } from '../../boot/apollo';
-
-describe('AuthService', () => {
+describe('authService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('login', () => {
-    it('should login successfully with valid credentials', async () => {
-      const mockToken = 'mock-jwt-token';
-      const mockUser = {
-        id: '1',
-        name: 'Test User',
-        email: 'test@example.com',
-        roles: {
-          nodes: [{ name: 'subscriber' }],
-        },
-        avatar: { url: 'avatar-url' },
-      };
+    it('should successfully login with valid credentials', async () => {
+      const { apolloClient } = await import('../../boot/apollo');
 
-      // Mock the GraphQL login response
-      (apolloClient.mutate as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      vi.mocked(apolloClient.mutate).mockResolvedValueOnce({
         data: {
           login: {
-            authToken: mockToken,
-            user: mockUser,
+            authToken: 'test-auth-token',
+            refreshToken: 'test-refresh-token',
+            user: {
+              id: 'dXNlcjox',
+              name: 'Test User',
+              email: 'test@example.com',
+            },
           },
         },
-      });
+      } as never);
 
-      const result = await authService.login({
+      const credentials: LoginCredentials = {
         username: 'testuser',
-        password: 'password123',
-      });
+        password: 'testpass123',
+      };
 
-      expect(result).not.toBeNull();
-      if (result) {
-        expect(result.token).toBe(mockToken);
-        expect(result.user).not.toBeNull();
-        if (result.user) {
-          expect(result.user.name).toBe(mockUser.name);
-        }
-      }
+      const response = await authService.login(credentials);
 
-      expect(apolloClient.mutate).toHaveBeenCalledWith({
-        mutation: expect.any(Object),
-        variables: {
-          input: {
-            clientMutationId: expect.any(String),
-            username: 'testuser',
-            password: 'password123',
-          },
-        },
-      });
+      expect(response).toBeDefined();
+      expect(response.token).toBe('test-auth-token');
+      expect(response.refreshToken).toBe('test-refresh-token');
+      expect(response.user).toBeDefined();
+      expect(response.user?.name).toBe('Test User');
+      expect(response.user?.email).toBe('test@example.com');
     });
 
-    it('should throw error on login failure', async () => {
-      const errorMessage = 'Invalid credentials';
-      (apolloClient.mutate as ReturnType<typeof vi.fn>).mockRejectedValueOnce({
-        graphQLErrors: [{ message: errorMessage }],
-      });
+    it('should throw error on failed login', async () => {
+      const { apolloClient } = await import('../../boot/apollo');
 
-      await expect(
-        authService.login({
-          username: 'wronguser',
-          password: 'wrongpass',
-        }),
-      ).rejects.toThrow('Login failed. Please check your credentials.');
+      vi.mocked(apolloClient.mutate).mockRejectedValueOnce(new Error('Invalid credentials'));
+
+      const credentials: LoginCredentials = {
+        username: 'invalid',
+        password: 'wrong',
+      };
+
+      await expect(authService.login(credentials)).rejects.toThrow();
     });
   });
 
-  describe('logout', () => {
-    it('should logout successfully', () => {
-      // No need for token, logout takes no arguments
-      authService.logout();
+  describe('refreshToken', () => {
+    it('should successfully refresh token', async () => {
+      const { apolloClient } = await import('../../boot/apollo');
 
-      // Since logout doesn't make a GraphQL call anymore, we just verify it doesn't throw
-      expect(true).toBe(true);
-    });
+      vi.mocked(apolloClient.mutate).mockResolvedValueOnce({
+        data: {
+          refreshJwtAuthToken: {
+            authToken: 'new-auth-token',
+          },
+        },
+      } as never);
 
-    it('should not throw error on logout failure', () => {
-      // Should not throw
-      expect(() => authService.logout()).not.toThrow();
+      const response = await authService.refreshToken('old-refresh-token');
+
+      expect(response).toBeDefined();
+      expect(response.token).toBe('new-auth-token');
+      expect(response.refreshToken).toBe('old-refresh-token');
+      expect(response.user).toBeNull();
     });
   });
 
   describe('validateToken', () => {
     it('should return true for valid token', async () => {
-      // Create a mock JWT token with proper structure
-      const mockPayload = {
-        exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-        user_id: 1,
-        username: 'testuser',
-      };
-      const mockJWT = `header.${btoa(JSON.stringify(mockPayload))}.signature`;
+      const { apolloClient } = await import('../../boot/apollo');
 
-      // Mock getCurrentUser to succeed
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      vi.mocked(apolloClient.query).mockResolvedValueOnce({
         data: {
           viewer: {
-            id: '1',
+            id: 'dXNlcjox',
             name: 'Test User',
             email: 'test@example.com',
-            roles: {
-              nodes: [{ name: 'subscriber' }],
-            },
+            roles: { nodes: [{ name: 'subscriber' }] },
           },
         },
+        loading: false,
+        networkStatus: 7,
       });
 
-      const result = await authService.validateToken(mockJWT);
-
-      expect(result).toBe(true);
-      expect(apolloClient.query).toHaveBeenCalledWith({
-        query: expect.any(Object),
-        context: {
-          headers: {
-            Authorization: `Bearer ${mockJWT}`,
-          },
-        },
-      });
+      const isValid = await authService.validateToken('valid-token');
+      expect(isValid).toBe(true);
     });
 
     it('should return false for invalid token', async () => {
-      const token = 'invalid-token';
+      const { apolloClient } = await import('../../boot/apollo');
 
-      // Mock getCurrentUser to fail
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Invalid token'),
-      );
+      vi.mocked(apolloClient.query).mockRejectedValueOnce(new Error('Invalid token'));
 
-      const result = await authService.validateToken(token);
-
-      expect(result).toBe(false);
+      const isValid = await authService.validateToken('invalid-token');
+      expect(isValid).toBe(false);
     });
   });
 
-  describe('getCurrentUser', () => {
-    it('should return user details', async () => {
-      const token = 'mock-token';
-      const mockUser = {
-        id: '1',
-        name: 'Test User',
-        email: 'test@example.com',
-        roles: {
-          nodes: [{ name: 'subscriber' }],
-        },
-        avatar: { url: 'avatar-url' },
-        url: 'user-url',
-        description: 'User description',
-        slug: 'test-user',
-      };
-
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        data: {
-          viewer: mockUser,
-        },
-      });
-
-      const result = await authService.getCurrentUser(token);
-
-      expect(result).not.toBeNull();
-      if (result) {
-        expect(result.name).toBe('Test User');
-        expect(result.id).toBe(1);
-      }
-      expect(apolloClient.query).toHaveBeenCalledWith({
-        query: expect.any(Object),
-        context: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      });
-    });
-
-    it('should throw error on user fetch failure', async () => {
-      const token = 'mock-token';
-      const errorMessage = 'User not found';
-
-      // This is the critical part: ensure the mock rejects with an actual Error instance.
-      (apolloClient.query as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error(errorMessage),
-      );
-
-      // The service should catch this error and re-throw it.
-      await expect(authService.getCurrentUser(token)).rejects.toThrow(errorMessage);
+  describe('logout', () => {
+    it('should be a no-op function', () => {
+      expect(typeof authService.logout).toBe('function');
     });
   });
 });

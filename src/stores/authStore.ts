@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed, readonly } from 'vue';
 import { authService } from '../services/authService';
+import { sessionService } from '../services/sessionService';
+import type { User as ImportedUser, Session } from '../services/types';
 import {
   setJWTToken,
   getJWTToken,
@@ -10,6 +12,7 @@ import {
 } from '../utils/cookies';
 import { getJwtExpiration } from '../utils/jwt';
 
+// Re-export User type for backward compatibility
 export interface User {
   id: number;
   name: string;
@@ -46,6 +49,10 @@ export const useAuthStore = defineStore('auth', () => {
   const hasAttemptedStoredAuth = ref(false);
   const error = ref<string | null>(null);
 
+  // Progressive delay protection for brute force
+  const loginAttempts = ref(0);
+  const lastFailedLoginTime = ref<number | null>(null);
+
   // Computed
   const isAuthenticated = computed(() => Boolean(token.value && user.value));
   const hasRole = computed(() => (role: string) => {
@@ -70,6 +77,15 @@ export const useAuthStore = defineStore('auth', () => {
   const canManageOptions = computed(
     () => hasRole.value('administrator') || hasRole.value('manage_options'),
   );
+
+  /**
+   * Calculate delay for progressive brute force protection
+   * Returns delay in milliseconds: 0s, 1s, 5s, 30s, 30s, ...
+   */
+  const getLoginDelay = computed(() => {
+    const delays = [0, 1000, 5000, 30000]; // 0s, 1s, 5s, 30s
+    return delays[Math.min(loginAttempts.value, delays.length - 1)];
+  });
 
   /* --------------------------------------------------------------------------
    *  Internal: automatic token refresh handling
@@ -104,15 +120,50 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
 
     try {
+      // Apply progressive delay for brute force protection
+      const delay = getLoginDelay.value ?? 0;
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+
       const response = await authService.login(credentials);
 
       token.value = response.token;
       user.value = response.user;
 
-      // Store tokens in cookies
+      // Reset login attempts on successful login
+      loginAttempts.value = 0;
+      lastFailedLoginTime.value = null;
+
+      // Create session object for sessionService
+      const session: Session = {
+        token: response.token,
+        userId: response.user?.id ?? 0,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        createdAt: new Date().toISOString(),
+        isValid: true,
+      };
+
+      // Convert User to sessionService format
+      const sessionUser: ImportedUser = {
+        id: response.user?.id ?? 0,
+        username: response.user?.username ?? response.user?.name ?? '',
+        email: response.user?.email ?? '',
+        displayName: response.user?.display_name ?? response.user?.name ?? '',
+        roles: Array.isArray(response.user?.roles)
+          ? response.user.roles
+          : (response.user?.roles?.nodes?.map((n) => n.name) ?? []),
+        isActive: true,
+      };
+
+      // Store session using sessionService
+      sessionService.saveSession(session, sessionUser);
+
+      // Also store in cookies for backward compatibility
       setJWTToken(response.token, credentials.remember);
       if (response.refreshToken) {
         setRefreshToken(response.refreshToken, credentials.remember);
+        sessionService.saveRefreshToken(response.refreshToken);
       }
 
       scheduleRefresh(response.token);
@@ -120,6 +171,11 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       console.error('Login error:', err);
       error.value = err instanceof Error ? err.message : 'Login failed';
+
+      // Increment login attempts on failure
+      loginAttempts.value++;
+      lastFailedLoginTime.value = Date.now();
+
       return false;
     } finally {
       isLoading.value = false;
@@ -139,6 +195,13 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = null;
       isLoadingStoredAuth.value = false;
       hasAttemptedStoredAuth.value = false;
+
+      // Reset login attempt tracking
+      loginAttempts.value = 0;
+      lastFailedLoginTime.value = null;
+
+      // Clear sessionService storage
+      sessionService.clearSession();
 
       // Clear stored tokens
       clearJWTTokens();
@@ -348,6 +411,41 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
   };
 
+  /**
+   * Set user directly (for testing or session restoration)
+   */
+  const setUser = (newUser: User | null): void => {
+    user.value = newUser;
+  };
+
+  /**
+   * Restore session from sessionService
+   */
+  const restoreSession = (): boolean => {
+    const session = sessionService.getSession();
+    const storedUser = sessionService.getUser();
+
+    if (!session || !storedUser || !sessionService.isSessionValid(session)) {
+      return false;
+    }
+
+    // Convert stored user to User type
+    const convertedUser: User = {
+      id: storedUser.id,
+      name: storedUser.displayName,
+      display_name: storedUser.displayName,
+      username: storedUser.username,
+      email: storedUser.email,
+      roles: Array.isArray(storedUser.roles) ? storedUser.roles : [],
+    };
+
+    token.value = session.token;
+    user.value = convertedUser;
+
+    scheduleRefresh(session.token);
+    return true;
+  };
+
   return {
     // State
     user: readonly(user),
@@ -356,6 +454,8 @@ export const useAuthStore = defineStore('auth', () => {
     isLoadingStoredAuth: readonly(isLoadingStoredAuth),
     hasAttemptedStoredAuth: readonly(hasAttemptedStoredAuth),
     error: readonly(error),
+    loginAttempts: readonly(loginAttempts),
+    getLoginDelay,
 
     // Computed
     isAuthenticated,
@@ -370,5 +470,7 @@ export const useAuthStore = defineStore('auth', () => {
     loadStoredAuth,
     attemptAutoRelogin,
     clearError,
+    setUser,
+    restoreSession,
   };
 });
