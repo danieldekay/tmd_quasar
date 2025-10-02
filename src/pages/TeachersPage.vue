@@ -170,31 +170,34 @@
 
           <template #body-cell-country="props">
             <q-td :props="props" class="country-cell cursor-pointer">
-              <div class="country-content">
-                <q-icon name="flag" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
-              </div>
+              <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
             </q-td>
           </template>
 
-          <template #body-cell-teacher_type="props">
-            <q-td :props="props" class="teacher-type-cell cursor-pointer">
+          <template #body-cell-role="props">
+            <q-td :props="props" class="role-cell cursor-pointer text-center">
               <q-chip
-                v-if="props.row.teacher_type"
+                v-if="props.row.role"
+                dense
                 size="sm"
-                :color="getTeacherTypeColor(props.row.teacher_type)"
+                :color="getRoleColor(props.row.role)"
                 text-color="white"
-                :icon="getTeacherTypeIcon(props.row.teacher_type)"
               >
-                {{ getTeacherTypeLabel(props.row.teacher_type) }}
+                {{ formatText(props.row.role) }}
               </q-chip>
               <span v-else class="text-grey-5">—</span>
             </q-td>
           </template>
 
-          <template #body-cell-status="props">
-            <q-td :props="props" class="cursor-pointer">
-              <span>{{ getStatusLabel(props.row.status) }}</span>
+          <template #body-cell-teaching_since="props">
+            <q-td :props="props" class="teaching-since-cell cursor-pointer text-center">
+              <span class="text-weight-medium">{{ props.row.teaching_since || '—' }}</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-specialization="props">
+            <q-td :props="props" class="specialization-cell cursor-pointer">
+              <span>{{ formatText(props.row.teaching_style) || '—' }}</span>
             </q-td>
           </template>
 
@@ -279,6 +282,7 @@ const hasActiveFilters = computed(() => {
 });
 
 // Table columns
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
     name: 'name',
@@ -286,7 +290,15 @@ const columns = [
     field: 'title',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 250px',
+    style: 'min-width: 200px',
+  },
+  {
+    name: 'role',
+    label: 'Role',
+    field: 'role',
+    align: 'center' as const,
+    sortable: true,
+    style: 'min-width: 100px',
   },
   {
     name: 'city',
@@ -305,20 +317,20 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'teacher_type',
-    label: 'Teacher Type',
-    field: 'teacher_type',
-    align: 'center' as const,
-    sortable: true,
-    style: 'min-width: 120px',
-  },
-  {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
+    name: 'teaching_since',
+    label: 'Teaching Since',
+    field: 'teaching_since',
     align: 'center' as const,
     sortable: true,
     style: 'min-width: 100px',
+  },
+  {
+    name: 'specialization',
+    label: 'Specialization',
+    field: 'teaching_style',
+    align: 'left' as const,
+    sortable: false,
+    style: 'min-width: 150px',
   },
 ];
 
@@ -340,36 +352,8 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const getStatusLabel = (status: string): string => {
-  switch (status?.toLowerCase()) {
-    case 'publish':
-      return 'Published';
-    case 'draft':
-      return 'Draft';
-    case 'private':
-      return 'Private';
-    default:
-      return 'Unknown';
-  }
-};
-
-const getTeacherTypeLabel = (teacherType: string): string => {
-  switch (teacherType) {
-    case 'leader':
-      return 'Leader';
-    case 'follower':
-      return 'Follower';
-    case 'both':
-      return 'Both';
-    case 'double-role':
-      return 'Double Role';
-    default:
-      return teacherType;
-  }
-};
-
-const getTeacherTypeColor = (teacherType: string): string => {
-  switch (teacherType) {
+const getRoleColor = (role: string): string => {
+  switch (role?.toLowerCase()) {
     case 'leader':
       return 'blue-6';
     case 'follower':
@@ -383,19 +367,18 @@ const getTeacherTypeColor = (teacherType: string): string => {
   }
 };
 
-const getTeacherTypeIcon = (teacherType: string): string => {
-  switch (teacherType) {
-    case 'leader':
-      return 'person';
-    case 'follower':
-      return 'person_outline';
-    case 'both':
-      return 'group';
-    case 'double-role':
-      return 'swap_horiz';
-    default:
-      return 'school';
-  }
+/**
+ * Get label for teacher type filter (used in filter chips)
+ */
+const getTeacherTypeLabel = (type: string | null): string => {
+  if (!type) return '';
+  const labelMap: Record<string, string> = {
+    leader: 'Leader',
+    follower: 'Follower',
+    both: 'Both',
+    'double-role': 'Double Role',
+  };
+  return labelMap[type] || type;
 };
 
 const updateCountrySet = (teachers: Teacher[]) => {

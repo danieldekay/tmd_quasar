@@ -139,63 +139,45 @@
           class="event-series-table"
         >
           <!-- Custom Cell Templates -->
-          <template #body-cell-name="props">
+          <!-- Custom Cell Templates -->
+          <template #body-cell-series_name="props">
             <q-td :props="props" class="series-name-cell cursor-pointer">
-              <div class="series-name-content">
-                <div class="series-name text-weight-medium">
-                  {{ formatText(props.row.title) }}
-                </div>
-                <div
-                  v-if="props.row.description"
-                  class="series-description text-caption text-grey-6"
-                >
-                  {{ formatText(props.row.description) }}
-                </div>
-              </div>
-            </q-td>
-          </template>
-
-          <template #body-cell-start_date="props">
-            <q-td :props="props" class="date-cell cursor-pointer">
-              <div class="date-content">
-                <q-icon name="event" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{ formatDate(props.row.start_date) }}</span>
-              </div>
+              <span class="text-weight-medium">{{ formatText(props.row.title) }}</span>
             </q-td>
           </template>
 
           <template #body-cell-city="props">
             <q-td :props="props" class="city-cell cursor-pointer">
-              <div class="city-content">
-                <q-icon name="place" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{
-                  formatText(capitalizeCity(props.row.city))
-                }}</span>
-              </div>
+              <span class="text-weight-medium">{{
+                formatText(capitalizeCity(props.row.city))
+              }}</span>
             </q-td>
           </template>
 
           <template #body-cell-country="props">
             <q-td :props="props" class="country-cell cursor-pointer">
-              <div class="country-content">
-                <q-icon name="flag" size="xs" class="q-mr-xs" />
-                <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
-              </div>
+              <span class="text-weight-medium">{{ getCountryName(props.row.country) }}</span>
             </q-td>
           </template>
 
-          <template #body-cell-series_type="props">
-            <q-td :props="props" class="series-type-cell cursor-pointer">
-              <q-chip
-                v-if="props.row.series_type"
-                size="sm"
-                :color="getSeriesTypeColor(props.row.series_type)"
-                text-color="white"
-                :icon="getSeriesTypeIcon(props.row.series_type)"
-              >
-                {{ getSeriesTypeLabel(props.row.series_type) }}
+          <template #body-cell-latest_edition="props">
+            <q-td :props="props" class="latest-edition-cell cursor-pointer text-center">
+              <q-chip v-if="getLatestEdition(props.row)" dense size="sm" color="primary">
+                {{ getLatestEdition(props.row) }}
               </q-chip>
               <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-total_events="props">
+            <q-td :props="props" class="total-events-cell cursor-pointer text-center">
+              <span class="text-weight-medium">{{ getTotalEvents(props.row) }}</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-active_since="props">
+            <q-td :props="props" class="active-since-cell cursor-pointer text-center">
+              <span class="text-weight-medium">{{ getActiveSince(props.row) || '—' }}</span>
             </q-td>
           </template>
 
@@ -253,7 +235,7 @@ const $q = useQuasar();
 
 // Composables
 const { getCountryName, getCountryOptionsFromCodes } = useCountries();
-const { formatDate, formatText } = useFormatters();
+const { formatText } = useFormatters();
 
 // State
 const eventSeries = ref<EventSeries[]>([]);
@@ -280,22 +262,43 @@ const hasActiveFilters = computed(() => {
 });
 
 // Table columns
+// Helper to get latest edition from embedded events
+const getLatestEdition = (series: EventSeries): string => {
+  const events = series._embedded?.events || [];
+  if (events.length === 0) return '';
+  // Find most recent event by start_date
+  const sorted = [...events].sort(
+    (a, b) => new Date(b.start_date || '').getTime() - new Date(a.start_date || '').getTime(),
+  );
+  return sorted[0]?.edition || '';
+};
+
+// Helper to get total events count
+const getTotalEvents = (series: EventSeries): number => {
+  return series._embedded?.events?.length || 0;
+};
+
+// Helper to get earliest active year from embedded events
+const getActiveSince = (series: EventSeries): string => {
+  const events = series._embedded?.events || [];
+  if (events.length === 0) return '';
+  // Find earliest event by start_date
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.start_date || '').getTime() - new Date(b.start_date || '').getTime(),
+  );
+  const earliestDate = sorted[0]?.start_date;
+  return earliestDate ? new Date(earliestDate).getFullYear().toString() : '';
+};
+
+// Table columns - matching contracts/table-columns.json
 const columns = [
   {
-    name: 'name',
+    name: 'series_name',
     label: 'Series Name',
     field: 'title',
     align: 'left' as const,
     sortable: true,
-    style: 'min-width: 250px',
-  },
-  {
-    name: 'start_date',
-    label: 'Start Date',
-    field: 'start_date',
-    align: 'left' as const,
-    sortable: true,
-    style: 'min-width: 120px',
+    style: 'min-width: 200px',
   },
   {
     name: 'city',
@@ -314,12 +317,28 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'series_type',
-    label: 'Series Type',
-    field: 'series_type',
+    name: 'latest_edition',
+    label: 'Latest Edition',
+    field: (row: EventSeries) => getLatestEdition(row),
     align: 'center' as const,
-    sortable: true,
+    sortable: false,
     style: 'min-width: 120px',
+  },
+  {
+    name: 'total_events',
+    label: 'Total Events',
+    field: (row: EventSeries) => getTotalEvents(row),
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
+  },
+  {
+    name: 'active_since',
+    label: 'Active Since',
+    field: (row: EventSeries) => getActiveSince(row),
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
   },
 ];
 
@@ -353,36 +372,6 @@ const getSeriesTypeLabel = (seriesType: string): string => {
       return 'Workshop';
     default:
       return seriesType;
-  }
-};
-
-const getSeriesTypeColor = (seriesType: string): string => {
-  switch (seriesType) {
-    case 'marathon':
-      return 'red-7';
-    case 'festival':
-      return 'purple-6';
-    case 'encuentro':
-      return 'blue-6';
-    case 'workshop':
-      return 'orange-6';
-    default:
-      return 'grey-6';
-  }
-};
-
-const getSeriesTypeIcon = (seriesType: string): string => {
-  switch (seriesType) {
-    case 'marathon':
-      return 'directions_run';
-    case 'festival':
-      return 'celebration';
-    case 'encuentro':
-      return 'groups';
-    case 'workshop':
-      return 'school';
-    default:
-      return 'repeat';
   }
 };
 

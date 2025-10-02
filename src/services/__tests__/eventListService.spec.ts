@@ -92,7 +92,7 @@ describe('EventListService', () => {
       const result: PaginatedEventsResponse = await eventListService.getEvents(params);
 
       // Assert that axios was called with the correct URL and essential params
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockedAxios.get).toHaveBeenCalledWith('/events', {
         params: expect.objectContaining({
           page: 1,
@@ -135,7 +135,7 @@ describe('EventListService', () => {
       const result = await eventListService.searchEvents(query, params);
 
       // Assert that axios was called with the correct URL and params
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockedAxios.get).toHaveBeenCalledWith(
         '/events',
         expect.objectContaining({

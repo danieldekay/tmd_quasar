@@ -68,3 +68,55 @@ describe('useFormatters - HTML Entity Decoding', () => {
     });
   });
 });
+
+describe('useFormatters - ISO Date Formatting', () => {
+  const { formatDate, formatDateISO } = useFormatters();
+
+  describe('formatDateISO', () => {
+    it('should format ISO date string as YYYY-MM-DD', () => {
+      expect(formatDateISO('2025-10-02')).toBe('2025-10-02');
+      expect(formatDateISO('2024-01-15')).toBe('2024-01-15');
+    });
+
+    it('should format MM/DD/YYYY to YYYY-MM-DD', () => {
+      expect(formatDateISO('10/02/2025')).toBe('2025-10-02');
+      expect(formatDateISO('01/15/2024')).toBe('2024-01-15');
+    });
+
+    it('should handle ISO datetime strings by extracting date', () => {
+      expect(formatDateISO('2025-10-02T14:30:00')).toBe('2025-10-02');
+      expect(formatDateISO('2024-12-25T00:00:00Z')).toBe('2024-12-25');
+    });
+
+    it('should return empty string for null', () => {
+      expect(formatDateISO(null)).toBe('');
+    });
+
+    it('should return empty string for undefined', () => {
+      expect(formatDateISO(undefined)).toBe('');
+    });
+
+    it('should return empty string for empty string', () => {
+      expect(formatDateISO('')).toBe('');
+    });
+
+    it('should return empty string for invalid date strings', () => {
+      expect(formatDateISO('invalid')).toBe('');
+      expect(formatDateISO('not-a-date')).toBe('');
+      expect(formatDateISO('2025-13-45')).toBe(''); // Invalid month/day
+    });
+
+    it('should handle numeric timestamps', () => {
+      const timestamp = Date.UTC(2025, 9, 2); // October 2, 2025 in UTC
+      expect(formatDateISO(timestamp)).toBe('2025-10-02');
+    });
+  });
+
+  describe('formatDate (alias check)', () => {
+    it('should work identically to formatDateISO', () => {
+      expect(formatDate('2025-10-02')).toBe(formatDateISO('2025-10-02'));
+      expect(formatDate('10/02/2025')).toBe(formatDateISO('10/02/2025'));
+      expect(formatDate(null)).toBe(formatDateISO(null));
+    });
+  });
+});

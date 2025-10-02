@@ -87,5 +87,16 @@ export default defineConfigWithVueTs(
     },
   },
 
+  // Relax rules for test files
+  {
+    files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/require-await': 'off',
+    },
+  },
+
   prettierSkipFormatting,
 );
