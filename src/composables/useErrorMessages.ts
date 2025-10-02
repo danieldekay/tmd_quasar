@@ -61,10 +61,7 @@ export function useErrorMessages() {
   /**
    * Get error message by error code with optional interpolation
    */
-  function getErrorMessage(
-    code: string,
-    params?: Record<string, string>,
-  ): ErrorMessage | null {
+  function getErrorMessage(code: string, params?: Record<string, string>): ErrorMessage | null {
     // Search through all error categories
     const categories: ErrorCategory[] = [
       'networkErrors',
@@ -82,14 +79,8 @@ export function useErrorMessages() {
           if (params !== undefined) {
             const interpolatedError = { ...error };
             for (const [key, value] of Object.entries(params)) {
-              interpolatedError.message = interpolatedError.message.replace(
-                `{${key}}`,
-                value,
-              );
-              interpolatedError.title = interpolatedError.title.replace(
-                `{${key}}`,
-                value,
-              );
+              interpolatedError.message = interpolatedError.message.replace(`{${key}}`, value);
+              interpolatedError.title = interpolatedError.title.replace(`{${key}}`, value);
             }
             return interpolatedError;
           }
@@ -120,16 +111,12 @@ export function useErrorMessages() {
   /**
    * Show error notification using Quasar Notify
    */
-  function showErrorNotification(
-    code: string,
-    params?: Record<string, string>,
-  ): void {
+  function showErrorNotification(code: string, params?: Record<string, string>): void {
     const error = getErrorMessage(code, params);
     if (error === null) return;
 
     // Get notification type based on error type
-    const notificationType =
-      errorMessages.notificationSettings.types[error.type] ?? 'negative';
+    const notificationType = errorMessages.notificationSettings.types[error.type] ?? 'negative';
 
     // Build actions array
     const actions: Array<{ label: string; icon?: string }> = [];

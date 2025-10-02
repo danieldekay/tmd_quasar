@@ -291,7 +291,8 @@ const getLeaderName = (couple: Couple): string => {
 const getFollowerName = (couple: Couple): string => {
   const follower = couple._embedded?.follower?.[0];
   if (!follower) return '';
-  const title = typeof follower.title === 'string' ? follower.title : follower.title?.rendered || '';
+  const title =
+    typeof follower.title === 'string' ? follower.title : follower.title?.rendered || '';
   return formatText(title);
 };
 

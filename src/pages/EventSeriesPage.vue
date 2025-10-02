@@ -285,8 +285,8 @@ const getLatestEdition = (series: EventSeries): string => {
   const events = series._embedded?.events || [];
   if (events.length === 0) return '';
   // Find most recent event by start_date
-  const sorted = [...events].sort((a, b) => 
-    new Date(b.start_date || '').getTime() - new Date(a.start_date || '').getTime()
+  const sorted = [...events].sort(
+    (a, b) => new Date(b.start_date || '').getTime() - new Date(a.start_date || '').getTime(),
   );
   return sorted[0]?.edition || '';
 };
@@ -301,8 +301,8 @@ const getActiveSince = (series: EventSeries): string => {
   const events = series._embedded?.events || [];
   if (events.length === 0) return '';
   // Find earliest event by start_date
-  const sorted = [...events].sort((a, b) => 
-    new Date(a.start_date || '').getTime() - new Date(b.start_date || '').getTime()
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.start_date || '').getTime() - new Date(b.start_date || '').getTime(),
   );
   const earliestDate = sorted[0]?.start_date;
   return earliestDate ? new Date(earliestDate).getFullYear().toString() : '';
