@@ -143,7 +143,7 @@ describe('EventCalendar', () => {
     expect(wrapper.vm.currentDate).toBe(testDate);
   });
 
-  it('emits event-selected when an event is clicked', async () => {
+  it('emits event-selected when an event is clicked', () => {
     // Test that events are properly displayed in the calendar
     const monthView = wrapper.find('.month-view');
     expect(monthView.exists() || wrapper.find('[data-testid="month-calendar"]').exists()).toBe(true);
