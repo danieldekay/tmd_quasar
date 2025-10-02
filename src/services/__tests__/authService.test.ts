@@ -18,7 +18,7 @@ describe('authService', () => {
   describe('login', () => {
     it('should successfully login with valid credentials', async () => {
       const { apolloClient } = await import('../../boot/apollo');
-      
+
       vi.mocked(apolloClient.mutate).mockResolvedValueOnce({
         data: {
           login: {
@@ -50,10 +50,8 @@ describe('authService', () => {
 
     it('should throw error on failed login', async () => {
       const { apolloClient } = await import('../../boot/apollo');
-      
-      vi.mocked(apolloClient.mutate).mockRejectedValueOnce(
-        new Error('Invalid credentials')
-      );
+
+      vi.mocked(apolloClient.mutate).mockRejectedValueOnce(new Error('Invalid credentials'));
 
       const credentials: LoginCredentials = {
         username: 'invalid',
@@ -67,7 +65,7 @@ describe('authService', () => {
   describe('refreshToken', () => {
     it('should successfully refresh token', async () => {
       const { apolloClient } = await import('../../boot/apollo');
-      
+
       vi.mocked(apolloClient.mutate).mockResolvedValueOnce({
         data: {
           refreshJwtAuthToken: {
@@ -88,7 +86,7 @@ describe('authService', () => {
   describe('validateToken', () => {
     it('should return true for valid token', async () => {
       const { apolloClient } = await import('../../boot/apollo');
-      
+
       vi.mocked(apolloClient.query).mockResolvedValueOnce({
         data: {
           viewer: {
@@ -108,10 +106,8 @@ describe('authService', () => {
 
     it('should return false for invalid token', async () => {
       const { apolloClient } = await import('../../boot/apollo');
-      
-      vi.mocked(apolloClient.query).mockRejectedValueOnce(
-        new Error('Invalid token')
-      );
+
+      vi.mocked(apolloClient.query).mockRejectedValueOnce(new Error('Invalid token'));
 
       const isValid = await authService.validateToken('invalid-token');
       expect(isValid).toBe(false);
