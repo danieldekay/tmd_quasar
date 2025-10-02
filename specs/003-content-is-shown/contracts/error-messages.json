@@ -1,0 +1,285 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-02",
+  "description": "Standardized error messages for table and detail views per FR-008 and FR-019",
+
+  "networkErrors": {
+    "timeout": {
+      "type": "network",
+      "code": "NETWORK_TIMEOUT",
+      "title": "Connection Timeout",
+      "message": "The request took too long to complete. Please check your internet connection and try again.",
+      "userAction": "retry",
+      "technicalMessage": "Request exceeded timeout threshold"
+    },
+    "offline": {
+      "type": "network",
+      "code": "NETWORK_OFFLINE",
+      "title": "No Internet Connection",
+      "message": "You appear to be offline. Please check your internet connection and try again.",
+      "userAction": "retry",
+      "technicalMessage": "Network unreachable"
+    },
+    "connectionRefused": {
+      "type": "network",
+      "code": "NETWORK_CONNECTION_REFUSED",
+      "title": "Connection Failed",
+      "message": "Unable to connect to the server. Please try again in a moment.",
+      "userAction": "retry",
+      "technicalMessage": "Connection refused by server"
+    },
+    "dnsError": {
+      "type": "network",
+      "code": "NETWORK_DNS_ERROR",
+      "title": "Server Not Found",
+      "message": "Unable to locate the server. Please check your connection and try again.",
+      "userAction": "retry",
+      "technicalMessage": "DNS resolution failed"
+    }
+  },
+
+  "httpErrors": {
+    "400": {
+      "type": "http",
+      "code": "HTTP_BAD_REQUEST",
+      "title": "Invalid Request",
+      "message": "The request was not understood by the server. Please refresh the page and try again.",
+      "userAction": "refresh",
+      "technicalMessage": "HTTP 400 Bad Request"
+    },
+    "401": {
+      "type": "authentication",
+      "code": "HTTP_UNAUTHORIZED",
+      "title": "Authentication Required",
+      "message": "Your session has expired. Please log in again to continue.",
+      "userAction": "login",
+      "technicalMessage": "HTTP 401 Unauthorized"
+    },
+    "403": {
+      "type": "authentication",
+      "code": "HTTP_FORBIDDEN",
+      "title": "Access Denied",
+      "message": "You don't have permission to view this content. Please contact support if you believe this is an error.",
+      "userAction": "back",
+      "technicalMessage": "HTTP 403 Forbidden"
+    },
+    "404": {
+      "type": "http",
+      "code": "HTTP_NOT_FOUND",
+      "title": "Content Not Found",
+      "message": "The requested content could not be found. It may have been removed or is no longer available.",
+      "userAction": "back",
+      "technicalMessage": "HTTP 404 Not Found"
+    },
+    "429": {
+      "type": "http",
+      "code": "HTTP_TOO_MANY_REQUESTS",
+      "title": "Too Many Requests",
+      "message": "You've made too many requests. Please wait a moment before trying again.",
+      "userAction": "wait",
+      "technicalMessage": "HTTP 429 Too Many Requests"
+    },
+    "500": {
+      "type": "server",
+      "code": "HTTP_SERVER_ERROR",
+      "title": "Server Error",
+      "message": "The server encountered an error while processing your request. Please try again in a moment.",
+      "userAction": "retry",
+      "technicalMessage": "HTTP 500 Internal Server Error"
+    },
+    "502": {
+      "type": "server",
+      "code": "HTTP_BAD_GATEWAY",
+      "title": "Server Unavailable",
+      "message": "The server is temporarily unavailable. Please try again in a moment.",
+      "userAction": "retry",
+      "technicalMessage": "HTTP 502 Bad Gateway"
+    },
+    "503": {
+      "type": "server",
+      "code": "HTTP_SERVICE_UNAVAILABLE",
+      "title": "Service Unavailable",
+      "message": "The service is temporarily unavailable. Please try again in a few minutes.",
+      "userAction": "retry",
+      "technicalMessage": "HTTP 503 Service Unavailable"
+    },
+    "504": {
+      "type": "server",
+      "code": "HTTP_GATEWAY_TIMEOUT",
+      "title": "Server Timeout",
+      "message": "The server took too long to respond. Please try again.",
+      "userAction": "retry",
+      "technicalMessage": "HTTP 504 Gateway Timeout"
+    }
+  },
+
+  "dataErrors": {
+    "emptyTable": {
+      "type": "data",
+      "code": "DATA_EMPTY_TABLE",
+      "title": "No Results Found",
+      "message": "No items match your current filters. Try adjusting your search criteria.",
+      "userAction": "clearFilters",
+      "technicalMessage": "Empty result set from API"
+    },
+    "invalidData": {
+      "type": "data",
+      "code": "DATA_INVALID_RESPONSE",
+      "title": "Invalid Data",
+      "message": "The server returned unexpected data. Please try again or contact support if the issue persists.",
+      "userAction": "retry",
+      "technicalMessage": "Response data failed validation"
+    },
+    "partialData": {
+      "type": "data",
+      "code": "DATA_PARTIAL_CONTENT",
+      "title": "Incomplete Data",
+      "message": "Some information is missing or unavailable. Displaying what we have.",
+      "userAction": "none",
+      "technicalMessage": "Partial content returned from API"
+    },
+    "corruptedData": {
+      "type": "data",
+      "code": "DATA_CORRUPTED",
+      "title": "Data Error",
+      "message": "The data appears to be corrupted or invalid. Please try refreshing the page.",
+      "userAction": "refresh",
+      "technicalMessage": "Data integrity check failed"
+    }
+  },
+
+  "tableSpecific": {
+    "loadFailure": {
+      "type": "table",
+      "code": "TABLE_LOAD_FAILURE",
+      "title": "Failed to Load {contentType}",
+      "message": "Unable to load {contentType} data. {errorDetail}",
+      "userAction": "retry",
+      "technicalMessage": "Table data fetch failed"
+    },
+    "sortFailure": {
+      "type": "table",
+      "code": "TABLE_SORT_FAILURE",
+      "title": "Sorting Failed",
+      "message": "Unable to sort the table. Please try a different sort option or refresh the page.",
+      "userAction": "refresh",
+      "technicalMessage": "Sort operation failed"
+    },
+    "filterFailure": {
+      "type": "table",
+      "code": "TABLE_FILTER_FAILURE",
+      "title": "Filter Failed",
+      "message": "Unable to apply filters. Please try again or refresh the page.",
+      "userAction": "refresh",
+      "technicalMessage": "Filter operation failed"
+    },
+    "paginationFailure": {
+      "type": "table",
+      "code": "TABLE_PAGINATION_FAILURE",
+      "title": "Pagination Error",
+      "message": "Unable to load the requested page. Please try again.",
+      "userAction": "retry",
+      "technicalMessage": "Pagination request failed"
+    }
+  },
+
+  "detailSpecific": {
+    "loadFailure": {
+      "type": "detail",
+      "code": "DETAIL_LOAD_FAILURE",
+      "title": "Failed to Load Details",
+      "message": "Unable to load complete details for this item. {errorDetail}",
+      "userAction": "retryOrBack",
+      "technicalMessage": "Detail page data fetch failed"
+    },
+    "embeddedDataFailure": {
+      "type": "detail",
+      "code": "DETAIL_EMBEDDED_FAILURE",
+      "title": "Related Data Unavailable",
+      "message": "Some related information could not be loaded. The main content is displayed below.",
+      "userAction": "none",
+      "technicalMessage": "Embedded relationship data failed to load"
+    },
+    "tabLoadFailure": {
+      "type": "detail",
+      "code": "DETAIL_TAB_FAILURE",
+      "title": "Tab Load Failed",
+      "message": "Unable to load this section. Please try again.",
+      "userAction": "retry",
+      "technicalMessage": "Tab content fetch failed"
+    }
+  },
+
+  "userActions": {
+    "retry": {
+      "label": "Retry",
+      "icon": "refresh",
+      "description": "Attempt the operation again"
+    },
+    "refresh": {
+      "label": "Refresh Page",
+      "icon": "refresh",
+      "description": "Reload the entire page"
+    },
+    "back": {
+      "label": "Go Back",
+      "icon": "arrow_back",
+      "description": "Return to the previous page"
+    },
+    "login": {
+      "label": "Log In",
+      "icon": "login",
+      "description": "Redirect to login page"
+    },
+    "clearFilters": {
+      "label": "Clear Filters",
+      "icon": "clear",
+      "description": "Remove all active filters"
+    },
+    "retryOrBack": {
+      "label": "Retry or Go Back",
+      "icon": "refresh",
+      "description": "Try again or return to list"
+    },
+    "wait": {
+      "label": "Please Wait",
+      "icon": "hourglass_empty",
+      "description": "Wait before retrying"
+    },
+    "none": {
+      "label": null,
+      "icon": null,
+      "description": "No action available"
+    }
+  },
+
+  "contentTypeLabels": {
+    "events": "Events",
+    "djs": "DJs",
+    "teachers": "Teachers",
+    "couples": "Teacher Couples",
+    "eventSeries": "Event Series"
+  },
+
+  "notificationSettings": {
+    "position": "top",
+    "timeout": 5000,
+    "types": {
+      "network": "warning",
+      "http": "negative",
+      "authentication": "warning",
+      "server": "negative",
+      "data": "info",
+      "table": "negative",
+      "detail": "negative"
+    }
+  },
+
+  "notes": {
+    "interpolation": "Messages with {variable} support dynamic interpolation",
+    "technicalMessage": "Technical messages are for logging/debugging, not user display",
+    "userAction": "Determines which action button(s) to show with error",
+    "consistency": "All error messages follow Quasar notification standards",
+    "accessibility": "Error messages include ARIA live regions for screen readers"
+  }
+}

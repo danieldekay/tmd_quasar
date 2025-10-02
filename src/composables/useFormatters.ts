@@ -231,8 +231,15 @@ export const useFormatters = () => {
     return decodeHtmlEntities(text);
   };
 
+  /**
+   * Alias for formatDate - explicitly named for ISO date formatting clarity
+   * Converts various date formats to ISO YYYY-MM-DD format
+   */
+  const formatDateISO = formatDate;
+
   return {
     formatDate,
+    formatDateISO,
     formatDateTime,
     formatLocation,
     getEventCategory,

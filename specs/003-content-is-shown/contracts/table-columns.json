@@ -1,0 +1,355 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-02",
+  "description": "Column definitions for all content type tables",
+
+  "events": {
+    "columns": [
+      {
+        "name": "title",
+        "label": "Event Name",
+        "field": "title",
+        "align": "left",
+        "sortable": true,
+        "required": true,
+        "type": "string"
+      },
+      {
+        "name": "start_date",
+        "label": "Start Date",
+        "field": "start_date",
+        "align": "left",
+        "sortable": true,
+        "required": true,
+        "type": "date",
+        "format": "ISO"
+      },
+      {
+        "name": "end_date",
+        "label": "End Date",
+        "field": "end_date",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "date",
+        "format": "ISO"
+      },
+      {
+        "name": "city",
+        "label": "City",
+        "field": "city",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "string"
+      },
+      {
+        "name": "country",
+        "label": "Country",
+        "field": "country",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "country_code"
+      },
+      {
+        "name": "registration_start_date",
+        "label": "Registration",
+        "field": "registration_start_date",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "date",
+        "format": "ISO"
+      },
+      {
+        "name": "edition",
+        "label": "Edition",
+        "field": "edition",
+        "align": "center",
+        "sortable": true,
+        "required": false,
+        "type": "string"
+      }
+    ]
+  },
+
+  "djs": {
+    "columns": [
+      {
+        "name": "name",
+        "label": "DJ Name",
+        "field": "tmd_dj_name",
+        "fallbackField": "title",
+        "align": "left",
+        "sortable": true,
+        "required": true,
+        "type": "string"
+      },
+      {
+        "name": "real_name",
+        "label": "Real Name",
+        "field": "tmd_dj_real_name",
+        "align": "left",
+        "sortable": false,
+        "required": false,
+        "type": "string",
+        "display": "secondary"
+      },
+      {
+        "name": "city",
+        "label": "City",
+        "field": "tmd_dj_city",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "string"
+      },
+      {
+        "name": "country",
+        "label": "Country",
+        "field": "tmd_dj_country",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "country_code"
+      },
+      {
+        "name": "activity_types",
+        "label": "Activity",
+        "field": "computed",
+        "align": "left",
+        "sortable": false,
+        "required": false,
+        "type": "badges",
+        "computeFrom": [
+          "tmd_dj_activity_marathons",
+          "tmd_dj_activity_festivals",
+          "tmd_dj_activity_encuentros",
+          "tmd_dj_activity_milongas"
+        ]
+      },
+      {
+        "name": "years_active",
+        "label": "Active Since",
+        "field": "computed",
+        "align": "center",
+        "sortable": false,
+        "required": false,
+        "type": "year_range",
+        "computeFrom": [
+          "tmd_dj_activity_marathons_since",
+          "tmd_dj_activity_festivals_since",
+          "tmd_dj_activity_encuentros_since",
+          "tmd_dj_activity_milongas_since"
+        ]
+      }
+    ]
+  },
+
+  "teachers": {
+    "columns": [
+      {
+        "name": "name",
+        "label": "Teacher Name",
+        "field": "title",
+        "align": "left",
+        "sortable": true,
+        "required": true,
+        "type": "string"
+      },
+      {
+        "name": "role",
+        "label": "Role",
+        "field": "role",
+        "align": "center",
+        "sortable": true,
+        "required": false,
+        "type": "enum",
+        "values": ["leader", "follower", "both", "double-role"]
+      },
+      {
+        "name": "city",
+        "label": "City",
+        "field": "city",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "string"
+      },
+      {
+        "name": "country",
+        "label": "Country",
+        "field": "country",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "country_code"
+      },
+      {
+        "name": "teaching_since",
+        "label": "Teaching Since",
+        "field": "teaching_since",
+        "align": "center",
+        "sortable": true,
+        "required": false,
+        "type": "year"
+      },
+      {
+        "name": "specialization",
+        "label": "Specialization",
+        "field": "teaching_style",
+        "align": "left",
+        "sortable": false,
+        "required": false,
+        "type": "string"
+      }
+    ]
+  },
+
+  "couples": {
+    "columns": [
+      {
+        "name": "couple_name",
+        "label": "Couple Name",
+        "field": "title",
+        "align": "left",
+        "sortable": true,
+        "required": true,
+        "type": "string"
+      },
+      {
+        "name": "leader_name",
+        "label": "Leader",
+        "field": "computed",
+        "align": "left",
+        "sortable": false,
+        "required": false,
+        "type": "relationship",
+        "relationship": "leader"
+      },
+      {
+        "name": "follower_name",
+        "label": "Follower",
+        "field": "computed",
+        "align": "left",
+        "sortable": false,
+        "required": false,
+        "type": "relationship",
+        "relationship": "follower"
+      },
+      {
+        "name": "city",
+        "label": "City",
+        "field": "city",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "string"
+      },
+      {
+        "name": "country",
+        "label": "Country",
+        "field": "country",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "country_code"
+      },
+      {
+        "name": "type",
+        "label": "Type",
+        "field": "couple_type",
+        "align": "center",
+        "sortable": true,
+        "required": false,
+        "type": "enum",
+        "values": ["traditional", "same-role", "queer"]
+      }
+    ]
+  },
+
+  "eventSeries": {
+    "columns": [
+      {
+        "name": "series_name",
+        "label": "Series Name",
+        "field": "title",
+        "align": "left",
+        "sortable": true,
+        "required": true,
+        "type": "string"
+      },
+      {
+        "name": "city",
+        "label": "City",
+        "field": "city",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "string"
+      },
+      {
+        "name": "country",
+        "label": "Country",
+        "field": "country",
+        "align": "left",
+        "sortable": true,
+        "required": false,
+        "type": "country_code"
+      },
+      {
+        "name": "latest_edition",
+        "label": "Latest Edition",
+        "field": "computed",
+        "align": "center",
+        "sortable": false,
+        "required": false,
+        "type": "string",
+        "computeFrom": ["_embedded.events"]
+      },
+      {
+        "name": "total_events",
+        "label": "Total Events",
+        "field": "computed",
+        "align": "center",
+        "sortable": false,
+        "required": false,
+        "type": "number",
+        "computeFrom": ["_embedded.events"]
+      },
+      {
+        "name": "active_since",
+        "label": "Active Since",
+        "field": "computed",
+        "align": "center",
+        "sortable": false,
+        "required": false,
+        "type": "year",
+        "computeFrom": ["_embedded.events"]
+      }
+    ]
+  },
+
+  "commonTypes": {
+    "string": "Plain text string",
+    "number": "Numeric value",
+    "date": "Date string (ISO format YYYY-MM-DD)",
+    "year": "4-digit year",
+    "year_range": "Year range display (e.g., '2015-present')",
+    "country_code": "ISO 3166-1 alpha-2 country code (converted to name for display)",
+    "enum": "One of predefined values",
+    "badges": "Array of values displayed as chips/badges",
+    "relationship": "Related entity name from embedded data",
+    "computed": "Value computed from other fields"
+  },
+
+  "notes": {
+    "dates": "All date fields MUST be displayed in ISO format (YYYY-MM-DD) per FR-021",
+    "sorting": "All sortable columns support ascending/descending toggle per FR-010",
+    "filtering": "Tables support column-specific filtering per FR-011",
+    "computed": "Computed fields require transformation logic in component",
+    "fallback": "Fields with fallbackField will use fallback if primary field is empty",
+    "display": "Fields with display='secondary' show below primary field in same cell"
+  }
+}
