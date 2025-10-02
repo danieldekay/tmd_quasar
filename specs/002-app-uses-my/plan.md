@@ -1,4 +1,3 @@
-
 # Implementation Plan: TMD API Integration with Availability Handling
 
 **Branch**: `002-app-uses-my` | **Date**: October 2, 2025 | **Spec**: [spec.md](./spec.md)
@@ -7,6 +6,7 @@
 **Note**: This is a **status quo documentation feature** - documenting existing implementation rather than building new functionality.
 
 ## Execution Flow (/plan command scope)
+
 ```
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
@@ -29,6 +29,7 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
@@ -39,50 +40,61 @@ This feature documents the existing TMD API integration and availability handlin
 **Technical Approach**: Analysis and documentation of existing Vue 3 + TypeScript composables (useApiStatus), Axios interceptors, service layer patterns, and UI components (OfflineMessage) that implement the specified availability handling requirements.
 
 ## Technical Context
+
 **Language/Version**: TypeScript 5.x (Vue 3 Composition API with `<script setup lang="ts">`)
 **Primary Dependencies**: Quasar 2.x, Vue 3, Axios, Vitest
 **Storage**: LocalStorage (JWT tokens, auth state), Browser cache (API responses)  
 **Testing**: Vitest with tests in `__tests__` folders per Quasar conventions
 **Target Platform**: Modern web browsers (Chrome, Firefox, Safari, Edge), responsive mobile web  
 **Project Type**: Single-page web application (Quasar SPA)
-**Performance Goals**: 
-  - 3 second response time for normal API requests
-  - 5-20 concurrent request handling
-  - 30 second timeout threshold
-**Constraints**: 
-  - HAL-compliant API response format
-  - JWT authentication with proactive refresh
-  - No service worker/offline persistence (enhancement for future)
-**Scale/Scope**: 
-  - 7 TMD v3 API endpoints
-  - Standard operational metrics tracking
-  - Mobile-first responsive design
+**Performance Goals**:
+
+- 3 second response time for normal API requests
+- 5-20 concurrent request handling
+- 30 second timeout threshold
+  **Constraints**:
+- HAL-compliant API response format
+- JWT authentication with proactive refresh
+- No service worker/offline persistence (enhancement for future)
+  **Scale/Scope**:
+- 7 TMD v3 API endpoints
+- Standard operational metrics tracking
+- Mobile-first responsive design
 
 ## Constitution Check
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### I. Quasar-First Development
+
 **Status**: ✅ PASS - Current implementation uses Quasar components (QBtn, QCard, QBanner, QIcon) and utilities throughout. OfflineMessage component leverages Quasar's component system properly.
 
 ### II. TypeScript Strict Compliance
+
 **Status**: ✅ PASS - All code uses TypeScript with strict mode, no `any` types, proper interfaces for ApiError/ApiStatusState, async operations handled with proper error handling.
 
 ### III. Composition API Structure
+
 **Status**: ✅ PASS - useApiStatus composable and Vue components follow prescribed structure: imports, reactive state, computed properties, methods. OfflineMessage.vue uses `<script setup lang="ts">` syntax correctly.
 
 ### IV. Test-First Development
+
 **Status**: ⚠️ DOCUMENTATION FOCUS - Since this is status quo documentation, existing tests will be analyzed rather than new tests written first. Tests exist in `src/services/__tests__/`, `src/composables/` locations per Quasar conventions.
 
 ### V. Mobile-First & Accessibility
+
 **Status**: ✅ PASS - Implementation includes touch-optimized interactions, loading states, error states, ARIA labels in OfflineMessage component, semantic HTML structure.
 
 ### Quality Standards
+
 **Status**: ✅ PASS - Code follows ESLint rules, uses proper naming conventions (isOnline, isApiAvailable), implements debouncing and request cancellation, proper error handling with user-friendly messages.
 
 ### Performance Standards
+
 **Status**: ✅ PASS - Implements request cancellation via AbortSignal, tracks request duration, uses exponential backoff for retries, 30-second timeout, handles 5-20 concurrent requests.
 
 ### API Integration Standards
+
 **Status**: ✅ PASS - Uses TMD v3 REST API endpoints, proper error handling, JWT authentication with proactive refresh, HAL-compliant response handling in BaseService.
 
 **Overall Gate Status**: ✅ PASS with documentation focus notation
@@ -90,6 +102,7 @@ This feature documents the existing TMD API integration and availability handlin
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/002-app-uses-my/
 ├── spec.md              # Feature specification with clarifications
@@ -104,6 +117,7 @@ specs/002-app-uses-my/
 ```
 
 ### Source Code (repository root)
+
 ```
 src/
 ├── boot/
@@ -151,6 +165,7 @@ tests/
 ### Research Activities Completed
 
 1. **Analyzed existing codebase**:
+
    - Reviewed `src/composables/useApiStatus.ts` for offline detection
    - Examined `src/boot/axios.ts` for HTTP client configuration
    - Studied `src/services/baseService.ts` for HAL response handling
@@ -158,6 +173,7 @@ tests/
    - Surveyed all service implementations (events, DJs, teachers, etc.)
 
 2. **Documented technology decisions**:
+
    - Vue 3 Composition API with TypeScript rationale
    - Axios vs Fetch API vs Apollo Client comparison
    - Composable-based state vs Pinia for API status
@@ -165,6 +181,7 @@ tests/
    - Service layer pattern with BaseService inheritance
 
 3. **Identified architectural patterns**:
+
    - HAL (Hypertext Application Language) response parsing
    - Retry strategy with exponential backoff
    - Error classification (NetworkError, APIUnavailable, ServerError, etc.)
@@ -172,6 +189,7 @@ tests/
    - JWT token management (current + proactive refresh needed)
 
 4. **Documented current capabilities**:
+
    - 7 TMD v3 API endpoints integrated
    - Offline detection via browser events + API health monitoring
    - Automatic retry (max 1 retry, exponential backoff)
@@ -192,18 +210,21 @@ tests/
 ### Activities Completed
 
 1. **Created data-model.md**:
+
    - Documented 8 core entities (ApiStatusState, ApiError, HALResponse, etc.)
    - Defined relationships and data flows
    - Captured state transitions and validation rules
    - Identified 2 enhancement entities (OperationalMetrics, TokenState)
 
 2. **Generated API contracts** in `/contracts/`:
+
    - `api-status.yaml`: OpenAPI contract for ApiStatusState and ApiError schemas
    - `error-types.yaml`: Behavioral contract for error categorization and handling
    - `metrics.yaml`: Contract for operational metrics tracking (enhancement)
    - All contracts use OpenAPI 3.0.0 format with examples
 
 3. **Created quickstart.md**:
+
    - 6 main test scenarios matching specification acceptance scenarios
    - 5 edge case test procedures
    - Automated test execution instructions
@@ -212,6 +233,7 @@ tests/
    - Troubleshooting guide
 
 4. **No contract tests needed** (status quo documentation):
+
    - Existing tests in `src/services/__tests__/` cover current functionality
    - API integration tests in `api-tests/` validate endpoint contracts
    - Component tests in `src/components/__tests__/` verify UI behavior
@@ -223,7 +245,8 @@ tests/
    - Composition API structure maintained
    - Tests in proper `__tests__` locations
 
-**Outputs**: 
+**Outputs**:
+
 - [data-model.md](./data-model.md)
 - [contracts/](./contracts/)
   - [api-status.yaml](./contracts/api-status.yaml)
@@ -232,15 +255,18 @@ tests/
 - [quickstart.md](./quickstart.md)
 
 ## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
+
+_This section describes what the /tasks command will do - DO NOT execute during /plan_
 
 **Note**: Since this is a status quo documentation feature, task generation will focus on:
+
 1. Documentation verification tasks
 2. Enhancement implementation tasks (from clarifications)
 3. Test coverage improvements
 4. Metrics implementation
 
 **Task Generation Strategy**:
+
 - Load `.specify/templates/tasks-template.md` as base
 - Generate documentation tasks from quickstart.md test scenarios
 - Create enhancement tasks for 3 clarification requirements:
@@ -251,6 +277,7 @@ tests/
 - Create validation tasks for quickstart scenarios
 
 **Ordering Strategy**:
+
 - Documentation verification first (understand current state)
 - Test infrastructure setup (metrics tracking, token monitoring)
 - Implementation tasks (proactive refresh, metrics collection)
@@ -259,6 +286,7 @@ tests/
 - Mark [P] for parallel execution (independent files)
 
 **Estimated Task Categories**:
+
 1. **Documentation Verification** (3-5 tasks): Validate existing functionality per quickstart
 2. **Enhancement: Token Refresh** (4-6 tasks): Design → Test → Implement → Validate
 3. **Enhancement: Metrics** (5-7 tasks): Schema → Collection → Storage → Exposure → Validate
@@ -271,7 +299,8 @@ tests/
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
 ## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
+
+_These phases are beyond the scope of the /plan command_
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
@@ -282,7 +311,7 @@ tests/
 **No violations to document** - This status quo documentation feature follows all constitutional principles. The existing implementation already complies with:
 
 - Quasar-First Development
-- TypeScript Strict Compliance  
+- TypeScript Strict Compliance
 - Composition API Structure
 - Mobile-First & Accessibility
 - Quality Standards
@@ -294,9 +323,11 @@ No complexity deviations or justifications needed.
 ---
 
 ## Progress Tracking
-*This checklist is updated during execution flow*
+
+_This checklist is updated during execution flow_
 
 **Phase Status**:
+
 - [x] Phase 0: Research complete (/plan command) - research.md created
 - [x] Phase 1: Design complete (/plan command) - data-model.md, contracts/, quickstart.md created
 - [x] Phase 2: Task planning complete (/plan command - approach described)
@@ -305,12 +336,14 @@ No complexity deviations or justifications needed.
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS (all principles followed)
 - [x] Post-Design Constitution Check: PASS (no violations)
 - [x] All NEEDS CLARIFICATION resolved (via /clarify command)
 - [x] Complexity deviations documented (none needed)
 
 **Artifacts Generated**:
+
 - [x] spec.md (with clarifications)
 - [x] plan.md (this file)
 - [x] research.md
@@ -335,6 +368,7 @@ The /plan command has completed successfully. To proceed with task generation:
 ```
 
 This will create `tasks.md` with detailed, ordered implementation tasks for:
+
 1. Verifying existing functionality
 2. Implementing enhancement features (token refresh, metrics)
 3. Testing and validation
@@ -342,4 +376,4 @@ This will create `tasks.md` with detailed, ordered implementation tasks for:
 
 ---
 
-*Based on Constitution v1.0.1 - See `.specify/memory/constitution.md`*
+_Based on Constitution v1.0.1 - See `.specify/memory/constitution.md`_
