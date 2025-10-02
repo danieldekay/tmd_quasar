@@ -132,10 +132,10 @@ const userIcon = computed(() => {
   const userRoles = user.value.roles;
   const roles = Array.isArray(userRoles)
     ? userRoles
-    : (userRoles && 'nodes' in userRoles)
-    ? userRoles.nodes.map((r: { name: string }) => r.name)
-    : [];
-  
+    : userRoles && 'nodes' in userRoles
+      ? userRoles.nodes.map((r: { name: string }) => r.name)
+      : [];
+
   if (roles.includes('administrator')) {
     return 'admin_panel_settings';
   }
