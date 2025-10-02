@@ -9,14 +9,7 @@
  *   const mockEvents = createMockEventList(5); // Creates 5 mock events
  */
 
-import type {
-  Event,
-  DJ,
-  Teacher,
-  Couple,
-  EventSeries,
-  BaseEvent,
-} from 'src/services/types';
+import type { Event, DJ, Teacher, Couple, EventSeries, BaseEvent } from 'src/services/types';
 import type { PaginatedEventsResponse } from '../services/eventListService';
 
 /**
@@ -182,9 +175,7 @@ export function createMockCouple(overrides?: Partial<Couple>): Couple {
 /**
  * Create a mock EventSeries object
  */
-export function createMockEventSeries(
-  overrides?: Partial<EventSeries>
-): EventSeries {
+export function createMockEventSeries(overrides?: Partial<EventSeries>): EventSeries {
   return {
     id: 401,
     title: 'Test Event Series',

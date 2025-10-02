@@ -30,45 +30,55 @@ Duration    96.96s
 Most failures are timeouts (5 second limit) indicating missing component implementation:
 
 **FR-016: Event Series Name Display** (2 tests)
+
 - Display series name as main title
 - Render HTML entities correctly
 
 **FR-017: Location Display** (2 tests)
+
 - Display city and country
 - Handle missing location gracefully
 
 **FR-018: Series Statistics Display** (3 tests)
+
 - Display total events count
 - Display DJ statistics
 - Handle missing statistics gracefully
 
 **FR-019: Service API Call** (2 tests)
+
 - Call getEventSeriesById with correct ID
 - Handle service call with string ID
 
 **FR-020: Embedded Event Data** (3 tests)
+
 - Display embedded events in series
 - Handle series with no embedded events
 - Fetch embedded events with series data
 
 **FR-021: Loading State** (2 tests)
+
 - Show loading indicator while fetching
 - Hide loading indicator after data loads
 
 **FR-022: Error State** (2 tests)
+
 - Display error message when fetch fails
 - Handle network error gracefully
 
 **FR-023: Navigation** (2 tests)
+
 - Provide navigation to event details
 - Have external website link if available
 
 **FR-024: ISO Date Formatting** (3 tests)
+
 - Format start_date as ISO date
 - Format registration_start_date as ISO date
 - Handle null dates gracefully
 
 **Additional Tests** (5 tests)
+
 - Handle series with no website URL
 - Display message when no events in series
 - Handle series with all optional fields null
@@ -128,7 +138,7 @@ export function createMockEventSeries(overrides?: Partial<EventSeries>): EventSe
 
 - **Complete EventSeries type**: All required and optional fields
 - **DJ Statistics**: Includes dj_statistics with sample DJ data
-- **Embedded Events**: Can include _embedded.events array
+- **Embedded Events**: Can include \_embedded.events array
 - **Content**: Includes both content.rendered and acf fields
 - **Flexible Overrides**: Partial type support for customization
 - **TypeScript Strict**: Fully compliant with exactOptionalPropertyTypes
@@ -138,14 +148,17 @@ export function createMockEventSeries(overrides?: Partial<EventSeries>): EventSe
 ### TypeScript Strict Compliance
 
 1. **Fixed Import Issues**:
+
    - Removed unused `QLayoutInjectionKey` import
    - Added EventSeries type to imports
 
 2. **Fixed vue-router Mock**:
+
    - Used `vi.importActual` to preserve createRouter
    - Maintains all router functionality while mocking useRoute/useRouter
 
 3. **Fixed exactOptionalPropertyTypes**:
+
    - Used property deletion instead of `undefined` assignment
    - Properly handles optional fields in test scenarios
 
@@ -192,6 +205,7 @@ export function createMockEventSeries(overrides?: Partial<EventSeries>): EventSe
 ### T015-T026: Implementation Phase (Phase 3.3)
 
 With T014 complete, **ALL detail page tests are now written** (T010-T014):
+
 - ✅ EventDetails (341 lines, 13/20 passing - 65%)
 - ✅ DJDetails (420 lines, 19/24 passing - 79%)
 - ✅ TeacherDetails (414 lines, 19/26 passing - 73%)
@@ -203,6 +217,7 @@ With T014 complete, **ALL detail page tests are now written** (T010-T014):
 ### Phase 3.2 Status: **COMPLETE** ✅
 
 All 14 tasks in Phase 3.2 (Tests First) are now complete:
+
 - T001: Project validation ✅
 - T002: ISO formatter (14/14 passing) ✅
 - T003: Error messages ✅
@@ -219,7 +234,8 @@ All 14 tasks in Phase 3.2 (Tests First) are now complete:
 - T013: CoupleDetails tests ✅
 - T014: EventSeriesDetails tests ✅
 
-**Total Test Infrastructure**: 
+**Total Test Infrastructure**:
+
 - Test utilities: 904 lines
 - Table tests (T005-T009): 1,919 lines, 118 tests
 - Detail tests (T010-T014): 2,246 lines, 120 tests
@@ -228,6 +244,7 @@ All 14 tasks in Phase 3.2 (Tests First) are now complete:
 ### Immediate Next Actions
 
 1. **Begin Phase 3.3 Implementation** (T015-T026):
+
    - T015: Implement ISO date formatter utility
    - T016: Implement error message handling
    - T017: Standardize table components
@@ -235,6 +252,7 @@ All 14 tasks in Phase 3.2 (Tests First) are now complete:
    - T023-T026: Refactor detail pages to match contracts
 
 2. **Target**: Make failing tests pass systematically
+
    - Use test failures to guide implementation
    - Achieve 100% pass rate across all components
    - Ensure all FR requirements are met

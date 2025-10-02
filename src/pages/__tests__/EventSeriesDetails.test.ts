@@ -6,7 +6,7 @@
  *
  * Requirements Tested:
  * - FR-016: Event series name displayed as title
- * - FR-017: Location (city, country) displayed  
+ * - FR-017: Location (city, country) displayed
  * - FR-018: Series statistics (total events, upcoming/past counts)
  * - FR-019: getEventSeries service called with ID
  * - FR-020: Embedded event data fetched and displayed
@@ -126,9 +126,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-016: Event Series Name Display =====
   describe('Event Series Name Display (FR-016)', () => {
     it('should display series name as main title', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -142,9 +140,7 @@ describe('EventSeriesDetails Component', () => {
       const seriesWithHtml = createMockEventSeries({
         title: 'Test &amp; Series',
       });
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(
-        seriesWithHtml
-      );
+      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(seriesWithHtml);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -158,9 +154,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-017: Location Display =====
   describe('Location Display (FR-017)', () => {
     it('should display city and country', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -175,9 +169,7 @@ describe('EventSeriesDetails Component', () => {
       const seriesNoLocation = createMockEventSeries();
       delete seriesNoLocation.city;
       delete seriesNoLocation.country;
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(
-        seriesNoLocation
-      );
+      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(seriesNoLocation);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -191,9 +183,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-018: Series Statistics Display =====
   describe('Series Statistics Display (FR-018)', () => {
     it('should display total events count', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -205,9 +195,7 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should display DJ statistics', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -221,9 +209,7 @@ describe('EventSeriesDetails Component', () => {
     it('should handle missing statistics gracefully', async () => {
       const seriesNoStats = createMockEventSeries();
       delete seriesNoStats.dj_statistics;
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesNoStats
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoStats);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -236,9 +222,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-019: Service API Call =====
   describe('Service API Call (FR-019)', () => {
     it('should call getEventSeries with correct ID from route params', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -247,26 +231,20 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should handle service call with string ID', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
 
       // Route params provide string '401', should be converted to number
-      expect(eventSeriesService.getEventSeriesById).toHaveBeenCalledWith(
-        expect.any(Number)
-      );
+      expect(eventSeriesService.getEventSeriesById).toHaveBeenCalledWith(expect.any(Number));
     });
   });
 
   // ===== FR-020: Embedded Event Data =====
   describe('Embedded Event Data (FR-020)', () => {
     it('should display embedded events in series', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -280,9 +258,7 @@ describe('EventSeriesDetails Component', () => {
     it('should handle series with no embedded events', async () => {
       const seriesNoEvents = createMockEventSeries();
       delete seriesNoEvents._embedded;
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesNoEvents
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoEvents);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -292,9 +268,7 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should fetch embedded events with series data', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -311,9 +285,7 @@ describe('EventSeriesDetails Component', () => {
       const delayedPromise = new Promise<EventSeries>((resolve) => {
         setTimeout(() => resolve(mockEventSeries), 200);
       });
-      vi.mocked(eventSeriesService.getEventSeriesById).mockReturnValue(
-        delayedPromise
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockReturnValue(delayedPromise);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -324,14 +296,12 @@ describe('EventSeriesDetails Component', () => {
         html.includes('loading') ||
           html.includes('Loading') ||
           html.includes('spinner') ||
-          html.includes('skeleton')
+          html.includes('skeleton'),
       ).toBe(true);
     });
 
     it('should hide loading indicator after data loads', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -359,9 +329,7 @@ describe('EventSeriesDetails Component', () => {
 
     it('should handle network error gracefully', async () => {
       const networkError = new Error('Network error');
-      vi.mocked(eventSeriesService.getEventSeriesById).mockRejectedValue(
-        networkError
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockRejectedValue(networkError);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -375,9 +343,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-023: Navigation =====
   describe('Navigation (FR-023)', () => {
     it('should provide navigation to event details', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -389,9 +355,7 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should have external website link if available', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -405,9 +369,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-024: ISO Date Formatting =====
   describe('ISO Date Formatting (FR-024)', () => {
     it('should format start_date as ISO date', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -419,9 +381,7 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should format registration_start_date as ISO date', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -436,9 +396,7 @@ describe('EventSeriesDetails Component', () => {
         start_date: undefined,
         registration_start_date: undefined,
       });
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesNoDates
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoDates);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -454,9 +412,7 @@ describe('EventSeriesDetails Component', () => {
       const seriesNoWebsite = createMockEventSeries();
       delete seriesNoWebsite.website;
       delete seriesNoWebsite.acf;
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesNoWebsite
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoWebsite);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -476,9 +432,7 @@ describe('EventSeriesDetails Component', () => {
           events: [],
         },
       });
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesNoEvents
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoEvents);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -503,9 +457,7 @@ describe('EventSeriesDetails Component', () => {
       delete seriesMinimal.acf;
       delete seriesMinimal.dj_statistics;
       delete seriesMinimal._embedded;
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesMinimal
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesMinimal);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -522,13 +474,10 @@ describe('EventSeriesDetails Component', () => {
     it('should sanitize content HTML properly', async () => {
       const seriesWithHtml = createMockEventSeries({
         content: {
-          rendered:
-            '<p>Safe content</p><script>alert("xss")</script><p>More content</p>',
+          rendered: '<p>Safe content</p><script>alert("xss")</script><p>More content</p>',
         },
       });
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesWithHtml
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesWithHtml);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -546,9 +495,7 @@ describe('EventSeriesDetails Component', () => {
           rendered: '<p><strong>Bold</strong> and <em>italic</em> text</p>',
         },
       });
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        seriesWithFormatting
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesWithFormatting);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -562,9 +509,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== Additional: Component Lifecycle =====
   describe('Component Lifecycle', () => {
     it('should clean up on unmount', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -573,16 +518,12 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should reload data on route param change', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
 
-      const initialCalls = vi.mocked(
-        eventSeriesService.getEventSeriesById
-      ).mock.calls.length;
+      const initialCalls = vi.mocked(eventSeriesService.getEventSeriesById).mock.calls.length;
       expect(initialCalls).toBeGreaterThan(0);
     });
   });
@@ -590,9 +531,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== Additional: Data Integrity =====
   describe('Data Integrity', () => {
     it('should validate series has required fields', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -604,9 +543,7 @@ describe('EventSeriesDetails Component', () => {
     });
 
     it('should handle series data type correctly', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(
-        mockEventSeries
-      );
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
