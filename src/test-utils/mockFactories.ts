@@ -9,7 +9,14 @@
  *   const mockEvents = createMockEventList(5); // Creates 5 mock events
  */
 
-import type { EventListItem, EventTaxonomies, DJ, Teacher } from '../services/types';
+import type {
+  Event,
+  DJ,
+  Teacher,
+  Couple,
+  EventSeries,
+  BaseEvent,
+} from 'src/services/types';
 import type { PaginatedEventsResponse } from '../services/eventListService';
 
 /**
@@ -148,7 +155,74 @@ export function createMockTeacher(overrides: Partial<Teacher> = {}): Teacher {
   return { ...defaults, ...overrides };
 }
 
-// TODO: Add Couple and EventSeries mock factories when needed
+/**
+ * Create a mock Couple object
+ */
+export function createMockCouple(overrides?: Partial<Couple>): Couple {
+  return {
+    id: 301,
+    title: 'Test Couple',
+    date: '2024-01-15T10:00:00',
+    link: 'https://tangomarathons.com/couples/test-couple',
+    city: 'Buenos Aires',
+    country: 'AR',
+    leader_id: 201,
+    leader_name: 'Test Leader',
+    follower_id: 202,
+    follower_name: 'Test Follower',
+    meta_box: {
+      partnership_started: '2020-01-01',
+      partnership_style: 'Milonguero',
+      bio_couple: 'Test couple biography',
+    },
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock EventSeries object
+ */
+export function createMockEventSeries(
+  overrides?: Partial<EventSeries>
+): EventSeries {
+  return {
+    id: 401,
+    title: 'Test Event Series',
+    date: '2024-01-01T00:00:00',
+    link: 'https://tangomarathons.com/event-series/test-series',
+    slug: 'test-event-series',
+    city: 'Berlin',
+    country: 'DE',
+    start_date: '2024-06-15T09:00:00',
+    registration_start_date: '2024-03-01T00:00:00',
+    website: 'https://example.com',
+    content: {
+      rendered: '<p>Test series description</p>',
+    },
+    acf: {
+      description: 'Test series ACF description',
+      website: 'https://example.com',
+      logo: 'https://example.com/logo.png',
+    },
+    dj_statistics: {
+      total_djs: 10,
+      unique_djs: 8,
+      dj_list: [
+        {
+          id: 101,
+          name: 'Test DJ',
+          city: 'Berlin',
+          country: 'DE',
+          appearances: 3,
+          years: ['2022', '2023', '2024'],
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+// TODO: Add EventSeries mock factory when needed
 
 /**
  * Create mock taxonomies

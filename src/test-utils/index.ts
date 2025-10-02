@@ -20,6 +20,8 @@ export {
   createMockEventsResponse,
   createMockDJ,
   createMockTeacher,
+  createMockCouple,
+  createMockEventSeries,
   createMockTaxonomies,
   generateDateRange,
   createMockError,
