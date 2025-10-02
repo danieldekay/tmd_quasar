@@ -1,0 +1,86 @@
+openapi: 3.0.0
+info:
+  title: API Status State Contract
+  description: Contract for API connectivity and health tracking state
+  version: 1.0.0
+
+components:
+  schemas:
+    ApiStatusState:
+      type: object
+      required:
+        - isOnline
+        - isApiAvailable
+        - lastError
+        - consecutiveFailures
+        - lastSuccessfulRequest
+      properties:
+        isOnline:
+          type: boolean
+          description: Device has internet connectivity (from navigator.onLine)
+          example: true
+        
+        isApiAvailable:
+          type: boolean
+          description: Backend API is reachable and responding
+          example: true
+        
+        lastError:
+          $ref: '#/components/schemas/ApiError'
+          nullable: true
+          description: Most recent error details, null if no errors
+        
+        consecutiveFailures:
+          type: integer
+          minimum: 0
+          description: Count of sequential failed requests
+          example: 0
+        
+        lastSuccessfulRequest:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of last successful API call
+          example: "2025-10-02T14:30:00.000Z"
+
+    ApiError:
+      type: object
+      required:
+        - name
+        - message
+      properties:
+        name:
+          type: string
+          enum:
+            - NetworkError
+            - APIUnavailable
+            - ServerError
+            - NotFoundError
+            - UnauthorizedError
+            - APIError
+          description: Error classification type
+          example: "NetworkError"
+        
+        message:
+          type: string
+          description: User-friendly error message
+          example: "API connection failed - please check your internet connection"
+        
+        isOffline:
+          type: boolean
+          description: True if error caused by no internet connectivity
+          example: true
+        
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+          description: HTTP status code if available
+          example: 503
+        
+        originalError:
+          type: object
+          description: Original error object for debugging (not exposed to users)
+          additionalProperties: true
+
+paths: {}  # This is a state contract, not an API endpoint

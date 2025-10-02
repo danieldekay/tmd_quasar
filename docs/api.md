@@ -5,6 +5,15 @@
 - **Production**: `https://www.tangomarathons.com/wp-json/`
 - **Local Development**: `http://localhost:10014/wp-json/`
 
+## Table of Contents
+
+1. [Available Namespaces](#available-namespaces)
+2. [Authentication](#authentication)
+3. [Request Handling](#request-handling)
+4. [TMD v3 API Endpoints](#tmd-v3-api-endpoints-hal-compliant)
+5. [Error Handling](#error-handling)
+6. [Performance & Monitoring](#performance--monitoring)
+
 ## Available Namespaces
 
 ### TMD Custom API
@@ -16,6 +25,112 @@
 ### WordPress Core API
 
 - `wp/v2` - Standard WordPress REST API
+
+## Authentication
+
+### JWT Token Authentication
+
+The TMD frontend uses JWT (JSON Web Token) authentication for secure API access.
+
+**GraphQL Endpoint**: `/graphql`
+
+**Login Mutation**:
+```graphql
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    authToken
+    refreshToken
+    user {
+      id
+      name
+      email
+      roles
+    }
+  }
+}
+```
+
+**Token Management**:
+- **Access Token**: 30-minute expiration (default)
+- **Refresh Token**: 30-day expiration
+- **Storage**: localStorage (Remember Me) or sessionStorage (session only)
+- **Header**: `Authorization: Bearer <token>`
+
+### Proactive Token Refresh
+
+The application implements **proactive token refresh** to prevent authentication interruptions:
+
+- Refresh triggered **5 minutes before token expiration**
+- Exponential backoff on failures: 1s → 2s → 4s
+- Maximum 3 refresh attempts
+- Automatic redirect to login after exhausting attempts
+- Concurrent refresh prevention (single promise shared)
+
+**Benefits**:
+- No user interruption during active sessions
+- Reduced 401 errors
+- Better user experience
+- Graceful degradation on refresh failure
+
+See [API Integration Guide](./api-integration.md) for detailed authentication flow.
+
+## Request Handling
+
+### Axios Configuration
+
+All API requests use Axios with custom configuration:
+
+```typescript
+{
+  baseURL: process.env.WORDPRESS_API_URL,
+  timeout: 30000, // 30 seconds
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <token>' // Added automatically
+  }
+}
+```
+
+### Request Interceptors
+
+**Before Each Request**:
+1. Check token expiration (proactive refresh if < 5 min)
+2. Add authentication header
+3. Record request start time
+4. Log request details
+
+**After Each Response**:
+1. Calculate request duration
+2. Record operational metrics
+3. Log slow requests (>5s)
+4. Handle errors and re-login attempts
+
+### Concurrent Request Support
+
+The application supports **5-20 concurrent requests** depending on browser and HTTP version:
+
+| Browser | HTTP/1.1 | HTTP/2 |
+|---------|----------|--------|
+| Chrome | 6 connections | 100+ streams |
+| Firefox | 6 connections | 100+ streams |
+| Safari | 6 connections | 100+ streams |
+
+**Recommended Pattern**:
+```typescript
+// ✅ Good: Concurrent requests with Promise.all
+const [events, djs, teachers] = await Promise.all([
+  api.get('/events'),
+  api.get('/djs'),
+  api.get('/teachers'),
+]);
+
+// ❌ Avoid: Sequential requests
+const events = await api.get('/events');
+const djs = await api.get('/djs');
+const teachers = await api.get('/teachers');
+```
+
+See [API Integration Guide](./api-integration.md#concurrent-request-management) for details.
 
 ## TMD v3 API Endpoints (HAL-Compliant)
 
@@ -339,15 +454,6 @@ DELETE /tmd/v3/user-interactions/bulk
 - Suitable for building favorites/bookmarks features
 
 ## Universal Query Parameters
-=======
-- `GET /wp/v2/tmd_dj` - DJ posts (can be used for production access to DJ data)
-- `GET /wp/v2/tmd_dj/{id}` - Specific DJ post (can be used for production access to specific DJ data)
-- `GET /wp/v2/dj-category` - DJ categories (can be used for production access to DJ categories)
-
-**Note on Production Endpoints for Other Content Types:**
-
-- While `tmd/v2` is the primary production API for Events, other content types like DJs, Teachers, and Event Series may utilize `tmd/v3` endpoints in production (e.g., `GET /tmd/v3/djs`), or rely on the standard WordPress `wp/v2` API as shown above for DJs.
-- This mixed-version approach for production (Events on `v2`, others on `v3` or `wp/v2`) should be confirmed by checking the frontend application's API service configurations for production builds. The `README.md` and `DESIGN.md` have been updated to reflect this understanding.
 
 All endpoints support these parameters:
 
@@ -381,6 +487,198 @@ All endpoints return HAL-compliant JSON:
       {
         "id": 12345,
         "title": "Item Title",
+        "_links": {
+          "self": [{"href": "..."}]
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": [{"href": "..."}],
+    "next": [{"href": "..."}],
+    "prev": [{"href": "..."}],
+    "first": [{"href": "..."}],
+    "last": [{"href": "..."}]
+  },
+  "count": 10,
+  "total": 2989,
+  "page": 1,
+  "per_page": 10
+}
+```
+
+---
+
+## Error Handling
+
+### Error Classification
+
+The application classifies API errors into three categories:
+
+**Network Errors**:
+- No response from server
+- DNS resolution failures
+- Connection timeouts
+- CORS errors
+
+**Server Errors (5xx)**:
+- 500 Internal Server Error
+- 502 Bad Gateway
+- 503 Service Unavailable
+- 504 Gateway Timeout
+
+**Client Errors (4xx)**:
+- 400 Bad Request
+- 401 Unauthorized (triggers automatic re-login)
+- 403 Forbidden
+- 404 Not Found
+- 429 Too Many Requests
+
+### Error Response Format
+
+```json
+{
+  "code": "rest_invalid_param",
+  "message": "Invalid parameter(s): per_page",
+  "data": {
+    "status": 400,
+    "params": {
+      "per_page": "per_page must be between 1 and 100"
+    }
+  }
+}
+```
+
+### Automatic Re-login
+
+On **401 Unauthorized** errors:
+- Automatic re-login attempted (max 3 times)
+- Uses stored credentials from authStore
+- Retries original request after successful re-login
+- Redirects to login page if re-login fails
+
+### User Notifications
+
+Errors trigger Quasar notifications with appropriate severity:
+
+```typescript
+Notify.create({
+  type: 'negative', // or 'warning' for client errors
+  message: 'Failed to load events. Please try again.',
+  position: 'top',
+  timeout: 5000,
+});
+```
+
+---
+
+## Performance & Monitoring
+
+### Operational Metrics
+
+The application tracks comprehensive operational metrics for all API requests:
+
+**Request Metrics**:
+- Total request count
+- Success/failure counts
+- Success rate (percentage)
+
+**Error Metrics**:
+- Network errors
+- Server errors (5xx)
+- Client errors (4xx)
+- Overall error rate
+
+**Performance Metrics**:
+- Average response time
+- P50 (median) response time
+- P95 response time (95th percentile)
+- P99 response time (99th percentile)
+
+**Per-Endpoint Metrics**:
+- Request volume per endpoint
+- Success/failure breakdown
+- Error rate
+- Average response time
+
+### Metrics Dashboard
+
+Access real-time metrics at `/debug` page:
+- Summary statistics (requests, success rate, error rate)
+- Response time percentiles
+- Error breakdown by type
+- Top 5 endpoints by volume
+- Export metrics as JSON
+- Reset metrics for testing
+
+### Performance Targets
+
+- **Normal**: < 3 seconds
+- **Slow warning**: 5-10 seconds (logged to console)
+- **Timeout**: 30 seconds (hard limit)
+
+Slow requests (>5s) are automatically logged:
+
+```javascript
+console.warn('Slow request detected', {
+  endpoint: '/events',
+  duration: 6234,
+  status: 200,
+});
+```
+
+### Metrics Export
+
+Metrics can be exported as JSON for external monitoring:
+
+```json
+{
+  "timestamp": "2025-10-02T14:30:00.000Z",
+  "requestMetrics": {
+    "totalRequests": 156,
+    "successfulRequests": 148,
+    "failedRequests": 8,
+    "successRate": 94.87
+  },
+  "performanceMetrics": {
+    "averageResponseTime": 245,
+    "p50ResponseTime": 210,
+    "p95ResponseTime": 450,
+    "p99ResponseTime": 890
+  }
+}
+```
+
+See [API Integration Guide](./api-integration.md#operational-metrics) for complete details.
+
+---
+
+## Additional Resources
+
+- **[API Integration Guide](./api-integration.md)** - Authentication, concurrent requests, metrics
+- **[Edge Case Testing](./edge-case-testing.md)** - Robustness testing results
+- **[Troubleshooting Guide](./troubleshooting.md)** - Common issues and solutions
+- **[Feature Specification](../specs/002-app-uses-my/spec.md)** - Requirements and design
+- **[GraphQL Schema](http://localhost:10014/graphql)** - GraphiQL interface (dev only)
+
+---
+
+## Production Endpoints (Legacy Reference)
+
+**Note**: For production, Events use `tmd/v2` while other content types may use `tmd/v3` or `wp/v2`:
+
+- `GET /tmd/v2/events` - Production events API
+- `GET /wp/v2/tmd_dj` - DJ posts
+- `GET /wp/v2/tmd_dj/{id}` - Specific DJ post
+- `GET /wp/v2/dj-category` - DJ categories
+
+This mixed-version approach for production should be confirmed by checking the frontend application's API service configurations for production builds.
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: October 2, 2025  
+**API Version**: TMD v3 (Development), TMD v2 (Production for Events)
         "slug": "item-slug",
         "date": "2024-01-01T00:00:00+00:00",
         "meta_field": "value",

@@ -16,23 +16,67 @@ This project implements a headless WordPress architecture where:
 
 ## Features
 
+### Core Functionality
 - **Modern DJ Management**: Complete DJ profiles with activity tracking,
   experience timelines, and linked events
 - **Event & Performance Tracking**: Comprehensive event listings with
   DJ-event relationships and performance statistics
-- **Authentication & Session Management**: Secure GraphQL-based authentication
-  with 30-day persistent sessions and progressive brute force protection
 - **Mobile-First Design**: Touch-optimized interactions with responsive
   layouts for all screen sizes
 - **Advanced Filtering**: Server-side search and filtering with optimized
   performance
 - **Dark Mode Support**: System preference detection with persistent settings
-- **Performance Optimized**: Efficient API calls, request cancellation, and
-  optimized data loading
-- **TypeScript Integration**: Full type safety with strict null checks and
-  ESLint compliance
 - **Full Accessibility**: WCAG 2.1 AA compliance with complete keyboard
   navigation and screen reader support
+
+### Authentication & Security
+- **JWT Token Authentication**: Secure GraphQL-based authentication
+- **Proactive Token Refresh**: Automatic refresh 5 minutes before expiration
+  - Prevents authentication interruptions
+  - Exponential backoff (1s → 2s → 4s)
+  - Maximum 3 refresh attempts
+  - Graceful degradation on failure
+- **Persistent Sessions**: 30-day sessions with "Remember Me"
+- **Automatic Re-login**: Up to 3 automatic re-login attempts on 401 errors
+- **Session Management**: localStorage (persistent) or sessionStorage (temporary)
+
+### API Integration & Performance
+- **TMD v3 REST API**: HAL-compliant JSON responses with embedded relationships
+- **Concurrent Request Support**: 5-20 parallel requests (HTTP/2 optimized)
+- **Request Handling**: 30-second timeout with automatic retry logic
+- **Error Classification**: Network, server (5xx), and client (4xx) error types
+- **Automatic Metrics Tracking**: Comprehensive operational monitoring
+- **Performance Optimization**: Request debouncing, caching, lazy loading
+
+### Operational Metrics (New)
+- **Real-time Request Tracking**: Total requests, success/failure counts
+- **Performance Monitoring**: 
+  - Response time percentiles (P50, P95, P99)
+  - Average response time
+  - Slow request detection (>5s)
+- **Error Analytics**:
+  - Network errors (connection failures)
+  - Server errors (5xx responses)
+  - Client errors (4xx responses)
+  - Error rate calculations
+- **Per-Endpoint Statistics**: Track volume, success rate, and performance by endpoint
+- **Rolling Time Window**: 1-hour metrics with automatic pruning
+- **Metrics Export**: JSON export for external monitoring and analysis
+- **Debug Dashboard**: Real-time metrics visualization at `/debug` route
+
+### Developer Experience
+- **TypeScript Integration**: Full type safety with strict null checks
+- **Code Quality**: ESLint + Prettier + Stylelint with strict rules
+- **Comprehensive Testing**: 
+  - 383+ unit tests with Vitest
+  - Integration tests for concurrent requests
+  - Edge case coverage (offline, errors, malformed responses)
+- **Debug Tools**: 
+  - Comprehensive debug page (`/debug`)
+  - API connection testing
+  - Token refresh testing
+  - Metrics dashboard with export
+  - Storage inspection
 
 ## Tech Stack
 
@@ -245,6 +289,60 @@ Password reset is handled by the main TMD WordPress site:
     - Example (DJ): `GET https://www.tangomarathons.com/wp-json/tmd/v3/djs`
     - Example (WordPress Core for DJs): `GET https://www.tangomarathons.com/wp-json/wp/v2/tmd_dj`
 
+**Authentication**: GraphQL endpoint at `/graphql` for login, token refresh, and user verification.
+
+For comprehensive API documentation including authentication flow, concurrent request handling, and operational metrics, see:
+- **[API Documentation](docs/api.md)** - Complete endpoint reference
+- **[API Integration Guide](docs/api-integration.md)** - Authentication, metrics, performance
+- **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and solutions
+
+### Configuration Options
+
+#### Environment Variables
+
+Create a `.env` file in the project root:
+
+```bash
+# API Configuration
+WORDPRESS_API_URL=http://localhost:10014/wp-json/tmd/v3
+GRAPHQL_ENDPOINT=http://localhost:10014/graphql
+
+# Optional: Debug settings
+DEBUG=api:*  # Enable verbose logging
+```
+
+#### Token Refresh Configuration
+
+The proactive token refresh system can be configured in `src/composables/useTokenRefresh.ts`:
+
+```typescript
+// Default configuration:
+const REFRESH_THRESHOLD_MINUTES = 5;  // Refresh 5 min before expiry
+const MAX_REFRESH_ATTEMPTS = 3;        // Max retry attempts
+const BACKOFF_DELAYS = [1000, 2000, 4000]; // Exponential backoff (ms)
+```
+
+#### Metrics Configuration
+
+Metrics collection settings in `src/composables/useMetrics.ts`:
+
+```typescript
+// Default configuration:
+const METRICS_WINDOW_MS = 60 * 60 * 1000; // 1-hour rolling window
+// Automatic pruning of old metrics
+// Per-endpoint tracking enabled by default
+```
+
+#### Axios Timeout
+
+Request timeout can be adjusted in `src/boot/axios.ts`:
+
+```typescript
+const api = axios.create({
+  timeout: 30000, // 30 seconds (default)
+});
+```
+
 ### Custom Post Types
 
 - `tmd_event` - Events and festivals
@@ -268,12 +366,21 @@ The API provides bidirectional relationships:
 
 ## Performance
 
-- **Optimized API Calls**: Request debouncing and cancellation
-- **Efficient Data Loading**: Server-side pagination and filtering
+### Response Time Targets
+- **Normal**: < 3 seconds
+- **Slow warning**: 5-10 seconds (logged automatically)
+- **Timeout**: 30 seconds (hard limit)
+
+### Optimization Strategies
+- **Concurrent Requests**: Use `Promise.all()` for parallel API calls (5-20 requests supported)
+- **Request Batching**: Fetch related data in single requests with `_embed=true`
+- **Efficient Pagination**: Server-side pagination with configurable `per_page`
+- **Metrics Tracking**: Real-time performance monitoring with percentile calculations
+- **Smart Caching**: Reduced API payloads with essential fields only (`meta_fields` parameter)
+- **Loading States**: Visual feedback with Quasar spinners and skeletons
 - **TypeScript Safety**: Strict null checks and proper error handling
 - **Responsive Design**: Mobile-first with touch optimization
-- **Smart Caching**: Reduced API payloads with essential fields only
-- **Loading States**: Visual feedback with Quasar spinners and skeletons
+- **Proactive Token Refresh**: Prevents authentication delays during active sessions
 
 ## Todo
 
