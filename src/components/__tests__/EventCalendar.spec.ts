@@ -146,8 +146,10 @@ describe('EventCalendar', () => {
   it('emits event-selected when an event is clicked', () => {
     // Test that events are properly displayed in the calendar
     const monthView = wrapper.find('.month-view');
-    expect(monthView.exists() || wrapper.find('[data-testid="month-calendar"]').exists()).toBe(true);
-    
+    expect(monthView.exists() || wrapper.find('[data-testid="month-calendar"]').exists()).toBe(
+      true,
+    );
+
     // Verify events prop is passed to calendar
     expect(wrapper.props('events')).toBeDefined();
   });

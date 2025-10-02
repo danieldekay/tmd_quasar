@@ -83,7 +83,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -101,7 +101,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -118,7 +118,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -137,7 +137,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -190,7 +190,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -209,7 +209,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -228,7 +228,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -249,7 +249,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -265,7 +265,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -300,7 +300,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };
@@ -319,7 +319,7 @@ describe('SessionIndicator component', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        displayName: 'Test User',
+        display_name: 'Test User',
         roles: ['subscriber'],
         isActive: true,
       };

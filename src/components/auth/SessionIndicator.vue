@@ -27,7 +27,7 @@
             <q-item>
               <q-item-section>
                 <q-item-label class="text-weight-bold">
-                  {{ user?.displayName || user?.username || 'User' }}
+                  {{ user?.display_name || user?.username || 'User' }}
                 </q-item-label>
                 <q-item-label caption>{{ user?.email || '' }}</q-item-label>
               </q-item-section>
@@ -116,20 +116,27 @@ import { useSession } from 'src/composables/useSession';
 
 // Composables
 const { isAuthenticated, user, logout } = useAuth();
-const { session, isValid, isExpiringSoon, getRemainingTime } = useSession();
+const { session, isValid, isExpiringSoon, remainingTime: sessionRemainingTime } = useSession();
 const router = useRouter();
 
 // Computed
 const displayName = computed(() => {
   if (!user.value) return '';
-  return user.value.displayName || user.value.username || 'User';
+  return user.value.display_name || user.value.username || 'User';
 });
 
 const userIcon = computed(() => {
   if (!user.value) return 'person';
 
   // Show admin icon for administrators
-  if (user.value.roles?.includes('administrator')) {
+  const userRoles = user.value.roles;
+  const roles = Array.isArray(userRoles)
+    ? userRoles
+    : (userRoles && 'nodes' in userRoles)
+    ? userRoles.nodes.map((r: { name: string }) => r.name)
+    : [];
+  
+  if (roles.includes('administrator')) {
     return 'admin_panel_settings';
   }
 
@@ -163,7 +170,7 @@ const statusText = computed(() => {
 
 const timeRemaining = computed(() => {
   if (!session.value) return '';
-  return getRemainingTime();
+  return sessionRemainingTime.value || '';
 });
 
 // Methods
