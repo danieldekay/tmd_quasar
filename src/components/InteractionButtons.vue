@@ -147,10 +147,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useAuthStore } from '../stores/authStore';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useInteractions } from '../composables/useInteractions';
 import type { ContentType } from '../services/types';
+import { useAuthStore } from '../stores/authStore';
 
 // Props
 interface Props {

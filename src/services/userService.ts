@@ -1,6 +1,6 @@
-import { BaseService, type BaseParams } from './baseService';
-import type { User } from '../stores/authStore';
 import type { AxiosRequestConfig } from 'axios';
+import type { User } from '../stores/authStore';
+import { type BaseParams, BaseService } from './baseService';
 
 // User interface for v3 API
 export interface UserProfile extends User {

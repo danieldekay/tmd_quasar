@@ -19,17 +19,17 @@
  * USES: Test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import CoupleDetails from '../CoupleDetails.vue';
 import {
   createMockCouple,
   createMockRouter,
-  mountWithQuasar,
-  mockDelayedResponse,
   createNetworkError,
+  mockDelayedResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import CoupleDetails from '../CoupleDetails.vue';
 
 // Mock the couple service
 vi.mock('src/services/coupleService', () => ({

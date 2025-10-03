@@ -1,11 +1,11 @@
-import { BaseService } from './baseService';
-import type { EventSeries } from './types';
 import type { BaseParams } from './baseService';
+import { BaseService } from './baseService';
 import {
-  ESSENTIAL_EVENT_SERIES_META_FIELDS,
   ALL_EVENT_SERIES_META_FIELDS,
+  ESSENTIAL_EVENT_SERIES_META_FIELDS,
   type EventSeriesSortOption,
 } from './eventConstants';
+import type { EventSeries } from './types';
 
 export interface EventSeriesParams extends BaseParams {
   country?: string;

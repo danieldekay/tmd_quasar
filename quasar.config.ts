@@ -1,8 +1,8 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-import { defineConfig } from '#q-app/wrappers';
 import dotenv from 'dotenv';
+import { defineConfig } from '#q-app/wrappers';
 
 // Load environment variables from .env file
 const envPath = process.env.APP_ENV ? `.env.${process.env.APP_ENV}` : '.env';
@@ -94,7 +94,7 @@ export default defineConfig((/* ctx */) => {
               useFlatConfig: true,
             },
           },
-          { server: false },
+          { server: true }, // ✅ Enable type checking in dev server
         ],
       ],
     },

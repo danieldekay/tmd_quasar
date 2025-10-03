@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useEventFilters, type EventFilters } from '../useEventFilters';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
+import { type EventFilters, useEventFilters } from '../useEventFilters';
 
 // Helper to set document.cookie
 const setCookie = (name: string, value: string, expiryDays: number) => {

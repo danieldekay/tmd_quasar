@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { EventSeries } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EventSeriesParams } from '../eventSeriesService';
+import type { EventSeries } from '../types';
 
 // Mock the base service
 vi.mock('../baseService', () => ({

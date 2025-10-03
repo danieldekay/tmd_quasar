@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Couple } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoupleParams } from '../coupleService';
+import type { Couple } from '../types';
 
 // Mock the base service
 vi.mock('../baseService', () => ({

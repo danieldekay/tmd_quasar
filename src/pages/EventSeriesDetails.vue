@@ -511,13 +511,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useCountries } from '../composables/useCountries';
+import { useFormatters } from '../composables/useFormatters';
 import { eventSeriesService } from '../services';
 import type { EventSeries } from '../services/types';
-import { useFormatters } from '../composables/useFormatters';
-import { useCountries } from '../composables/useCountries';
 
 const { formatDate } = useFormatters();
 const { getCountryName } = useCountries();
@@ -708,7 +708,7 @@ const openExternalLink = (url: string) => {
 const loadEventSeries = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
-  const id = parseInt(route.params.id as string);
+  const id = Number.parseInt(route.params.id as string);
 
   if (!id) {
     error.value = 'Invalid event series ID';

@@ -23,22 +23,22 @@
  * USES: Test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
-import EventSeriesPage from '../EventSeriesPage.vue';
 import {
+  clickQTableRow,
   createMockRouter,
-  mountWithQuasar,
-  getQTableProps,
+  createNetworkError,
   getQTableColumns,
+  getQTablePagination,
+  getQTableProps,
   getQTableRows,
   isQTableLoading,
-  clickQTableRow,
-  getQTablePagination,
   mockDelayedResponse,
-  createNetworkError,
   mockErrorResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import EventSeriesPage from '../EventSeriesPage.vue';
 
 // Mock data factory for Event Series
 const createMockEventSeries = (id: number) => ({

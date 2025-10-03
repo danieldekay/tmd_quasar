@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useApiStatus } from '../composables/useApiStatus';
 
 interface Props {
@@ -73,9 +73,7 @@ interface Props {
   retryLabel?: string | undefined;
 }
 
-interface Emits {
-  (e: 'retry'): void;
-}
+type Emits = (e: 'retry') => void;
 
 const props = withDefaults(defineProps<Props>(), {
   show: true,

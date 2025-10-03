@@ -1,9 +1,9 @@
-import { ref, computed, watch } from 'vue';
-import { useAuthStore } from '../stores/authStore';
-import { interactionService } from '../services/interactionService';
-import { useInteractionCache } from './useInteractionCache';
-import type { InteractionType, ContentType, UserInteraction } from '../services/types';
 import { Notify } from 'quasar';
+import { computed, ref, watch } from 'vue';
+import { interactionService } from '../services/interactionService';
+import type { ContentType, InteractionType, UserInteraction } from '../services/types';
+import { useAuthStore } from '../stores/authStore';
+import { useInteractionCache } from './useInteractionCache';
 
 export interface InteractionState {
   liked: boolean;
@@ -89,7 +89,7 @@ export function useInteractions(targetId: number, targetType: ContentType) {
         interaction_type: apiInteraction.interaction_type,
         target_post_id:
           typeof apiInteraction.target_post_id === 'string'
-            ? parseInt(apiInteraction.target_post_id, 10)
+            ? Number.parseInt(apiInteraction.target_post_id, 10)
             : apiInteraction.target_post_id,
         target_post_type: apiInteraction.target_post_type,
         interaction_date: apiInteraction.interaction_date,
@@ -143,7 +143,7 @@ export function useInteractions(targetId: number, targetType: ContentType) {
         interaction_type: response.interaction_type,
         target_post_id:
           typeof response.target_post_id === 'string'
-            ? parseInt(response.target_post_id, 10)
+            ? Number.parseInt(response.target_post_id, 10)
             : response.target_post_id,
         target_post_type: response.target_post_type,
         interaction_date: response.interaction_date,

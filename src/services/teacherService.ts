@@ -1,15 +1,15 @@
-import { BaseService } from './baseService';
-import type { Teacher } from './types';
 import type { BaseParams } from './baseService';
+import { BaseService } from './baseService';
 import {
-  TEACHER_ROLES,
-  TEACHER_GENDERS,
-  ESSENTIAL_TEACHER_META_FIELDS,
   ALL_TEACHER_META_FIELDS,
-  type TeacherRole,
+  ESSENTIAL_TEACHER_META_FIELDS,
+  TEACHER_GENDERS,
+  TEACHER_ROLES,
   type TeacherGender,
+  type TeacherRole,
   type TeacherSortOption,
 } from './eventConstants';
+import type { Teacher } from './types';
 
 export interface TeacherParams extends BaseParams {
   role?: TeacherRole;

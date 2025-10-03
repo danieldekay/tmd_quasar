@@ -3,8 +3,8 @@
  * Specialized utility for building V3 API meta_filters with type safety
  */
 
-import type { V3MetaFilters, V3EventParams } from './v3ApiTypes';
 import { EVENT_FEATURES } from './eventConstants';
+import type { V3EventParams, V3MetaFilters } from './v3ApiTypes';
 
 /**
  * Meta filter builder class for V3 API

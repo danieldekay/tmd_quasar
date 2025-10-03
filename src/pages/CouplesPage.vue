@@ -230,12 +230,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { coupleService, type Couple } from '../services';
-import { useFormatters } from '../composables/useFormatters';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useCountries } from '../composables/useCountries';
+import { useFormatters } from '../composables/useFormatters';
+import { type Couple, coupleService } from '../services';
 
 const router = useRouter();
 const $q = useQuasar();

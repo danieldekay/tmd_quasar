@@ -22,24 +22,24 @@
  * REFACTORED: Now uses test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
-import EventList from '../EventList.vue';
 import {
+  clickQTableRow,
   createMockEventList,
   createMockEventsResponse,
   createMockRouter,
-  mountWithQuasar,
-  getQTableProps,
+  createNetworkError,
   getQTableColumns,
+  getQTablePagination,
+  getQTableProps,
   getQTableRows,
   isQTableLoading,
-  clickQTableRow,
-  getQTablePagination,
   mockDelayedResponse,
-  createNetworkError,
   mockErrorResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import EventList from '../EventList.vue';
 
 // Mock the service module
 vi.mock('src/services/eventListService', () => ({

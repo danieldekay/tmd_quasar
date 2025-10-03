@@ -425,17 +425,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { api } from '../boot/axios';
-import { useAuthStore } from '../stores/authStore';
 import {
+  exportMetricsJSON,
   getMetrics,
   getTopEndpoints,
   resetMetrics as resetMetricsService,
-  exportMetricsJSON,
 } from '../services/metricsService';
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();

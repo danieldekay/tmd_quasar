@@ -30,7 +30,7 @@ export const useFormatters = () => {
     } else if (typeof value === 'number') {
       timestamp = value;
     } else {
-      timestamp = NaN;
+      timestamp = Number.NaN;
     }
 
     if (Number.isNaN(timestamp)) return '';
@@ -59,7 +59,7 @@ export const useFormatters = () => {
     } else if (typeof value === 'number') {
       timestamp = value;
     } else {
-      timestamp = NaN;
+      timestamp = Number.NaN;
     }
 
     if (Number.isNaN(timestamp)) return '';

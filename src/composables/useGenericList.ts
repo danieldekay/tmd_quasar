@@ -1,4 +1,4 @@
-import { ref, computed, watch, nextTick } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useApiStatus } from './useApiStatus';
 
 export interface GenericListState<T = unknown> {

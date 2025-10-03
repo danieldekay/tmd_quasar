@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
 import ListEmptyState from '../ListEmptyState.vue';
 
 // Define functional stubs for Quasar components
@@ -17,9 +17,9 @@ const QCardSectionStub = {
 const QIconStub = {
   name: 'QIcon',
   props: ['name', 'color', 'size'],
-  template: '<i :class="`mocked-q-icon icon-${name} color-${color}`" :style="`font-size: ${size}`">{{ name }}</i>',
+  template:
+    '<i :class="`mocked-q-icon icon-${name} color-${color}`" :style="`font-size: ${size}`">{{ name }}</i>',
 };
-
 
 describe('ListEmptyState.vue', () => {
   const globalStubs = {

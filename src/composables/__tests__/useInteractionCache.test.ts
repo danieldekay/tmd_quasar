@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useInteractionCache } from '../useInteractionCache';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserInteraction } from '../../services/types';
+import { useInteractionCache } from '../useInteractionCache';
 
 // Mock the auth store
 vi.mock('../../stores/authStore', () => ({

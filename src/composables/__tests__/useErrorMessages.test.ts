@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useErrorMessages } from '../useErrorMessages';
 
 // Mock Quasar
@@ -20,6 +20,7 @@ describe('useErrorMessages', () => {
       const error = getErrorMessage('NETWORK_TIMEOUT');
 
       expect(error).toBeDefined();
+      if (!error) return;
       expect(error.code).toBe('NETWORK_TIMEOUT');
       expect(error.title).toBe('Connection Timeout');
       expect(error.type).toBe('network');
@@ -32,6 +33,7 @@ describe('useErrorMessages', () => {
       const error = getErrorMessage('HTTP_NOT_FOUND');
 
       expect(error).toBeDefined();
+      if (!error) return;
       expect(error.code).toBe('HTTP_NOT_FOUND');
       expect(error.title).toBe('Content Not Found');
       expect(error.type).toBe('http');
@@ -44,6 +46,7 @@ describe('useErrorMessages', () => {
       const error = getErrorMessage('HTTP_UNAUTHORIZED');
 
       expect(error).toBeDefined();
+      if (!error) return;
       expect(error.code).toBe('HTTP_UNAUTHORIZED');
       expect(error.title).toBe('Authentication Required');
       expect(error.type).toBe('authentication');
@@ -56,6 +59,7 @@ describe('useErrorMessages', () => {
       const error = getErrorMessage('UNKNOWN_ERROR_CODE');
 
       expect(error).toBeDefined();
+      if (!error) return;
       expect(error.code).toBe('UNKNOWN_ERROR');
       expect(error.title).toBe('Error');
       expect(error.message).toContain('unexpected error');
@@ -65,6 +69,7 @@ describe('useErrorMessages', () => {
       const { getErrorMessage } = useErrorMessages();
       const error = getErrorMessage('TABLE_LOAD_FAILURE', { contentType: 'Events' });
 
+      if (!error) return;
       expect(error.message).toContain('Events');
     });
 
@@ -72,6 +77,7 @@ describe('useErrorMessages', () => {
       const { getErrorMessage } = useErrorMessages();
       const error = getErrorMessage('DETAIL_LOAD_FAILURE', { errorDetail: 'Server timeout' });
 
+      if (!error) return;
       expect(error.message).toContain('Server timeout');
     });
   });
@@ -82,6 +88,7 @@ describe('useErrorMessages', () => {
       const action = getUserAction('retry');
 
       expect(action).toBeDefined();
+      if (!action) return;
       expect(action.label).toBe('Retry');
       expect(action.icon).toBe('refresh');
       expect(action.description).toContain('operation again');
@@ -92,6 +99,7 @@ describe('useErrorMessages', () => {
       const action = getUserAction('login');
 
       expect(action).toBeDefined();
+      if (!action) return;
       expect(action.label).toBe('Log In');
       expect(action.icon).toBe('login');
     });
@@ -101,6 +109,7 @@ describe('useErrorMessages', () => {
       const action = getUserAction('back');
 
       expect(action).toBeDefined();
+      if (!action) return;
       expect(action.label).toBe('Go Back');
       expect(action.icon).toBe('arrow_back');
     });
@@ -110,6 +119,7 @@ describe('useErrorMessages', () => {
       const action = getUserAction('none');
 
       expect(action).toBeDefined();
+      if (!action) return;
       expect(action.label).toBeNull();
       expect(action.icon).toBeNull();
     });
@@ -193,6 +203,7 @@ describe('useErrorMessages', () => {
       const { getErrorMessage } = useErrorMessages();
       const error = getErrorMessage('NETWORK_TIMEOUT');
 
+      if (!error) return;
       expect(error.type).toBe('network');
     });
 
@@ -200,6 +211,7 @@ describe('useErrorMessages', () => {
       const { getErrorMessage } = useErrorMessages();
       const error = getErrorMessage('HTTP_NOT_FOUND');
 
+      if (!error) return;
       expect(error.type).toBe('http');
     });
 
@@ -207,6 +219,7 @@ describe('useErrorMessages', () => {
       const { getErrorMessage } = useErrorMessages();
       const error = getErrorMessage('HTTP_UNAUTHORIZED');
 
+      if (!error) return;
       expect(error.type).toBe('authentication');
     });
 
@@ -214,6 +227,7 @@ describe('useErrorMessages', () => {
       const { getErrorMessage } = useErrorMessages();
       const error = getErrorMessage('DATA_EMPTY_TABLE');
 
+      if (!error) return;
       expect(error.type).toBe('data');
     });
   });

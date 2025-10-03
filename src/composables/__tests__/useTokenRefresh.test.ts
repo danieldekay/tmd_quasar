@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTokenRefresh } from '../useTokenRefresh';
 
 /**
  * Test suite for proactive JWT token refresh functionality (FR-003)
- * 
+ *
  * These tests verify:
  * - Token refresh triggered 5 minutes before expiration
  * - Refresh updates token and expiresAt timestamp
@@ -11,7 +11,7 @@ import { useTokenRefresh } from '../useTokenRefresh';
  * - Max 3 refresh attempts before requiring re-login
  * - Concurrent refresh attempts return same promise
  * - isRefreshing flag prevents duplicate refreshes
- * 
+ *
  * Expected: FAIL (useTokenRefresh composable doesn't exist yet)
  */
 

@@ -628,15 +628,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { eventDetailsService as eventService } from '../services';
-import type { EventDetails, DJ, Teacher } from '../services/types';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import DJCard from '../components/DJCard.vue';
 import InteractionButtons from '../components/InteractionButtons.vue';
 import { useFormatters } from '../composables/useFormatters';
 import { useInteractions } from '../composables/useInteractions';
+import { eventDetailsService as eventService } from '../services';
+import type { DJ, EventDetails, Teacher } from '../services/types';
 
 defineOptions({ name: 'EventDetails' });
 
@@ -709,7 +709,7 @@ const getOrdinal = (n: number): string => {
 const editionOrdinal = computed(() => {
   const raw = event.value?.edition;
   if (!raw) return '';
-  const num = parseInt(raw, 10);
+  const num = Number.parseInt(raw, 10);
   return isNaN(num) ? raw : getOrdinal(num);
 });
 
@@ -1333,7 +1333,7 @@ const extractEventSeriesIdFromLink = (href: string): number | null => {
   // Extract event series ID from URLs like:
   // http://localhost:10014/wp-json/tmd/v4/event-series/51405
   const match = href.match(/\/event-series\/(\d+)/);
-  return match && match[1] ? parseInt(match[1], 10) : null;
+  return match && match[1] ? Number.parseInt(match[1], 10) : null;
 };
 
 // Load event data

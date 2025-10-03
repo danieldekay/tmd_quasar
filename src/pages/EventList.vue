@@ -456,16 +456,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { eventListService, type EventListItem } from '../services';
-import type { PaginatedEventsResponse } from '../services/eventListService';
-import { useFormatters } from '../composables/useFormatters';
-import { useCountries } from '../composables/useCountries';
-import { useGenericList, type ListFilters } from '../composables/useGenericList';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import EventCalendar from '../components/EventCalendar.vue';
+import { useCountries } from '../composables/useCountries';
 import type { CalendarEvent } from '../composables/useEventCalendar';
+import { useFormatters } from '../composables/useFormatters';
+import { type ListFilters, useGenericList } from '../composables/useGenericList';
+import { type EventListItem, eventListService } from '../services';
+import type { PaginatedEventsResponse } from '../services/eventListService';
 
 interface EventListFilters extends ListFilters {
   country: string | null;

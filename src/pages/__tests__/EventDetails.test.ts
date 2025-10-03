@@ -19,18 +19,18 @@
  * USES: Test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import EventDetails from '../EventDetails.vue';
 import {
   createMockEvent,
   createMockRouter,
-  mountWithQuasar,
-  mockDelayedResponse,
   createNetworkError,
+  mockDelayedResponse,
   mockErrorResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import EventDetails from '../EventDetails.vue';
 
 // Mock the event details service
 vi.mock('src/services/eventDetailsService', () => ({

@@ -3,9 +3,9 @@
  * Provides reactive session state and lifecycle management
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { sessionService } from 'src/services/sessionService';
 import type { Session, User } from 'src/services/types';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 /**
  * Session management composable

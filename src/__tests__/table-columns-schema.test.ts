@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import tableColumns from '../../specs/003-content-is-shown/contracts/table-columns.json';
 
 describe('Table Columns Schema Validation', () => {

@@ -1,7 +1,6 @@
- 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { authService } from '../authService';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LoginCredentials } from '../../stores/authStore';
+import { authService } from '../authService';
 
 vi.mock('../../boot/apollo', () => ({
   apolloClient: {

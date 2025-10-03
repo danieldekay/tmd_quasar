@@ -1,5 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { requireManageOptions, requireAuth, redirectIfAuthenticated } from './guards';
+import { redirectIfAuthenticated, requireAuth, requireManageOptions } from './guards';
 
 const routes: RouteRecordRaw[] = [
   {

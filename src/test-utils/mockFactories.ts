@@ -9,8 +9,34 @@
  *   const mockEvents = createMockEventList(5); // Creates 5 mock events
  */
 
-import type { DJ, Teacher, Couple, EventSeries } from 'src/services/types';
+import type {
+  BaseEvent,
+  Couple,
+  DJ,
+  EventListItem,
+  EventSeries,
+  EventTaxonomies,
+  Teacher,
+} from 'src/services/types';
 import type { PaginatedEventsResponse } from '../services/eventListService';
+
+/**
+ * Create a minimal embedded event (for _embedded arrays)
+ */
+export function createMockEmbeddedEvent(overrides: Partial<BaseEvent> = {}): BaseEvent {
+  const defaults: BaseEvent = {
+    id: 100,
+    title: 'Embedded Event',
+    date: '2024-05-01',
+    link: 'https://example.com/event/100',
+    start_date: '2024-05-01',
+    end_date: '2024-05-05',
+    registration_start_date: '2024-03-01',
+    edition: '1',
+  };
+
+  return { ...defaults, ...overrides };
+}
 
 /**
  * Create a mock event with sensible defaults

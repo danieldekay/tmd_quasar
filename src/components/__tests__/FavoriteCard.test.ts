@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('FavoriteCard Helper Functions', () => {
   // Test the HTML stripping logic

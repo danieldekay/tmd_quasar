@@ -1,11 +1,11 @@
-import { BaseService } from './baseService';
-import type { Couple } from './types';
 import type { BaseParams } from './baseService';
+import { BaseService } from './baseService';
 import {
-  ESSENTIAL_COUPLE_META_FIELDS,
   ALL_COUPLE_META_FIELDS,
   type CoupleSortOption,
+  ESSENTIAL_COUPLE_META_FIELDS,
 } from './eventConstants';
+import type { Couple } from './types';
 
 export interface CoupleParams extends BaseParams {
   leader_id?: number;

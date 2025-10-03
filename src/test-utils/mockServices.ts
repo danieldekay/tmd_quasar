@@ -9,11 +9,11 @@
  *   mockEventService.getEvents.mockResolvedValue({ events: [], totalCount: 0 });
  */
 
-import { vi } from 'vitest';
 import type { Mock } from 'vitest';
-import type { EnhancedEventParams, PaginatedEventsResponse } from '../services/eventListService';
+import { vi } from 'vitest';
 import type { BaseParams } from '../services/baseService';
-import { createMockEventsResponse, createMockEventList } from './mockFactories';
+import type { EnhancedEventParams, PaginatedEventsResponse } from '../services/eventListService';
+import { createMockEventList, createMockEventsResponse } from './mockFactories';
 
 /**
  * Create a properly typed mock eventListService

@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 export interface TablePaginationOptions {
   initialPage?: number;

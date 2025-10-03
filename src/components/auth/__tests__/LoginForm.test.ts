@@ -3,9 +3,9 @@
  * Tests for login form UI component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
-import { Quasar, QBtn, QInput, QForm, QBanner } from 'quasar';
+import { flushPromises, mount } from '@vue/test-utils';
+import { QBanner, QBtn, QForm, QInput, Quasar } from 'quasar';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginForm from '../LoginForm.vue';
 
 describe('LoginForm component', () => {
@@ -91,9 +91,8 @@ describe('LoginForm component', () => {
       // Set values through exposed refs
 
       if (wrapper.vm) {
-         
         (wrapper.vm as any).username = 'testuser';
-         
+
         (wrapper.vm as any).password = 'password123';
       }
 
@@ -112,11 +111,10 @@ describe('LoginForm component', () => {
 
       // Set values through exposed refs
       if (wrapper.vm) {
-         
         (wrapper.vm as any).username = 'testuser';
-         
+
         (wrapper.vm as any).password = 'password123';
-         
+
         (wrapper.vm as any).remember = true;
       }
 
@@ -128,7 +126,7 @@ describe('LoginForm component', () => {
       await flushPromises();
 
       expect(wrapper.emitted('submit')).toBeTruthy();
-       
+
       const emittedData = wrapper.emitted('submit')?.[0]?.[0] as any;
       expect(emittedData).toEqual({
         username: 'testuser',
@@ -153,7 +151,6 @@ describe('LoginForm component', () => {
 
       // Set password
       if (wrapper.vm) {
-         
         (wrapper.vm as any).password = 'wrongpassword';
       }
       await wrapper.vm.$nextTick();
@@ -163,7 +160,7 @@ describe('LoginForm component', () => {
       await flushPromises();
 
       // Password should be cleared
-       
+
       expect((wrapper.vm as any).password).toBe('');
     });
   });

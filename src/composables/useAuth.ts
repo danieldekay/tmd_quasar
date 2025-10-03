@@ -3,9 +3,9 @@
  * Provides reactive authentication state and methods
  */
 
-import { computed } from 'vue';
-import { useAuthStore } from 'src/stores/authStore';
 import { storeToRefs } from 'pinia';
+import { useAuthStore } from 'src/stores/authStore';
+import { computed } from 'vue';
 
 /**
  * Authentication composable

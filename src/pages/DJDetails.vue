@@ -362,12 +362,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { djService } from '../services';
-import type { DJ, BaseEvent } from '../services/types';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useFormatters } from '../composables/useFormatters';
+import { djService } from '../services';
+import type { BaseEvent, DJ } from '../services/types';
 
 defineOptions({ name: 'DJDetails' });
 
@@ -543,7 +543,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_marathons_since || '',
       icon: 'run_circle',
       color: 'red',
-      year: parseInt(dj.value?.tmd_dj_activity_marathons_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_marathons_since || '0'),
     },
     {
       show:
@@ -553,7 +553,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_festivals_since || '',
       icon: 'celebration',
       color: 'purple',
-      year: parseInt(dj.value?.tmd_dj_activity_festivals_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_festivals_since || '0'),
     },
     {
       show:
@@ -563,7 +563,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_encuentros_since || '',
       icon: 'groups',
       color: 'blue',
-      year: parseInt(dj.value?.tmd_dj_activity_encuentros_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_encuentros_since || '0'),
     },
     {
       show: dj.value?.tmd_dj_activity_milongas === '1' && dj.value?.tmd_dj_activity_milongas_since,
@@ -572,7 +572,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_milongas_since || '',
       icon: 'music_note',
       color: 'teal',
-      year: parseInt(dj.value?.tmd_dj_activity_milongas_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_milongas_since || '0'),
     },
     {
       show:
@@ -583,7 +583,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_milongas_travel_since || '',
       icon: 'travel_explore',
       color: 'green',
-      year: parseInt(dj.value?.tmd_dj_activity_milongas_travel_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_milongas_travel_since || '0'),
     },
   ];
 

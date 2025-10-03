@@ -349,15 +349,45 @@ Organize files in this order:
 
 Before submitting code:
 
-- [ ] Run `pnpm lint` and fix all errors
+- [ ] Run `pnpm check:biome` to auto-fix formatting, imports, and lint issues
+- [ ] Run `pnpm type-check` and fix all TypeScript errors
+- [ ] Run `pnpm lint` (ESLint for Vue-specific rules, Biome takes precedence)
 - [ ] Write tests for new functionality
-- [ ] Ensure TypeScript types are correct
+- [ ] Run `pnpm test:run` and ensure all tests pass
+- [ ] Ensure TypeScript types are correct (no `any`)
 - [ ] Use Quasar components when available
 - [ ] Follow naming conventions
 - [ ] Implement proper error handling
 - [ ] Add loading states for async operations
 - [ ] Test on different screen sizes
 - [ ] Update documentation if needed
+
+### Quality Commands
+
+**Terminal Commands:**
+- `pnpm check:biome` - Format + lint with auto-fix (⭐ PRIMARY - run before commits)
+- `pnpm ci:biome` - Check without auto-fix (CI/CD mode)
+- `pnpm type-check` - Check TypeScript types without emitting files
+- `pnpm type-check:watch` - Watch mode for continuous type checking
+- `pnpm lint` - Run ESLint (Vue-specific rules, secondary to Biome)
+- `pnpm format:biome` - Format code only with Biome
+- `pnpm lint:biome` - Lint code only with Biome
+- `pnpm test:run` - Run all tests once
+- `pnpm dev` - Now includes real-time TypeScript checking in browser!
+
+**VS Code Tasks** (Press `Cmd+Shift+P` → "Run Task"):
+- **Quality: Full Check (Biome)** - Type-check + Biome + Tests (⭐ RECOMMENDED)
+- **Quality: Pre-Commit (Biome)** - Biome auto-fix + type-check + tests
+- **Quality: Full Check** - Type-check + ESLint + Tests (legacy)
+- **Biome: Check All (Lint + Format)** - Run Biome formatting and linting
+- **TypeScript: Check Types** - Quick type validation
+- **Dev: Start Server** - Start dev server with live type checking
+- See `.vscode/TASKS.md` and `BIOME_SETUP.md` for complete documentation
+
+**Package Manager:**
+- Use `pnpm@10.18.0` exclusively (enforced via `corepack use pnpm@10.18.0`)
+- Never use `npm` or `yarn`
+- Run `pnpm install` for dependencies
 
 ## Authentication Development Guidelines
 

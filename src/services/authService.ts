@@ -1,11 +1,11 @@
 import { apolloClient } from '../boot/apollo';
-import type { User, AuthResponse, LoginCredentials } from '../stores/authStore';
+import type { AuthResponse, LoginCredentials, User } from '../stores/authStore';
 import {
-  LOGIN_MUTATION,
-  REFRESH_TOKEN_MUTATION,
   GET_CURRENT_USER_QUERY,
+  LOGIN_MUTATION,
   type LoginInput,
   type LoginResponse,
+  REFRESH_TOKEN_MUTATION,
   type RefreshTokenInput,
   type RefreshTokenResponse,
 } from './graphql/auth';
@@ -37,7 +37,7 @@ export class AuthService {
         token: authToken,
         refreshToken,
         user: {
-          id: parseInt(user.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
+          id: Number.parseInt(user.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
           name: user.name,
           email: user.email || '',
           roles: [], // Will be populated later if needed
@@ -140,7 +140,7 @@ export class AuthService {
 
       const { viewer } = data;
       return {
-        id: parseInt(viewer.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
+        id: Number.parseInt(viewer.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
         name: viewer.name,
         email: viewer.email || '',
         roles: viewer.roles?.nodes?.map((role: { name: string }) => role.name) || [],

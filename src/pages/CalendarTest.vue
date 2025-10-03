@@ -24,8 +24,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import EventCalendar from '../components/EventCalendar.vue';
-import type { EventListItem } from '../services/types';
 import type { CalendarEvent } from '../composables/useEventCalendar';
+import type { EventListItem } from '../services/types';
 
 // Test events with future dates
 const testEvents = ref<EventListItem[]>([

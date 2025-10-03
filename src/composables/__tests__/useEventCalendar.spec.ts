@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useEventCalendar } from '../useEventCalendar';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { EventListItem } from '../../services/types';
+import { useEventCalendar } from '../useEventCalendar';
 
 // Mock useFormatters
 vi.mock('../useFormatters', () => ({

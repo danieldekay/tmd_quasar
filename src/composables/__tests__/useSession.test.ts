@@ -3,7 +3,7 @@
  * Tests for session management composable
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useSession } from '../useSession';
 
 describe('useSession composable', () => {

@@ -1,5 +1,5 @@
 import { api } from 'boot/axios';
-import type { InteractionType, ContentType } from './types';
+import type { ContentType, InteractionType } from './types';
 
 export interface InteractionServiceResponse {
   id: number;

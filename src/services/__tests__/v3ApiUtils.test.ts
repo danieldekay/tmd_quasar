@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  isFeatureAvailable,
-  safeString,
-  getString,
-  extractTaxonomies,
-  parsePriceInfo,
-  parseLocationInfo,
   calculateEventDuration,
+  extractTaxonomies,
+  getString,
   isDateToday,
-  isEventWithinDays,
   isEventToday,
+  isEventWithinDays,
+  isFeatureAvailable,
+  parseLocationInfo,
+  parsePriceInfo,
+  safeString,
 } from '../v3ApiUtils';
 
 describe('v3ApiUtils', () => {

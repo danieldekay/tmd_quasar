@@ -129,11 +129,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useFormatters } from '../composables/useFormatters';
 import { teacherService } from '../services';
 import type { Teacher } from '../services/types';
-import { useFormatters } from '../composables/useFormatters';
 
 const { formatDate } = useFormatters();
 const route = useRoute();
@@ -143,7 +143,7 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 
 const loadTeacher = async () => {
-  const id = parseInt(route.params.id as string);
+  const id = Number.parseInt(route.params.id as string);
   if (!id) {
     error.value = 'Invalid teacher ID';
     isLoading.value = false;

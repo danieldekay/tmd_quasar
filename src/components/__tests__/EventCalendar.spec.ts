@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar } from 'quasar';
+import { beforeEach, describe, expect, it } from 'vitest';
 import EventCalendar from '../../components/EventCalendar.vue';
 import type { EventListItem } from '../../services/types';
 

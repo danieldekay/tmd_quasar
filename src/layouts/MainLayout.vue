@@ -235,15 +235,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionMonitor } from '../composables/useSessionMonitor';
-import { useInteractionCache } from '../composables/useInteractionCache';
+import { onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+// @ts-expect-error
 import pkg from '../../package.json';
+import { useInteractionCache } from '../composables/useInteractionCache';
+import { useSessionMonitor } from '../composables/useSessionMonitor';
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();

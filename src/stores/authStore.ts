@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia';
-import { ref, computed, readonly } from 'vue';
+import { computed, readonly, ref } from 'vue';
+import { useTokenRefresh } from '../composables/useTokenRefresh';
 import { authService } from '../services/authService';
 import { sessionService } from '../services/sessionService';
 import type { User as ImportedUser, Session } from '../services/types';
 import {
-  setJWTToken,
-  getJWTToken,
-  setRefreshToken,
-  getRefreshToken,
   clearJWTTokens,
+  getJWTToken,
+  getRefreshToken,
+  setJWTToken,
+  setRefreshToken,
 } from '../utils/cookies';
 import { getJwtExpiration } from '../utils/jwt';
-import { useTokenRefresh } from '../composables/useTokenRefresh';
 
 // Re-export User type for backward compatibility
 export interface User {
@@ -168,7 +168,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.refreshToken) {
         setRefreshToken(response.refreshToken, credentials.remember);
         sessionService.saveRefreshToken(response.refreshToken);
-        
+
         // Initialize proactive token refresh
         const expiresAt = new Date(Date.now() + (response.expires_in || 30 * 60) * 1000);
         initializeTokenState(response.token, response.refreshToken, expiresAt);

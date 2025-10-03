@@ -19,17 +19,18 @@
  * USES: Test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import DJDetails from '../DJDetails.vue';
 import {
   createMockDJ,
+  createMockEmbeddedEvent,
   createMockRouter,
-  mountWithQuasar,
-  mockDelayedResponse,
   createNetworkError,
+  mockDelayedResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import DJDetails from '../DJDetails.vue';
 
 // Mock the DJ service
 vi.mock('src/services/djService', () => ({
@@ -158,12 +159,12 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
         id: 1,
         _embedded: {
           events: [
-            {
+            createMockEmbeddedEvent({
               id: 100,
               title: 'Embedded Event',
               start_date: '2024-05-01',
               end_date: '2024-05-05',
-            },
+            }),
           ],
         },
       });
@@ -180,12 +181,12 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
         id: 1,
         _embedded: {
           events: [
-            {
+            createMockEmbeddedEvent({
               id: 100,
               title: 'DJ Event 1',
               start_date: '2024-05-01',
               end_date: '2024-05-05',
-            },
+            }),
           ],
         },
       });
@@ -202,7 +203,13 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
 
   describe('FR-018: Loading Indicators', () => {
     it('should show loading state while fetching DJ data', async () => {
-      mockGetDJ.mockImplementation(() => mockDelayedResponse(createMockDJ({ id: 1 }), 100));
+      // Create a delayed promise manually instead of using mockDelayedResponse incorrectly
+      mockGetDJ.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve(createMockDJ({ id: 1 })), 100);
+          }),
+      );
 
       const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
 

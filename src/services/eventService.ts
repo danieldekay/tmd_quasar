@@ -1,5 +1,5 @@
-import { eventListService } from './eventListService';
 import { eventDetailsService } from './eventDetailsService';
+import { eventListService } from './eventListService';
 
 /**
  * Legacy aggregate service combining the specialised list/detail services.

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { api } from '../boot/axios';
 
 export interface ApiError {
@@ -181,7 +181,7 @@ export const useApiStatus = () => {
 
         // Wait before retry
         if (attempt < retries) {
-          await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
         }
       }
     }

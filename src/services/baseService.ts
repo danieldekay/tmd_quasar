@@ -1,5 +1,5 @@
-import { api } from '../boot/axios';
 import type { AxiosRequestConfig } from 'axios';
+import { api } from '../boot/axios';
 import { useApiStatus } from '../composables/useApiStatus';
 
 // Get API status instance for error handling
@@ -107,8 +107,8 @@ export class BaseService<T = Record<string, unknown>> {
     currentPage = 1,
   ) {
     // First try to extract from WordPress REST API headers (v4 API)
-    const totalCount = parseInt(headers['x-wp-total'] || '0', 10);
-    const totalPages = parseInt(headers['x-wp-totalpages'] || '1', 10);
+    const totalCount = Number.parseInt(headers['x-wp-total'] || '0', 10);
+    const totalPages = Number.parseInt(headers['x-wp-totalpages'] || '1', 10);
 
     if (totalCount > 0) {
       return {

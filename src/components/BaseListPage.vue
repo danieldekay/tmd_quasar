@@ -207,9 +207,9 @@
 </template>
 
 <script setup lang="ts">
-import ListPageHeader from './ListPageHeader.vue';
-import ListFilters from './ListFilters.vue';
 import ListEmptyState from './ListEmptyState.vue';
+import ListFilters from './ListFilters.vue';
+import ListPageHeader from './ListPageHeader.vue';
 import OfflineMessage from './OfflineMessage.vue';
 
 interface Props {

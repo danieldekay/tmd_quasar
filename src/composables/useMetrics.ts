@@ -1,35 +1,35 @@
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import type {
-  OperationalMetrics,
-  RequestMetrics,
-  ErrorMetrics,
-  PerformanceMetrics,
-  TimeWindow,
-  RequestRecord,
   EndpointStats,
+  ErrorMetrics,
   ExportedMetrics,
+  OperationalMetrics,
+  PerformanceMetrics,
+  RequestMetrics,
+  RequestRecord,
+  TimeWindow,
 } from '../types/metrics';
 
 /**
  * Composable for operational metrics tracking (FR-025)
- * 
+ *
  * Tracks API performance, error rates, and usage patterns with:
  * - Request count (total, success, failure)
  * - Error rate calculation
  * - Response time percentiles (P50, P95, P99)
  * - Per-endpoint statistics
  * - Rolling 1-hour time window
- * 
+ *
  * @example
  * ```typescript
  * const { metrics, recordRequest } = useMetrics();
- * 
+ *
  * // Record a successful request
  * recordRequest('/events', 150, true);
- * 
+ *
  * // Record a failed request
  * recordRequest('/djs', 500, false, 500, 'server');
- * 
+ *
  * // Get current metrics
  * console.log(metrics.value.performanceMetrics.p95ResponseTime);
  * ```
@@ -45,7 +45,7 @@ const endpointMap = ref<Record<string, EndpointStats>>({});
 
 /**
  * Calculate percentile from sorted array of numbers
- * 
+ *
  * @param sortedValues - Array of numbers sorted in ascending order
  * @param percentile - Percentile to calculate (0-100)
  * @returns Percentile value
@@ -67,7 +67,7 @@ const calculatePercentile = (sortedValues: number[], percentile: number): number
 
 /**
  * Calculate average from array of numbers
- * 
+ *
  * @param values - Array of numbers
  * @returns Average value
  */
@@ -141,7 +141,7 @@ export const useMetrics = () => {
 
   /**
    * Record a new API request
-   * 
+   *
    * @param endpoint - API endpoint path
    * @param duration - Request duration in milliseconds
    * @param success - Whether request succeeded
@@ -181,7 +181,7 @@ export const useMetrics = () => {
 
   /**
    * Update endpoint statistics for a new request
-   * 
+   *
    * @param record - Request record to process
    */
   const updateEndpointStats = (record: RequestRecord): void => {
@@ -218,7 +218,7 @@ export const useMetrics = () => {
 
   /**
    * Get top N endpoints by request volume
-   * 
+   *
    * @param limit - Maximum number of endpoints to return
    * @returns Array of endpoint stats sorted by request count
    */
@@ -238,7 +238,7 @@ export const useMetrics = () => {
 
   /**
    * Export metrics for external monitoring
-   * 
+   *
    * @returns Exported metrics with timestamp
    */
   const exportMetrics = (): ExportedMetrics => {

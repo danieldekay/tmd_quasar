@@ -261,11 +261,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useCountries } from '../composables/useCountries';
 import { coupleService } from '../services';
 import type { Couple } from '../services/types';
-import { useCountries } from '../composables/useCountries';
 
 const route = useRoute();
 const { getCountryName } = useCountries();
@@ -347,7 +347,7 @@ const decodeHtmlEntities = (str: string): string => {
 
 // API functions
 const loadCouple = async () => {
-  const coupleId = parseInt(route.params.id as string);
+  const coupleId = Number.parseInt(route.params.id as string);
   if (!coupleId) {
     error.value = 'Invalid couple ID';
     return;

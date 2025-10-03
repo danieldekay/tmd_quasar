@@ -24,22 +24,22 @@
  * USES: Test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
-import CouplesPage from '../CouplesPage.vue';
 import {
+  clickQTableRow,
   createMockRouter,
-  mountWithQuasar,
-  getQTableProps,
+  createNetworkError,
   getQTableColumns,
+  getQTablePagination,
+  getQTableProps,
   getQTableRows,
   isQTableLoading,
-  clickQTableRow,
-  getQTablePagination,
   mockDelayedResponse,
-  createNetworkError,
   mockErrorResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import CouplesPage from '../CouplesPage.vue';
 
 // Mock data factory for Couples
 const createMockCouple = (id: number) => ({

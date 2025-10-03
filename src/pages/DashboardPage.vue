@@ -191,14 +191,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
-import { userService, type UserProfile } from '../services/userService';
-import { useDashboard, type DashboardContentItem } from '../composables/useDashboard';
+import ContentList from '../components/ContentList.vue';
 import ListPageHeader from '../components/ListPageHeader.vue';
 import OfflineMessage from '../components/OfflineMessage.vue';
-import ContentList from '../components/ContentList.vue';
+import { type DashboardContentItem, useDashboard } from '../composables/useDashboard';
+import { type UserProfile, userService } from '../services/userService';
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();

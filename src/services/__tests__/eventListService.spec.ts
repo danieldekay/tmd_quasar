@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { eventListService } from '../eventListService';
-import type { EventListItem } from '../types';
+import axios from 'axios';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   EnhancedEventParams as ExtendedEventParams,
   PaginatedEventsResponse,
 } from '../eventListService';
-import axios from 'axios';
+import { eventListService } from '../eventListService';
+import type { EventListItem } from '../types';
 
 // Mock the axios module
 vi.mock('axios');
@@ -92,7 +92,7 @@ describe('EventListService', () => {
       const result: PaginatedEventsResponse = await eventListService.getEvents(params);
 
       // Assert that axios was called with the correct URL and essential params
-       
+
       expect(mockedAxios.get).toHaveBeenCalledWith('/events', {
         params: expect.objectContaining({
           page: 1,
@@ -135,7 +135,7 @@ describe('EventListService', () => {
       const result = await eventListService.searchEvents(query, params);
 
       // Assert that axios was called with the correct URL and params
-       
+
       expect(mockedAxios.get).toHaveBeenCalledWith(
         '/events',
         expect.objectContaining({

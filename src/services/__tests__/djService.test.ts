@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { DJ } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DJParams } from '../djService';
+import type { DJ } from '../types';
 
 // Mock the base service
 vi.mock('../baseService', () => ({

@@ -256,13 +256,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { djService, type DJ } from '../services';
-import { useFormatters } from '../composables/useFormatters';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useCountries } from '../composables/useCountries';
-import { useGenericList, type ListFilters } from '../composables/useGenericList';
+import { useFormatters } from '../composables/useFormatters';
+import { type ListFilters, useGenericList } from '../composables/useGenericList';
+import { type DJ, djService } from '../services';
 
 interface DJListFilters extends ListFilters {
   country: string | null;

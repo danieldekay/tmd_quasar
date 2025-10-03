@@ -1,9 +1,9 @@
-import { boot } from 'quasar/wrappers';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
-import { getJWTToken } from '../utils/cookies';
+import { boot } from 'quasar/wrappers';
 import { useMetrics } from '../composables/useMetrics';
 import { useTokenRefresh } from '../composables/useTokenRefresh';
+import { getJWTToken } from '../utils/cookies';
 
 // Extend axios config to include metadata
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -80,16 +80,16 @@ api.interceptors.response.use(
     // Calculate request duration for monitoring
     const duration =
       Date.now() - ((response.config as ExtendedAxiosRequestConfig).metadata?.startTime || 0);
-    
+
     // Record successful request metrics
     const endpoint = response.config.url || 'unknown';
     recordRequest(endpoint, duration, true, response.status);
-    
+
     // Warn about slow requests
     if (duration > 5000) {
       console.warn(`Slow API request: ${endpoint} took ${duration}ms`);
     }
-    
+
     return response;
   },
   async (error: AxiosError) => {
@@ -97,7 +97,7 @@ api.interceptors.response.use(
     const duration =
       Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
     const endpoint = error.config?.url || 'unknown';
-    
+
     // Determine error type for metrics
     let errorType: 'network' | 'server' | 'client' | undefined;
     if (!error.response) {
@@ -107,10 +107,10 @@ api.interceptors.response.use(
     } else if (error.response.status >= 400) {
       errorType = 'client';
     }
-    
+
     // Record failed request metrics
     recordRequest(endpoint, duration, false, error.response?.status, errorType);
-    
+
     // Create enhanced error with additional context
     const enhancedError: APIError = new Error() as APIError;
     enhancedError.name = 'APIError';

@@ -3,9 +3,9 @@
  * Tests for session status indicator UI component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Quasar, QBadge, QTooltip, QIcon } from 'quasar';
+import { QBadge, QIcon, QTooltip, Quasar } from 'quasar';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SessionIndicator from '../SessionIndicator.vue';
 
 describe('SessionIndicator component', () => {
@@ -276,7 +276,6 @@ describe('SessionIndicator component', () => {
         isAuthenticated: false,
       });
 
-       
       await (wrapper.setProps as any)({
         isAuthenticated: true,
         user: {

@@ -3,8 +3,8 @@
  * Tests for authentication composable with reactive state
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { setActivePinia, createPinia } from 'pinia';
+import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '../useAuth';
 
 // Mock authService
@@ -69,7 +69,7 @@ describe('useAuth composable', () => {
 
       // Mock login to fail
       const authService = await import('../../services/authService');
-       
+
       const mockLogin = vi.mocked(authService.authService.login);
       mockLogin.mockRejectedValueOnce(new Error('Login failed'));
 

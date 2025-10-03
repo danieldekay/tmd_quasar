@@ -59,8 +59,8 @@
 </template>
 
 <script setup lang="ts">
-import { useFormatters } from '../composables/useFormatters';
 import { useCountries } from '../composables/useCountries';
+import { useFormatters } from '../composables/useFormatters';
 
 const { formatDate, formatDateTime } = useFormatters();
 const { getCountryName } = useCountries();

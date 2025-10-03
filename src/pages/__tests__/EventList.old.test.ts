@@ -23,12 +23,13 @@
  * initially if implementation doesn't match requirements. Tests define expected behavior.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { mount, flushPromises, type VueWrapper } from '@vue/test-utils';
-import { Quasar, QTable, QCard } from 'quasar';
-import EventList from '../EventList.vue';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { QCard, QTable, Quasar } from 'quasar';
+import { createMockEvent } from 'src/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import type { EventListItem } from '../../services/types';
+import EventList from '../EventList.vue';
 
 // Mock services - must be before imports
 vi.mock('../../services/eventListService', () => ({
@@ -92,7 +93,8 @@ const mockEvents: EventListItem[] = [
   {
     id: 1,
     title: 'Berlin Tango Marathon 2025',
-    subtitle: 'Spring Edition',
+    date: '2025-05-15',
+    link: 'https://example.com/event/1',
     start_date: '2025-05-15',
     end_date: '2025-05-18',
     city: 'Berlin',
@@ -100,13 +102,14 @@ const mockEvents: EventListItem[] = [
     edition: '12',
     registration_start_date: '2025-03-01',
     taxonomies: {
-      tmd_event_category: [{ term_id: 1, name: 'Marathon', slug: 'marathon' }],
+      tmd_event_category: [{ id: 1, name: 'Marathon', slug: 'marathon', description: '' }],
     },
   },
   {
     id: 2,
     title: 'Munich Festival',
-    subtitle: null,
+    date: '2025-06-20',
+    link: 'https://example.com/event/2',
     start_date: '2025-06-20',
     end_date: '2025-06-23',
     city: 'Munich',
@@ -114,13 +117,14 @@ const mockEvents: EventListItem[] = [
     edition: '5',
     registration_start_date: '2025-04-15',
     taxonomies: {
-      tmd_event_category: [{ term_id: 2, name: 'Festival', slug: 'festival' }],
+      tmd_event_category: [{ id: 2, name: 'Festival', slug: 'festival', description: '' }],
     },
   },
   {
     id: 3,
     title: 'Hamburg Encuentro',
-    subtitle: 'Summer Vibes',
+    date: '2025-07-10',
+    link: 'https://example.com/event/3',
     start_date: '2025-07-10',
     end_date: '2025-07-12',
     city: 'Hamburg',
@@ -128,7 +132,7 @@ const mockEvents: EventListItem[] = [
     edition: '3',
     registration_start_date: '2025-05-20',
     taxonomies: {
-      tmd_event_category: [{ term_id: 3, name: 'Encuentro', slug: 'encuentro' }],
+      tmd_event_category: [{ id: 3, name: 'Encuentro', slug: 'encuentro', description: '' }],
     },
   },
 ];
@@ -140,8 +144,9 @@ describe('EventList.vue - Component Tests (T005)', () => {
     vi.clearAllMocks();
 
     // Mock successful API response
-    const { eventListService } = vi.mocked(await import('../../services/eventListService'));
-    eventListService.getEvents.mockResolvedValue({
+    const { eventListService } = await import('../../services/eventListService');
+    const mockGetEvents = vi.mocked(eventListService.getEvents) as ReturnType<typeof vi.fn>;
+    mockGetEvents.mockResolvedValue({
       events: mockEvents,
       totalCount: 3,
       currentPage: 1,
@@ -380,8 +385,9 @@ describe('EventList.vue - Component Tests (T005)', () => {
   describe('FR-004: Loading States', () => {
     it('should display loading state when data is being fetched', async () => {
       // Mock delayed response
-      const { eventListService } = vi.mocked(await import('../../services/eventListService'));
-      eventListService.getEvents.mockImplementation(
+      const { eventListService } = await import('../../services/eventListService');
+      const mockGetEvents = vi.mocked(eventListService.getEvents) as ReturnType<typeof vi.fn>;
+      mockGetEvents.mockImplementation(
         () =>
           new Promise((resolve) =>
             setTimeout(
@@ -594,8 +600,9 @@ describe('EventList.vue - Component Tests (T005)', () => {
 
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
-      const { eventListService } = vi.mocked(await import('../../services/eventListService'));
-      eventListService.getEvents.mockRejectedValueOnce(new Error('Network error'));
+      const { eventListService } = await import('../../services/eventListService');
+      const mockGetEvents = vi.mocked(eventListService.getEvents) as ReturnType<typeof vi.fn>;
+      mockGetEvents.mockRejectedValueOnce(new Error('Network error'));
 
       wrapper = mount(EventList, {
         global: {
@@ -614,8 +621,9 @@ describe('EventList.vue - Component Tests (T005)', () => {
     });
 
     it('should display error state when API fails', async () => {
-      const { eventListService } = vi.mocked(await import('../../services/eventListService'));
-      eventListService.getEvents.mockRejectedValueOnce(new Error('Server error'));
+      const { eventListService } = await import('../../services/eventListService');
+      const mockGetEvents = vi.mocked(eventListService.getEvents) as ReturnType<typeof vi.fn>;
+      mockGetEvents.mockRejectedValueOnce(new Error('Server error'));
 
       wrapper = mount(EventList, {
         global: {
@@ -701,13 +709,14 @@ describe('EventList.vue - Component Tests (T005)', () => {
     });
 
     it('should handle events without edition gracefully', async () => {
-      const eventWithoutEdition: EventListItem = {
+      const eventWithoutEdition = createMockEvent({
         ...mockEvents[0],
-        edition: null,
-      };
+        edition: '',
+      });
 
-      const { eventListService } = vi.mocked(await import('../../services/eventListService'));
-      eventListService.getEvents.mockResolvedValueOnce({
+      const { eventListService } = await import('../../services/eventListService');
+      const mockGetEvents = vi.mocked(eventListService.getEvents) as ReturnType<typeof vi.fn>;
+      mockGetEvents.mockResolvedValueOnce({
         events: [eventWithoutEdition],
         totalCount: 1,
         currentPage: 1,

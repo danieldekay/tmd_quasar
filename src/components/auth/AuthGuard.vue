@@ -19,9 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from 'src/composables/useAuth';
+import { computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 /**
  * AuthGuard Component

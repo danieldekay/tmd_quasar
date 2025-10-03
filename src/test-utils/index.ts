@@ -13,54 +13,52 @@
  *   } from '@/test-utils';
  */
 
+export type { VueWrapper } from '@vue/test-utils';
+// Re-export commonly used testing utilities
+export { flushPromises } from '@vue/test-utils';
+export type { Mock } from 'vitest';
+// Component helpers
+export {
+  assertTableHeaders,
+  assertTableRowCount,
+  clickByTestId,
+  clickQTableRow,
+  createMockRouter,
+  existsByTestId,
+  findByTestId,
+  flushAll,
+  getQTableColumns,
+  getQTablePagination,
+  getQTableProps,
+  getQTableRows,
+  getTextByTestId,
+  isQTableLoading,
+  mountWithQuasar,
+} from './componentHelpers';
 // Mock factories
 export {
+  createHttpError,
+  createMockCouple,
+  createMockDJ,
+  createMockEmbeddedEvent,
+  createMockError,
   createMockEvent,
   createMockEventList,
-  createMockEventsResponse,
-  createMockDJ,
-  createMockTeacher,
-  createMockCouple,
   createMockEventSeries,
+  createMockEventsResponse,
   createMockTaxonomies,
-  generateDateRange,
-  createMockError,
+  createMockTeacher,
   createNetworkError,
-  createHttpError,
+  generateDateRange,
 } from './mockFactories';
-
 // Service mocks
 export {
   createMockEventListService,
-  isMockFunction,
-  mockSuccessResponse,
-  mockErrorResponse,
-  mockDelayedResponse,
-  resetServiceMocks,
   createMockPaginatedResponse,
   createMockQueryParams,
+  isMockFunction,
+  mockDelayedResponse,
+  mockErrorResponse,
+  mockSuccessResponse,
+  resetServiceMocks,
 } from './mockServices';
-
-// Component helpers
-export {
-  createMockRouter,
-  mountWithQuasar,
-  flushAll,
-  findByTestId,
-  existsByTestId,
-  getTextByTestId,
-  clickByTestId,
-  assertTableRowCount,
-  assertTableHeaders,
-  getQTableProps,
-  getQTableColumns,
-  getQTableRows,
-  isQTableLoading,
-  clickQTableRow,
-  getQTablePagination,
-} from './componentHelpers';
-
-// Re-export commonly used testing utilities
-export { flushPromises } from '@vue/test-utils';
-export type { VueWrapper } from '@vue/test-utils';
-export type { Mock } from 'vitest';

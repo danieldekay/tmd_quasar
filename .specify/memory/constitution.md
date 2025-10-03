@@ -1,10 +1,18 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 1.0.1
-- Amendment: Test location clarification (PATCH version bump)
-- Modified principles: Principle IV - Test-First Development (test location specification)
-- Added guidance: Tests MUST be placed in __tests__ folders per Quasar conventions
-- Templates requiring updates: ✅ tasks-template.md will reference __tests__ pattern
+- Version change: 1.0.1 → 1.1.0
+- Amendment: Added Biome tooling principle, enhanced type checking, auto-fix workflows (MINOR version bump)
+- Modified principles:
+  - Principle II: TypeScript Strict Compliance - Added real-time dev server checking
+  - Principle VI: NEW - Biome-First Code Quality (replaces ESLint/Prettier for speed)
+- Added sections:
+  - Auto-Fix Workflow Standards
+  - Enhanced Type Checking Requirements
+  - Package Manager Version Enforcement (pnpm@10.18.0)
+- Templates requiring updates:
+  - ✅ plan-template.md: Add Biome check to Constitution Check section
+  - ✅ tasks-template.md: Add Biome auto-fix tasks, type-check tasks
+  - ⚠ spec-template.md: Review for quality gate mentions
 - Follow-up TODOs: None
 -->
 
@@ -18,7 +26,7 @@ All features MUST leverage Quasar's built-in components and utilities before cre
 
 Rationale: Ensures consistency, reduces maintenance burden, and leverages battle-tested components with proper accessibility and performance optimizations.
 
-### II. TypeScript Strict Compliance (NON-NEGOTIABLE)
+### II. TypeScript Strict Compliance with Real-Time Checking (NON-NEGOTIABLE)
 
 - All code MUST be written in TypeScript with strict mode enabled
 - `any` type is prohibited; proper typing is mandatory
@@ -26,8 +34,11 @@ Rationale: Ensures consistency, reduces maintenance burden, and leverages battle
 - Enums are prohibited; use const objects instead
 - All async operations MUST use `void` operator or proper error handling
 - Undefined values MUST be handled explicitly with null coalescing or checks
+- **Real-time type checking MUST be enabled in dev server** (`vite-plugin-checker` with `server: true`)
+- Type checking MUST pass before commits: `pnpm type-check` returns exit code 0
+- TypeScript errors MUST be visible in browser during development
 
-Rationale: Type safety prevents runtime errors, improves code maintainability, and enables better developer tooling and refactoring capabilities.
+Rationale: Type safety prevents runtime errors, improves code maintainability, and enables better developer tooling. Real-time dev server checking provides immediate feedback and prevents type errors from entering the codebase. The enhanced workflow catches issues before they reach CI/CD.
 
 ### III. Composition API Structure
 
@@ -72,15 +83,54 @@ All features MUST implement mobile-first responsive design with proper accessibi
 
 Rationale: Ensures the application serves all users effectively across devices and abilities, meeting modern web standards.
 
+### VI. Biome-First Code Quality & Auto-Fix
+
+- **Biome MUST be the primary tool** for code formatting and linting (20-100x faster than ESLint/Prettier)
+- All code MUST pass `pnpm check:biome` before commits
+- Biome auto-fixes MUST be applied: import sorting, formatting, common lint issues
+- ESLint/Prettier remain available for Vue-specific rules but Biome takes precedence
+- VS Code Biome extension SHOULD be installed for format-on-save
+- Configuration in `biome.json` with these non-negotiable settings:
+  - 2-space indentation
+  - 100-character line width
+  - Single quotes for JavaScript/TypeScript
+  - Trailing commas everywhere
+  - Unix (LF) line endings
+  - Import organization enabled
+  - `useConst` enforced (prefer const over let)
+  - `useImportType` enforced (TypeScript type imports)
+  - `noExplicitAny` as warning (error in production code, warning in tests)
+
+Rationale: Biome provides instant feedback (100ms vs 5-10s), eliminates configuration complexity (single `biome.json` vs multiple config files), and automatically fixes most issues. The speed improvement enables pre-commit checks without frustrating developers. Auto-fix capabilities reduce manual formatting work and maintain consistency across the codebase.
+
 ## Quality Standards
+
+### Auto-Fix Workflow Standards
+
+- **Before every commit**:
+  1. `pnpm check:biome` - Auto-fix formatting, imports, and lint issues
+  2. `pnpm type-check` - Validate TypeScript types
+  3. `pnpm test:run` - Run all tests
+- **VS Code integration** (recommended):
+  - Install Biome extension (`biomejs.biome`)
+  - Enable format-on-save in `.vscode/settings.json`
+  - Use VS Code tasks for quality checks: `Cmd+Shift+B` → "Quality: Pre-Commit (Biome)"
+- **CI/CD validation**:
+  - `pnpm ci:biome` - Check without auto-fix (fails on issues)
+  - `pnpm type-check` - Type validation
+  - `pnpm test:run` - Test suite
 
 ### Code Quality Requirements
 
-- ESLint compliance is mandatory; `pnpm lint` MUST pass before commits
+- Biome compliance is mandatory; `pnpm check:biome` MUST pass before commits
+- Type checking compliance is mandatory; `pnpm type-check` MUST pass before commits
+- ESLint may be used for Vue-specific rules: `pnpm lint` SHOULD pass but Biome takes precedence
 - No floating promises (`@typescript-eslint/no-floating-promises` enforced)
 - Consistent naming: camelCase with auxiliary verbs (`isLoading`, `hasError`)
 - Template syntax for declarative rendering over imperative code
 - Modularization preferred over code duplication
+- Unused imports MUST be removed (Biome auto-fixes this)
+- Import statements MUST be alphabetically sorted (Biome auto-fixes this)
 
 ### Performance Standards
 
@@ -100,20 +150,44 @@ Rationale: Ensures the application serves all users effectively across devices a
 
 ## Development Workflow
 
+### Package Manager
+
+- **pnpm version 10.18.0 MUST be used** (enforced via `corepack use pnpm@10.18.0`)
+- Use `pnpm` exclusively for all package operations
+- Never use `npm` or `yarn` commands
+- Lock file (`pnpm-lock.yaml`) MUST be committed
+- Dependencies MUST be installed via `pnpm install`
+
 ### Git Workflow
 
 - Use git-flow methodology with feature branches
 - Descriptive commit messages following conventional commit format
 - Code reviews mandatory before merging
 - Never automatically check in code without review
+- Pre-commit quality gates:
+  1. Biome auto-fix: `pnpm check:biome`
+  2. Type validation: `pnpm type-check`
+  3. Test suite: `pnpm test:run`
 
 ### Build and Deployment
 
-- Use `pnpm` exclusively for package management
-- Development: `pnpm dev` with file watching
+- Development: `pnpm dev` with file watching and real-time type checking
 - Production builds: `pnpm build` with optimization
-- Linting: `pnpm lint` before commits
+- Auto-fix and validate: `pnpm check:biome && pnpm type-check`
 - Testing: `pnpm test --run` for CI environments
+- Pre-commit workflow: Use VS Code task "Quality: Pre-Commit (Biome)" or run commands manually
+
+### Quality Command Reference
+
+| Command                 | Purpose                     | When to Use           |
+| ----------------------- | --------------------------- | --------------------- |
+| `pnpm check:biome`      | Format + lint with auto-fix | Before every commit   |
+| `pnpm ci:biome`         | Check without auto-fix      | CI/CD pipelines       |
+| `pnpm type-check`       | TypeScript validation       | Before commits, CI/CD |
+| `pnpm type-check:watch` | Continuous type checking    | During development    |
+| `pnpm lint`             | ESLint (Vue-specific)       | Secondary validation  |
+| `pnpm format:biome`     | Format only                 | Quick formatting      |
+| `pnpm lint:biome`       | Lint only                   | Focused linting       |
 
 ### Documentation Maintenance
 
@@ -121,6 +195,7 @@ Rationale: Ensures the application serves all users effectively across devices a
 - Maintain DESIGN.md for architectural decisions
 - Update README.md for major changes only
 - Keep TODO.md for mid to long-term tasks
+- Update QUALITY_IMPROVEMENTS.md for tooling and workflow enhancements
 
 ## Governance
 
@@ -132,7 +207,8 @@ Amendment process requires:
 2. Impact assessment on existing codebase
 3. Migration plan for affected code
 4. Version bump following semantic versioning
+5. Update to Sync Impact Report (HTML comment at top of this file)
 
 Use `.github/copilot-instructions.md` for detailed runtime development guidance and implementation specifics.
 
-**Version**: 1.0.1 | **Ratified**: 2025-10-01 | **Last Amended**: 2025-10-01
+**Version**: 1.1.0 | **Ratified**: 2025-10-01 | **Last Amended**: 2025-10-03

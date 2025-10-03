@@ -400,11 +400,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { type UserProfile, userService } from '../services/userService';
 import { useAuthStore } from '../stores/authStore';
-import { userService, type UserProfile } from '../services/userService';
 
 // Composables
 const router = useRouter();

@@ -1,24 +1,24 @@
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import type { TokenState, RefreshTokenResponse } from '../types/auth';
+import type { RefreshTokenResponse, TokenState } from '../types/auth';
 
 /**
  * Composable for proactive JWT token refresh (FR-003)
- * 
+ *
  * Implements automatic token refresh 5 minutes before expiration
  * to prevent authentication interruptions during user sessions.
- * 
+ *
  * Features:
  * - Proactive refresh 5 minutes before expiration
  * - Exponential backoff for failed attempts (1s, 2s, 4s)
  * - Max 3 refresh attempts before requiring re-login
  * - Concurrent refresh prevention (single promise)
  * - Automatic redirect to login on exhausted attempts
- * 
+ *
  * @example
  * ```typescript
  * const { tokenState, refreshToken, scheduleProactiveRefresh } = useTokenRefresh();
- * 
+ *
  * // Initialize after login
  * tokenState.value = {
  *   token: authToken,
@@ -63,7 +63,7 @@ export const useTokenRefresh = () => {
 
   /**
    * Calculate milliseconds until proactive refresh should occur
-   * 
+   *
    * @returns Milliseconds until refresh, or 0 if should refresh immediately
    */
   const calculateTimeUntilRefresh = (): number => {
@@ -81,18 +81,18 @@ export const useTokenRefresh = () => {
 
   /**
    * Calculate exponential backoff delay for retry attempts
-   * 
+   *
    * @param attempt - Attempt number (0-indexed)
    * @returns Delay in milliseconds
    */
   const calculateBackoffDelay = (attempt: number): number => {
     // Exponential backoff: 1s, 2s, 4s
-    return Math.pow(2, attempt) * 1000;
+    return 2 ** attempt * 1000;
   };
 
   /**
    * Refresh JWT token using refresh token
-   * 
+   *
    * @throws Error if refresh fails or max attempts exceeded
    * @returns Promise with new auth and refresh tokens
    */
@@ -117,7 +117,7 @@ export const useTokenRefresh = () => {
 
     try {
       const result = await refreshPromise;
-      
+
       // Update token state on success
       tokenState.value.token = result.authToken;
       if (result.refreshToken) {
@@ -153,7 +153,7 @@ export const useTokenRefresh = () => {
 
   /**
    * Perform the actual token refresh API call
-   * 
+   *
    * @returns Promise with refresh response
    * @throws Error if API call fails
    */
@@ -182,9 +182,9 @@ export const useTokenRefresh = () => {
 
   /**
    * Handle token refresh failure
-   * 
+   *
    * Redirects to login page after max attempts exceeded
-   * 
+   *
    * @param error - The error that caused the failure
    */
   const handleRefreshFailure = async (error: Error): Promise<void> => {
@@ -208,7 +208,7 @@ export const useTokenRefresh = () => {
 
   /**
    * Schedule proactive token refresh
-   * 
+   *
    * Calculates time until refresh needed and sets timer
    */
   const scheduleProactiveRefresh = (): void => {
@@ -246,7 +246,7 @@ export const useTokenRefresh = () => {
 
   /**
    * Initialize token state from stored values
-   * 
+   *
    * @param token - JWT auth token
    * @param refresh - Refresh token
    * @param expiresAt - Token expiration date

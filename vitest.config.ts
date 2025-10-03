@@ -1,8 +1,9 @@
 /// <reference types="vitest" />
-import { defineConfig, mergeConfig } from 'vitest/config';
-import vue from '@vitejs/plugin-vue';
-import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
+
 import { fileURLToPath } from 'node:url';
+import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
+import vue from '@vitejs/plugin-vue';
+import { defineConfig, mergeConfig } from 'vitest/config';
 
 const viteConfig = defineConfig({
   plugins: [

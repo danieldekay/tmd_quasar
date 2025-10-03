@@ -97,10 +97,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuth } from 'src/composables/useAuth';
 import { useSession } from 'src/composables/useSession';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 /**
  * SessionIndicator Component

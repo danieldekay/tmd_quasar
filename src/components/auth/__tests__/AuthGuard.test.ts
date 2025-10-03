@@ -3,11 +3,11 @@
  * Tests for authentication guard wrapper component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { Quasar, QBanner, QBtn } from 'quasar';
+import { QBanner, QBtn, Quasar } from 'quasar';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import AuthGuard from '../AuthGuard.vue';
 
 // Mock the composables

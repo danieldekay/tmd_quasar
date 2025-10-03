@@ -3,8 +3,8 @@
  * Tests for authentication type definitions and validation
  */
 
-import { describe, it, expect } from 'vitest';
-import type { User, Session, AuthState } from '../types';
+import { describe, expect, it } from 'vitest';
+import type { AuthState, Session, User } from '../types';
 import { AuthErrorCodes } from '../types';
 
 describe('Authentication Types', () => {

@@ -171,11 +171,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { QCalendarMonth } from '@quasar/quasar-ui-qcalendar';
-import type { EventListItem } from '../services/types';
-import { useEventCalendar, type CalendarEvent } from '../composables/useEventCalendar';
+import { computed, ref } from 'vue';
+import { type CalendarEvent, useEventCalendar } from '../composables/useEventCalendar';
 import { useFormatters } from '../composables/useFormatters';
+import type { EventListItem } from '../services/types';
 
 // Helper function to extract rendered title from V4 API responses
 const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {

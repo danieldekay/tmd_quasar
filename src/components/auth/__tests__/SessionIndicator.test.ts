@@ -3,30 +3,30 @@
  * Tests for session status indicator UI component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import {
-  Quasar,
   QBadge,
-  QTooltip,
-  QIcon,
   QBtn,
-  QMenu,
-  QList,
+  QIcon,
   QItem,
-  QItemSection,
   QItemLabel,
+  QItemSection,
+  QList,
+  QMenu,
   QSeparator,
+  QTooltip,
+  Quasar,
 } from 'quasar';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import SessionIndicator from '../SessionIndicator.vue';
 
 // Mock the composables
 const mockIsAuthenticated = ref(false);
- 
+
 const mockUser = ref<any>(null);
- 
+
 const mockSession = ref<any>(null);
 const mockLogout = vi.fn();
 const mockRouter = {

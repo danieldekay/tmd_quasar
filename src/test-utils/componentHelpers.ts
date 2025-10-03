@@ -11,11 +11,11 @@
  *   });
  */
 
-import { mount, type VueWrapper, type MountingOptions } from '@vue/test-utils';
-import { Quasar, QLayout, QPageContainer, Notify } from 'quasar';
-import { createMemoryHistory, createRouter, type Router } from 'vue-router';
+import { type MountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { Notify, QLayout, QPageContainer, Quasar } from 'quasar';
 import type { Component } from 'vue';
 import { h } from 'vue';
+import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 
 /**
  * Create a mock router for testing

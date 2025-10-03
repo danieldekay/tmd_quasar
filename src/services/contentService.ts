@@ -1,5 +1,5 @@
 import { BaseService } from './baseService';
-import type { EventListItem, Teacher, DJ, Couple, EventSeries } from './types';
+import type { Couple, DJ, EventListItem, EventSeries, Teacher } from './types';
 
 // Helper function to extract rendered title from V4 API responses
 const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {

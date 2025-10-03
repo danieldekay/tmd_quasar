@@ -216,14 +216,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useInteractionCache } from '../composables/useInteractionCache';
-import { useFormatters } from '../composables/useFormatters';
-import { contentService, type ContentItem } from '../services/contentService';
-import type { InteractionType, ContentType } from '../services/types';
 import FavoriteCard from '../components/FavoriteCard.vue';
 import InteractionButtons from '../components/InteractionButtons.vue';
+import { useFormatters } from '../composables/useFormatters';
+import { useInteractionCache } from '../composables/useInteractionCache';
+import { type ContentItem, contentService } from '../services/contentService';
+import type { ContentType, InteractionType } from '../services/types';
 
 const router = useRouter();
 const activeTab = ref('bookmarks');

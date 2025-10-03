@@ -14,6 +14,7 @@ export interface TaxonomyTerm {
 
 export interface EventTaxonomies {
   'event-categories-2020'?: TaxonomyTerm[];
+  tmd_event_category?: TaxonomyTerm[]; // Legacy/test alias
 }
 
 export interface BaseEvent extends BaseEntity {
@@ -137,6 +138,8 @@ export interface DJ extends BaseEntity {
   abstract?: string;
   gender?: string;
   tmd_dj_about_the_dj?: string;
+  tmd_dj_bio?: string; // Bio field
+  tmd_dj_real_name?: string; // Real name field
   tmd_dj_activity_encuentros?: string;
   tmd_dj_activity_encuentros_since?: string;
   tmd_dj_activity_festivals?: string;
@@ -154,6 +157,19 @@ export interface DJ extends BaseEntity {
   tmd_dj_link_to_facebook_page?: string;
   tmd_dj_name?: string;
   tmd_dj_webpage?: string;
+  tmd_dj_website?: string; // Alias for tmd_dj_webpage
+  tmd_dj_email?: string; // Alias for tmd_dj_e_mail
+  tmd_dj_facebook?: string; // Alias for tmd_dj_link_to_facebook
+  tmd_dj_instagram?: string; // Instagram handle
+  // Shorthand activity fields (for test compatibility)
+  activity_marathon?: string;
+  activity_festival?: string;
+  activity_encuentro?: string;
+  activity_milonga?: string;
+  tmd_dj_marathon_since?: string;
+  tmd_dj_festival_since?: string;
+  tmd_dj_encuentro_since?: string;
+  tmd_dj_milonga_since?: string;
 }
 
 export interface Teacher extends BaseEntity {

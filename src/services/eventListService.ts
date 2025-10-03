@@ -1,10 +1,9 @@
-import { BaseService, type HALResponse, type WordPressResponse } from './baseService';
-import type { EventListItem, EventParams, EventTaxonomies } from './types';
 import type { BaseParams } from './baseService';
-
-// Import V3 API abstractions
-import { isFeatureAvailable, getString } from './v3ApiUtils';
+import { BaseService, type HALResponse, type WordPressResponse } from './baseService';
 import { META_FIELD_SETS } from './eventConstants';
+import type { EventListItem, EventParams, EventTaxonomies } from './types';
+// Import V3 API abstractions
+import { getString, isFeatureAvailable } from './v3ApiUtils';
 
 // Legacy export for backward compatibility
 export type EventMetaFilters = {

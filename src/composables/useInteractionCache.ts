@@ -1,6 +1,6 @@
-import { ref, computed, watch } from 'vue';
-import type { InteractionType, ContentType, UserInteraction } from '../services/types';
+import { computed, ref, watch } from 'vue';
 import { interactionService } from '../services/interactionService';
+import type { ContentType, InteractionType, UserInteraction } from '../services/types';
 import { useAuthStore } from '../stores/authStore';
 
 interface CachedInteraction extends UserInteraction {
@@ -189,7 +189,7 @@ export function useInteractionCache() {
             interaction_type: serverInteraction.interaction_type,
             target_post_id:
               typeof serverInteraction.target_post_id === 'string'
-                ? parseInt(serverInteraction.target_post_id, 10)
+                ? Number.parseInt(serverInteraction.target_post_id, 10)
                 : serverInteraction.target_post_id,
             target_post_type: serverInteraction.target_post_type,
             interaction_date: serverInteraction.interaction_date,

@@ -138,13 +138,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
 import { Notify } from 'quasar';
-import { useAuthStore } from '../stores/authStore';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - JSON import for version reading
+// @ts-expect-error - JSON import for version reading
 import pkg from '../../package.json';
+import { useAuthStore } from '../stores/authStore';
+
 const { version } = pkg as { version: string };
 
 const router = useRouter();

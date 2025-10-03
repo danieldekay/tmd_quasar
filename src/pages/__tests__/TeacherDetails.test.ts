@@ -19,17 +19,17 @@
  * USES: Test utilities from src/test-utils/ (T004a)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import TeacherDetails from '../TeacherDetails.vue';
 import {
-  createMockTeacher,
   createMockRouter,
-  mountWithQuasar,
-  mockDelayedResponse,
+  createMockTeacher,
   createNetworkError,
+  mockDelayedResponse,
+  mountWithQuasar,
 } from 'src/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import TeacherDetails from '../TeacherDetails.vue';
 
 // Mock the teacher service
 vi.mock('src/services/teacherService', () => ({

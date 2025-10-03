@@ -26,14 +26,13 @@
  * @vitest-environment happy-dom
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import type { VueWrapper } from '@vue/test-utils';
-import { setActivePinia, createPinia } from 'pinia';
-
-import EventSeriesDetails from '../EventSeriesDetails.vue';
+import { createPinia, setActivePinia } from 'pinia';
 import { eventSeriesService } from 'src/services/eventSeriesService';
-import { createMockEventSeries, mountWithQuasar } from 'src/test-utils';
 import type { EventSeries } from 'src/services/types';
+import { createMockEmbeddedEvent, createMockEventSeries, mountWithQuasar } from 'src/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import EventSeriesDetails from '../EventSeriesDetails.vue';
 
 // Mock the eventSeriesService
 vi.mock('src/services/eventSeriesService', () => ({
@@ -93,22 +92,26 @@ describe('EventSeriesDetails Component', () => {
       },
       _embedded: {
         events: [
-          {
+          createMockEmbeddedEvent({
             id: 1,
             title: 'Berlin Tango Marathon 2024',
             date: '2024-06-15T09:00:00',
+            start_date: '2024-06-15',
+            end_date: '2024-06-18',
             link: 'https://tangomarathons.com/events/btm-2024',
             registration_start_date: '2024-03-01T00:00:00',
             edition: '5',
-          },
-          {
+          }),
+          createMockEmbeddedEvent({
             id: 2,
             title: 'Berlin Tango Marathon 2023',
             date: '2023-06-15T09:00:00',
+            start_date: '2023-06-15',
+            end_date: '2023-06-18',
             link: 'https://tangomarathons.com/events/btm-2023',
             registration_start_date: '2023-03-01T00:00:00',
             edition: '4',
-          },
+          }),
         ],
       },
     });
@@ -126,7 +129,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-016: Event Series Name Display =====
   describe('Event Series Name Display (FR-016)', () => {
     it('should display series name as main title', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(mockEventSeries);
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -140,7 +143,7 @@ describe('EventSeriesDetails Component', () => {
       const seriesWithHtml = createMockEventSeries({
         title: 'Test &amp; Series',
       });
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(seriesWithHtml);
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesWithHtml);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -154,7 +157,7 @@ describe('EventSeriesDetails Component', () => {
   // ===== FR-017: Location Display =====
   describe('Location Display (FR-017)', () => {
     it('should display city and country', async () => {
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(mockEventSeries);
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(mockEventSeries);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -169,7 +172,7 @@ describe('EventSeriesDetails Component', () => {
       const seriesNoLocation = createMockEventSeries();
       delete seriesNoLocation.city;
       delete seriesNoLocation.country;
-      vi.mocked(eventSeriesService.getEventSeriesByIdById).mockResolvedValue(seriesNoLocation);
+      vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoLocation);
 
       wrapper = mountWithQuasar(EventSeriesDetails, {}, true);
       await wrapper.vm.$nextTick();
@@ -393,8 +396,8 @@ describe('EventSeriesDetails Component', () => {
 
     it('should handle null dates gracefully', async () => {
       const seriesNoDates = createMockEventSeries({
-        start_date: undefined,
-        registration_start_date: undefined,
+        start_date: '',
+        registration_start_date: '',
       });
       vi.mocked(eventSeriesService.getEventSeriesById).mockResolvedValue(seriesNoDates);
 

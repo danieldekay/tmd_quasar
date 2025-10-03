@@ -123,7 +123,7 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFormatters } from '../composables/useFormatters';
 import type { ContentItem } from '../services/contentService';
-import type { InteractionType, ContentType } from '../services/types';
+import type { ContentType, InteractionType } from '../services/types';
 import InteractionButtons from './InteractionButtons.vue';
 
 interface ConsolidatedFavoriteItem extends ContentItem {

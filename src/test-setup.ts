@@ -1,6 +1,6 @@
-import { vi, beforeEach, afterEach } from 'vitest';
 import { config } from '@vue/test-utils';
 import timezone_mock from 'timezone-mock';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 // List of timezones: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 timezone_mock.register('UTC');

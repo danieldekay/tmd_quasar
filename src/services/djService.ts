@@ -1,13 +1,13 @@
-import { BaseService } from './baseService';
-import type { DJ } from './types';
 import type { BaseParams } from './baseService';
+import { BaseService } from './baseService';
 import {
-  DJ_ACTIVITY_TYPES,
-  ESSENTIAL_DJ_META_FIELDS,
   ALL_DJ_META_FIELDS,
+  DJ_ACTIVITY_TYPES,
   type DJActivityType,
   type DJSortOption,
+  ESSENTIAL_DJ_META_FIELDS,
 } from './eventConstants';
+import type { DJ } from './types';
 
 export interface DJParams extends BaseParams {
   country?: string;

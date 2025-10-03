@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
-import { requireAuth, redirectIfAuthenticated } from '../guards';
 import { useAuthStore } from '../../stores/authStore';
+import { redirectIfAuthenticated, requireAuth } from '../guards';
 
 // Mock the auth store
 vi.mock('../../stores/authStore', () => ({
