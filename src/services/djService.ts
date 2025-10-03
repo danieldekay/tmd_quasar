@@ -22,8 +22,6 @@ export interface DJParams extends BaseParams {
 }
 
 class DJService extends BaseService<DJ> {
-  private readonly defaultMetaFields: string;
-
   constructor() {
     super('/djs', {
       _embed: false, // Disable embeds for better performance by default
@@ -66,7 +64,7 @@ class DJService extends BaseService<DJ> {
   async getDJ(id: number, params: DJParams = {}, signal?: AbortSignal): Promise<DJ> {
     try {
       const apiParams = {
-        _embed: params.include_events !== false ? true : false, // Default to true for single DJ
+        _embed: params.include_events !== false, // Default to true for single DJ
         meta_fields: params.essential_only ? ESSENTIAL_DJ_META_FIELDS : ALL_DJ_META_FIELDS,
         ...params,
       };
@@ -88,7 +86,7 @@ class DJService extends BaseService<DJ> {
       const searchParams = {
         search: query,
         meta_fields: ALL_DJ_META_FIELDS, // Include all fields for search results
-        _embed: params.include_events ? true : false,
+        _embed: !!params.include_events,
         ...params,
       };
 

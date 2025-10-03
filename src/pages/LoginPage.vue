@@ -159,15 +159,15 @@ const form = reactive({
   remember: false,
 });
 
-const showPassword = ref(false);
+const _showPassword = ref(false);
 const isLoading = ref(false);
 
 // Debug flag
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const debug = ref(true);
+const _debug = ref(true);
 
 // Debug information
-const isLocalhost = computed(() => {
+const _isLocalhost = computed(() => {
   if (typeof window === 'undefined') return false;
   return (
     window.location.hostname === 'localhost' ||
@@ -176,7 +176,7 @@ const isLocalhost = computed(() => {
   );
 });
 
-const envInfo = computed(() => ({
+const _envInfo = computed(() => ({
   apiBaseUrl: process.env.API_BASE_URL || 'Not set',
   graphqlEndpoint: process.env.GRAPHQL_ENDPOINT || 'Not set',
   wordpressUrl: process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'Not set',
@@ -184,12 +184,12 @@ const envInfo = computed(() => ({
   routerMode: process.env.VUE_ROUTER_MODE || 'hash',
 }));
 
-const currentUrl = computed(() => {
+const _currentUrl = computed(() => {
   if (typeof window === 'undefined') return 'Server-side rendering';
   return window.location.href;
 });
 
-const userAgent = computed(() => {
+const _userAgent = computed(() => {
   if (typeof window === 'undefined') return 'Server-side rendering';
   return `${window.navigator.userAgent.substring(0, 50)}...`;
 });
@@ -198,16 +198,16 @@ const userAgent = computed(() => {
 const wordpressUrl =
   process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';
 
-const redirectToForgotPassword = (): void => {
+const _redirectToForgotPassword = (): void => {
   window.open(`${wordpressUrl}/wp-login.php?action=lostpassword`, '_blank');
 };
 
-const redirectToRegister = (): void => {
+const _redirectToRegister = (): void => {
   window.open(`${wordpressUrl}/wp-login.php?action=register`, '_blank');
 };
 
 // Handle login
-const handleLogin = async (): Promise<void> => {
+const _handleLogin = async (): Promise<void> => {
   if (!form.username || !form.password) return;
 
   isLoading.value = true;

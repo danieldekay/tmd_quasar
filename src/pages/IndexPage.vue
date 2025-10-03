@@ -119,7 +119,7 @@ import { ref } from 'vue';
 const $q = useQuasar();
 const email = ref('');
 
-const subscribe = () => {
+const _subscribe = () => {
   if (email.value) {
     $q.notify({
       type: 'positive',

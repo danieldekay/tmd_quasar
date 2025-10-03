@@ -445,7 +445,7 @@ const testingApi = ref(false);
 const metricsData = ref(getMetrics());
 
 // Computed metrics for display
-const metrics = computed(() => {
+const _metrics = computed(() => {
   const data = metricsData.value;
   return {
     totalRequests: data.requestMetrics.totalRequests,
@@ -463,7 +463,7 @@ const metrics = computed(() => {
   };
 });
 
-const topEndpoints = computed(() => {
+const _topEndpoints = computed(() => {
   return getTopEndpoints(5).map((ep) => ({
     endpoint: ep.endpoint,
     requests: ep.totalRequests,
@@ -474,7 +474,7 @@ const topEndpoints = computed(() => {
   }));
 });
 
-const endpointColumns = [
+const _endpointColumns = [
   {
     name: 'endpoint',
     label: 'Endpoint',
@@ -520,7 +520,7 @@ const endpointColumns = [
 ];
 
 // Metrics actions
-const refreshMetrics = () => {
+const _refreshMetrics = () => {
   metricsData.value = getMetrics();
   Notify.create({
     type: 'info',
@@ -530,7 +530,7 @@ const refreshMetrics = () => {
   });
 };
 
-const resetMetrics = () => {
+const _resetMetrics = () => {
   resetMetricsService();
   metricsData.value = getMetrics();
   Notify.create({
@@ -540,7 +540,7 @@ const resetMetrics = () => {
   });
 };
 
-const exportMetrics = () => {
+const _exportMetrics = () => {
   try {
     const json = exportMetricsJSON();
     const blob = new Blob([json], { type: 'application/json' });
@@ -567,23 +567,23 @@ const exportMetrics = () => {
 };
 
 // Environment variables
-const apiBaseUrl = ref(api.defaults.baseURL || 'Not configured');
-const graphqlUrl = ref(`${process.env.WORDPRESS_API_URL || 'http://localhost:10014'}/graphql`);
-const apiTimeout = ref(api.defaults.timeout || 30000);
-const nodeEnv = ref(process.env.NODE_ENV || 'development');
-const routerMode = ref(process.env.VUE_ROUTER_MODE || 'hash');
-const buildTime = ref(process.env.BUILD_TIME || new Date().toISOString());
-const appVersion = ref(process.env.APP_VERSION || '1.0.0');
+const _apiBaseUrl = ref(api.defaults.baseURL || 'Not configured');
+const _graphqlUrl = ref(`${process.env.WORDPRESS_API_URL || 'http://localhost:10014'}/graphql`);
+const _apiTimeout = ref(api.defaults.timeout || 30000);
+const _nodeEnv = ref(process.env.NODE_ENV || 'development');
+const _routerMode = ref(process.env.VUE_ROUTER_MODE || 'hash');
+const _buildTime = ref(process.env.BUILD_TIME || new Date().toISOString());
+const _appVersion = ref(process.env.APP_VERSION || '1.0.0');
 
 // Browser information
-const userAgent = ref(navigator.userAgent);
-const browserLanguage = ref(navigator.language);
+const _userAgent = ref(navigator.userAgent);
+const _browserLanguage = ref(navigator.language);
 const isOnline = ref(navigator.onLine);
-const localStorageAvailable = ref(typeof localStorage !== 'undefined');
-const sessionStorageAvailable = ref(typeof sessionStorage !== 'undefined');
+const _localStorageAvailable = ref(typeof localStorage !== 'undefined');
+const _sessionStorageAvailable = ref(typeof sessionStorage !== 'undefined');
 
 // Computed properties
-const tokenStorageLocation = computed(() => {
+const _tokenStorageLocation = computed(() => {
   if (localStorage.getItem('auth_token')) {
     return 'Local Storage (Remember Me)';
   } else if (sessionStorage.getItem('auth_token')) {
@@ -593,7 +593,7 @@ const tokenStorageLocation = computed(() => {
 });
 
 // API endpoints
-const apiEndpoints = ref([
+const _apiEndpoints = ref([
   {
     name: 'Events (V3 API)',
     url: '/wp-json/tmd/v3/events?_embed=true',
@@ -625,7 +625,7 @@ const apiEndpoints = ref([
 ]);
 
 // Frontend routes
-const frontendRoutes = ref([
+const _frontendRoutes = ref([
   { name: 'Home', path: '/' },
   { name: 'Events List', path: '/events' },
   { name: 'Event Detail', path: '/events/:id' },
@@ -644,7 +644,7 @@ const frontendRoutes = ref([
 ]);
 
 // Actions
-const refreshToken = async () => {
+const _refreshToken = async () => {
   try {
     const success = await authStore.refreshToken();
     if (success) {
@@ -669,7 +669,7 @@ const refreshToken = async () => {
   }
 };
 
-const handleLogout = async () => {
+const _handleLogout = async () => {
   try {
     authStore.logout();
     Notify.create({
@@ -687,7 +687,7 @@ const handleLogout = async () => {
   }
 };
 
-const testApiConnection = async () => {
+const _testApiConnection = async () => {
   testingApi.value = true;
   try {
     const response = await api.get('/events?per_page=1');
@@ -707,7 +707,7 @@ const testApiConnection = async () => {
   }
 };
 
-const clearStorage = () => {
+const _clearStorage = () => {
   try {
     localStorage.clear();
     sessionStorage.clear();

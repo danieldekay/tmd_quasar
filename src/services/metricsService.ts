@@ -74,18 +74,17 @@ export const getMetricsSummary = () => {
     totalRequests: metrics.requestMetrics.totalRequests,
     successRate:
       metrics.requestMetrics.totalRequests > 0
-        ? (
-            (metrics.requestMetrics.successfulRequests / metrics.requestMetrics.totalRequests) *
-            100
-          ).toFixed(1) + '%'
+        ? `${(
+            (metrics.requestMetrics.successfulRequests / metrics.requestMetrics.totalRequests) * 100
+          ).toFixed(1)}%`
         : '0%',
-    errorRate: (metrics.errorMetrics.errorRate * 100).toFixed(1) + '%',
+    errorRate: `${(metrics.errorMetrics.errorRate * 100).toFixed(1)}%`,
 
     // Performance summary
-    avgResponseTime: Math.round(metrics.performanceMetrics.averageResponseTime) + 'ms',
-    p50ResponseTime: Math.round(metrics.performanceMetrics.p50ResponseTime) + 'ms',
-    p95ResponseTime: Math.round(metrics.performanceMetrics.p95ResponseTime) + 'ms',
-    p99ResponseTime: Math.round(metrics.performanceMetrics.p99ResponseTime) + 'ms',
+    avgResponseTime: `${Math.round(metrics.performanceMetrics.averageResponseTime)}ms`,
+    p50ResponseTime: `${Math.round(metrics.performanceMetrics.p50ResponseTime)}ms`,
+    p95ResponseTime: `${Math.round(metrics.performanceMetrics.p95ResponseTime)}ms`,
+    p99ResponseTime: `${Math.round(metrics.performanceMetrics.p99ResponseTime)}ms`,
 
     // Error breakdown
     networkErrors: metrics.errorMetrics.networkErrors,
@@ -101,8 +100,8 @@ export const getMetricsSummary = () => {
     topEndpoints: metrics.topEndpoints.slice(0, 5).map((endpoint) => ({
       endpoint: endpoint.endpoint,
       requests: endpoint.requestCount,
-      avgTime: Math.round(endpoint.averageResponseTime) + 'ms',
-      errorRate: (endpoint.errorRate * 100).toFixed(1) + '%',
+      avgTime: `${Math.round(endpoint.averageResponseTime)}ms`,
+      errorRate: `${(endpoint.errorRate * 100).toFixed(1)}%`,
     })),
   };
 };

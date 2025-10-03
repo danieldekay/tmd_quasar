@@ -193,7 +193,7 @@ export const buildMetaFiltersFromParams = (params: V3EventParams): V3MetaFilters
 
   // Direct meta_filters from params
   if (params.meta_filters) {
-    Object.assign(builder['filters'], params.meta_filters);
+    Object.assign(builder.filters, params.meta_filters);
   }
 
   // Legacy boolean filters converted to V3 API format

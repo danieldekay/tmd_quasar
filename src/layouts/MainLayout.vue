@@ -258,7 +258,7 @@ interface LinkProps {
   link: string;
 }
 
-const linksList: LinkProps[] = [
+const _linksList: LinkProps[] = [
   {
     title: 'Home',
     icon: 'home',
@@ -313,11 +313,11 @@ const linksList: LinkProps[] = [
 
 const leftDrawerOpen = ref(false);
 
-function toggleLeftDrawer() {
+function _toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 
-const handleLogout = async () => {
+const _handleLogout = async () => {
   try {
     authStore.logout();
     Notify.create({
@@ -354,7 +354,7 @@ watch(
   { immediate: true },
 );
 
-function getUserDisplayName(): string {
+function _getUserDisplayName(): string {
   if (!authStore.user?.name) return 'User';
 
   // Try to get first name from full name
@@ -362,7 +362,7 @@ function getUserDisplayName(): string {
   return nameParts[0] || authStore.user.name;
 }
 
-function getUserAvatar(): string {
+function _getUserAvatar(): string {
   // First try WordPress avatar
   if (authStore.user?.avatar_urls?.['96']) {
     return authStore.user.avatar_urls['96'];
@@ -386,7 +386,7 @@ function getUserAvatar(): string {
   return '';
 }
 
-function getInteractionCounts(): {
+function _getInteractionCounts(): {
   total: number;
   likes: number;
   bookmarks: number;

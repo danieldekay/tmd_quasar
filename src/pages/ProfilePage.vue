@@ -418,9 +418,9 @@ const error = ref<string | null>(null);
 
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated);
-const isAdmin = computed(() => authStore.isAdmin);
+const _isAdmin = computed(() => authStore.isAdmin);
 
-const hasAuthoredContent = computed(() => {
+const _hasAuthoredContent = computed(() => {
   if (!profile.value?.content_counts) return false;
   const counts = profile.value.content_counts;
   return (
@@ -473,7 +473,7 @@ watch(
   { immediate: true }, // Run the watcher immediately on component mount
 );
 
-const formatDate = (dateString: string): string => {
+const _formatDate = (dateString: string): string => {
   try {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -485,43 +485,43 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+const _getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
   if (typeof title === 'string') return title;
   if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
   return '';
 };
 
-const viewEvent = (id: number) => {
+const _viewEvent = (id: number) => {
   void router.push(`/events/${id}`);
 };
 
-const viewTeacher = (id: number) => {
+const _viewTeacher = (id: number) => {
   void router.push(`/teachers/${id}`);
 };
 
-const viewDJ = (id: number) => {
+const _viewDJ = (id: number) => {
   void router.push(`/djs/${id}`);
 };
 
-const viewEventSeries = (id: number) => {
+const _viewEventSeries = (id: number) => {
   void router.push(`/event-series/${id}`);
 };
 
-const editProfile = () => {
+const _editProfile = () => {
   // Redirect to WordPress admin profile page
   const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
   const profileUrl = `${wordpressUrl}/wp-admin/profile.php`;
   window.open(profileUrl, '_blank');
 };
 
-const changePassword = () => {
+const _changePassword = () => {
   // Redirect to WordPress admin password change page
   const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
   const passwordUrl = `${wordpressUrl}/wp-admin/profile.php#password`;
   window.open(passwordUrl, '_blank');
 };
 
-const logout = () => {
+const _logout = () => {
   try {
     void authStore.logout();
     $q.notify({
@@ -537,7 +537,7 @@ const logout = () => {
   }
 };
 
-const manageUsers = () => {
+const _manageUsers = () => {
   $q.notify({
     type: 'info',
     message: 'User management functionality coming soon!',

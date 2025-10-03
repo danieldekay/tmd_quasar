@@ -53,7 +53,7 @@ vi.mock('src/services/interactionService', () => ({
 import { eventDetailsService as mockEventDetailsService } from 'src/services/eventDetailsService';
 
 // Type-safe reference to mock function
-const mockGetEvent = mockEventDetailsService['getEvent'] as ReturnType<typeof vi.fn>;
+const mockGetEvent = mockEventDetailsService.getEvent as ReturnType<typeof vi.fn>;
 
 // Mock composables
 vi.mock('@/composables/useFormatters', () => ({

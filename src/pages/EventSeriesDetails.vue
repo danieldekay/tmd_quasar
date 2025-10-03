@@ -526,7 +526,7 @@ const router = useRouter();
 const $q = useQuasar();
 
 // Helper function to extract rendered title from V4 API responses
-const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+const _getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
   if (typeof title === 'string') return title;
   if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
   return '';
@@ -536,25 +536,25 @@ const getRenderedTitle = (title: string | { rendered: string } | undefined): str
 const eventSeries = ref<EventSeries | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const tab = ref('overview');
+const _tab = ref('overview');
 
 // Add computed property for DJ leaderboard
-const djLeaderboard = computed(() => {
+const _djLeaderboard = computed(() => {
   return eventSeries.value?.dj_statistics?.dj_list || [];
 });
 
 // Default image for when no featured image is available
-const defaultImage = 'https://cdn.quasar.dev/img/mountains.jpg';
+const _defaultImage = 'https://cdn.quasar.dev/img/mountains.jpg';
 
 // Computed properties
-const featuredImage = computed(() => {
+const _featuredImage = computed(() => {
   if (eventSeries.value?._embedded?.['wp:featuredmedia']?.[0]) {
     return eventSeries.value._embedded['wp:featuredmedia'][0].source_url;
   }
   return null;
 });
 
-const descriptionHtml = computed(() => {
+const _descriptionHtml = computed(() => {
   return eventSeries.value?.content?.rendered || null;
 });
 
@@ -568,12 +568,12 @@ const location = computed(() => {
   return city || country || null;
 });
 
-const categories = computed(() => {
+const _categories = computed(() => {
   if (!eventSeries.value?._embedded?.['wp:term']) return [];
   return eventSeries.value._embedded['wp:term'][0] || [];
 });
 
-const organizer = computed(() => {
+const _organizer = computed(() => {
   return eventSeries.value?._embedded?.author?.[0] || null;
 });
 
@@ -581,7 +581,7 @@ const seriesEvents = computed(() => {
   return eventSeries.value?._embedded?.events || [];
 });
 
-const sortedEvents = computed(() => {
+const _sortedEvents = computed(() => {
   if (!eventSeries.value?._embedded?.events) return [];
   return [...eventSeries.value._embedded.events].sort((a, b) => {
     const aDate = a.start_date || '';
@@ -594,11 +594,11 @@ const upcomingEventsCount = computed(() => {
   return seriesEvents.value.filter((event) => isEventUpcoming(event.start_date)).length;
 });
 
-const pastEventsCount = computed(() => {
+const _pastEventsCount = computed(() => {
   return seriesEvents.value.filter((event) => !isEventUpcoming(event.start_date)).length;
 });
 
-const seriesInfoItems = computed(() => [
+const _seriesInfoItems = computed(() => [
   {
     show: true,
     icon: 'event_repeat',
@@ -646,7 +646,7 @@ const seriesInfoItems = computed(() => [
 ]);
 
 // DJ table columns
-const djColumns = [
+const _djColumns = [
   {
     name: 'name',
     label: 'DJ Name',
@@ -678,7 +678,7 @@ const djColumns = [
 ];
 
 // Methods
-const getCategoryIcon = (categoryName: string): string => {
+const _getCategoryIcon = (categoryName: string): string => {
   const name = categoryName.toLowerCase();
   if (name.includes('festival')) return 'celebration';
   if (name.includes('marathon')) return 'directions_run';
@@ -693,22 +693,22 @@ const isEventUpcoming = (startDate: string): boolean => {
   return new Date(startDate) > new Date();
 };
 
-const navigateToEvent = (eventId: number) => {
+const _navigateToEvent = (eventId: number) => {
   void router.push(`/events/${eventId}`);
 };
 
-const navigateToDJ = (djId: number) => {
+const _navigateToDJ = (djId: number) => {
   void router.push(`/djs/${djId}`);
 };
 
-const openExternalLink = (url: string) => {
+const _openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 const loadEventSeries = async (done?: () => void) => {
   isLoading.value = true;
   error.value = null;
-  const id = Number.parseInt(route.params.id as string);
+  const id = Number.parseInt(route.params.id as string, 10);
 
   if (!id) {
     error.value = 'Invalid event series ID';

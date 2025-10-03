@@ -94,7 +94,7 @@ defineEmits<{
   edit: [item: ContentItem];
 }>();
 
-const formatLocation = (city?: string, country?: string): string => {
+const _formatLocation = (city?: string, country?: string): string => {
   if (city && country) {
     const countryName = getCountryName(country);
     return `${city}, ${countryName}`;

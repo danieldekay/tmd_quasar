@@ -23,12 +23,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import EventCalendar from '../components/EventCalendar.vue';
 import type { CalendarEvent } from '../composables/useEventCalendar';
 import type { EventListItem } from '../services/types';
 
 // Test events with future dates
-const testEvents = ref<EventListItem[]>([
+const _testEvents = ref<EventListItem[]>([
   {
     id: 1,
     title: 'Test Marathon',
@@ -82,11 +81,11 @@ const testEvents = ref<EventListItem[]>([
   },
 ]);
 
-const onDateSelected = (date: string) => {
+const _onDateSelected = (date: string) => {
   console.log('Date selected:', date);
 };
 
-const onEventSelected = (event: CalendarEvent) => {
+const _onEventSelected = (event: CalendarEvent) => {
   console.log('Event selected:', event);
 };
 </script>

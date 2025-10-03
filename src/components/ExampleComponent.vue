@@ -28,10 +28,10 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const clickCount = ref(0);
-function increment() {
+function _increment() {
   clickCount.value += 1;
   return clickCount.value;
 }
 
-const todoCount = computed(() => props.todos.length);
+const _todoCount = computed(() => props.todos.length);
 </script>

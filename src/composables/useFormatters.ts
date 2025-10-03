@@ -172,7 +172,7 @@ export const useFormatters = () => {
   const getCategoryColor = (
     category: string,
   ): { color: string; textColor: string; icon?: string } => {
-    if (!category) return categoryColorMap['other']!;
+    if (!category) return categoryColorMap.other!;
 
     const normalizedCategory = category.toLowerCase().trim();
 
@@ -189,7 +189,7 @@ export const useFormatters = () => {
     }
 
     // Default fallback
-    return categoryColorMap['other']!;
+    return categoryColorMap.other!;
   };
 
   /**

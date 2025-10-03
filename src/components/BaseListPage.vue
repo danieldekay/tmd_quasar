@@ -207,11 +207,6 @@
 </template>
 
 <script setup lang="ts">
-import ListEmptyState from './ListEmptyState.vue';
-import ListFilters from './ListFilters.vue';
-import ListPageHeader from './ListPageHeader.vue';
-import OfflineMessage from './OfflineMessage.vue';
-
 interface Props {
   // Page configuration
   title: string;
@@ -295,7 +290,7 @@ const emit = defineEmits<Emits>();
 /**
  * Format results text with proper pluralization
  */
-const formatResultsText = (count: number): string => {
+const _formatResultsText = (count: number): string => {
   const displayCount = count || 0;
 
   if (displayCount === 1) {
@@ -308,7 +303,7 @@ const formatResultsText = (count: number): string => {
 /**
  * Handle pull to refresh
  */
-const handlePullToRefresh = (done: () => void) => {
+const _handlePullToRefresh = (done: () => void) => {
   emit('pull-to-refresh', done);
 };
 </script>

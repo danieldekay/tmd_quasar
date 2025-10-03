@@ -26,7 +26,6 @@ import {
   createMockEmbeddedEvent,
   createMockRouter,
   createNetworkError,
-  mockDelayedResponse,
   mountWithQuasar,
 } from 'src/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,7 +42,7 @@ vi.mock('src/services/djService', () => ({
 import { djService as mockDJService } from 'src/services/djService';
 
 // Type-safe reference to mock function
-const mockGetDJ = mockDJService['getDJ'] as ReturnType<typeof vi.fn>;
+const mockGetDJ = mockDJService.getDJ as ReturnType<typeof vi.fn>;
 
 // Mock composables
 vi.mock('@/composables/useFormatters', () => ({
@@ -115,7 +114,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
     });
 
     it('should call getDJ service with correct ID from route params', async () => {
-      const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetDJ).toHaveBeenCalledWith(1, expect.any(Object));
@@ -132,7 +131,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
       const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should compute and display activity types
       expect(wrapper.html()).toBeTruthy();
     });
@@ -147,7 +146,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
       const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should show experience/years active
       expect(wrapper.html()).toBeTruthy();
     });
@@ -170,7 +169,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
       });
       mockGetDJ.mockResolvedValue(mockDJ);
 
-      const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetDJ).toHaveBeenCalledWith(1, expect.objectContaining({ _embed: true }));
@@ -195,7 +194,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
       const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should display embedded events
       expect(wrapper.html()).toBeTruthy();
     });
@@ -285,7 +284,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
       const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should format years as ISO dates or display years directly
       expect(wrapper.html()).toBeTruthy();
     });
@@ -371,7 +370,7 @@ describe('DJDetails.vue - Component Tests (T011)', () => {
 
   describe('Component Lifecycle', () => {
     it('should fetch DJ data on mount', async () => {
-      const wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(DJDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetDJ).toHaveBeenCalledTimes(1);

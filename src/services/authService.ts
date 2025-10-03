@@ -37,7 +37,7 @@ export class AuthService {
         token: authToken,
         refreshToken,
         user: {
-          id: Number.parseInt(user.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
+          id: Number.parseInt(user.id.replace('dXNlcjo', ''), 10), // Parse the base64 encoded user ID
           name: user.name,
           email: user.email || '',
           roles: [], // Will be populated later if needed
@@ -140,7 +140,7 @@ export class AuthService {
 
       const { viewer } = data;
       return {
-        id: Number.parseInt(viewer.id.replace('dXNlcjo', '')), // Parse the base64 encoded user ID
+        id: Number.parseInt(viewer.id.replace('dXNlcjo', ''), 10), // Parse the base64 encoded user ID
         name: viewer.name,
         email: viewer.email || '',
         roles: viewer.roles?.nodes?.map((role: { name: string }) => role.name) || [],
@@ -156,7 +156,7 @@ export class AuthService {
    * Request password reset - redirects to WordPress
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  requestPasswordReset(email: string): void {
+  requestPasswordReset(_email: string): void {
     // Redirect to WordPress password reset page
     const wordpressUrl =
       process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';
@@ -173,7 +173,7 @@ export class AuthService {
    * Register new user - redirects to WordPress
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  register(userData: { username: string; email: string; name: string; password: string }): void {
+  register(_userData: { username: string; email: string; name: string; password: string }): void {
     // Redirect to WordPress registration page
     const wordpressUrl =
       process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';

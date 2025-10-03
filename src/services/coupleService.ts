@@ -23,8 +23,6 @@ export interface CoupleParams extends BaseParams {
 }
 
 class CoupleService extends BaseService<Couple> {
-  private readonly defaultMetaFields: string;
-
   constructor() {
     super('/couples', {
       _embed: false, // Disable embeds for better performance by default
@@ -68,7 +66,7 @@ class CoupleService extends BaseService<Couple> {
   async getCouple(id: number, params: CoupleParams = {}, signal?: AbortSignal): Promise<Couple> {
     try {
       const apiParams = {
-        _embed: params.include_events || params.include_teachers ? true : false,
+        _embed: !!(params.include_events || params.include_teachers),
         meta_fields: params.essential_only ? ESSENTIAL_COUPLE_META_FIELDS : ALL_COUPLE_META_FIELDS,
         ...params,
       };

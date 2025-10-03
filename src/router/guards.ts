@@ -6,7 +6,7 @@ import { useAuthStore } from '../stores/authStore';
  */
 export const requireAuth = async (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ): Promise<void> => {
   const authStore = useAuthStore();
@@ -37,7 +37,7 @@ export const requireAuth = async (
 export const requireRole = (requiredRole: string) => {
   return async (
     to: RouteLocationNormalized,
-    from: RouteLocationNormalized,
+    _from: RouteLocationNormalized,
     next: NavigationGuardNext,
   ): Promise<void> => {
     const authStore = useAuthStore();
@@ -72,7 +72,7 @@ export const requireRole = (requiredRole: string) => {
  */
 export const requireAdmin = async (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ): Promise<void> => {
   const authStore = useAuthStore();
@@ -106,7 +106,7 @@ export const requireAdmin = async (
  */
 export const requireManageOptions = async (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ): Promise<void> => {
   const authStore = useAuthStore();
@@ -140,7 +140,7 @@ export const requireManageOptions = async (
  */
 export const redirectIfAuthenticated = (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ): void => {
   const authStore = useAuthStore();

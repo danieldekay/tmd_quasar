@@ -29,7 +29,7 @@ import { useQuasar } from 'quasar';
 
 const $q = useQuasar();
 
-const contactSupport = () => {
+const _contactSupport = () => {
   $q.notify({
     type: 'info',
     message: 'Please contact the administrator for access',

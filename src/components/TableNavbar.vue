@@ -136,13 +136,13 @@ const props = withDefaults(defineProps<TableNavbarProps>(), {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const emit = defineEmits<{
+const _emit = defineEmits<{
   reload: [];
   'update:rowsPerPage': [value: number];
   'update:currentPage': [value: number];
 }>();
 
-const formatResultsText = () => {
+const _formatResultsText = () => {
   const count = props.filteredCount;
   const plural = props.itemNamePlural || `${props.itemName}s`;
 

@@ -287,26 +287,26 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 // Computed properties
-const leader = computed(() => {
+const _leader = computed(() => {
   if (couple.value?._embedded?.teachers) {
     return couple.value._embedded.teachers.find((t) => t.role === 'leader');
   }
   return null;
 });
 
-const follower = computed(() => {
+const _follower = computed(() => {
   if (couple.value?._embedded?.teachers) {
     return couple.value._embedded.teachers.find((t) => t.role === 'follower');
   }
   return null;
 });
 
-const events = computed(() => {
+const _events = computed(() => {
   return couple.value?._embedded?.events || [];
 });
 
 // Helper function to get couple names
-const getCoupleNames = (couple: Couple): string => {
+const _getCoupleNames = (couple: Couple): string => {
   if (couple._embedded?.teachers) {
     const teachers = couple._embedded.teachers;
     const leaderName = teachers.find((t) => t.role === 'leader')?.title || '';
@@ -325,14 +325,14 @@ const getCoupleNames = (couple: Couple): string => {
   return decodeHtmlEntities(getRenderedTitle(couple.title) || 'Unknown Partnership');
 };
 
-const getLocationText = (couple: Couple): string => {
+const _getLocationText = (couple: Couple): string => {
   const city = couple.city || couple.meta_box?.city || '';
   const country = couple.country || couple.meta_box?.country || '';
   const countryName = country ? getCountryName(country) : '';
   return [city, countryName].filter(Boolean).join(', ');
 };
 
-const getTeacherLocation = (teacher: { city?: string; country?: string }): string => {
+const _getTeacherLocation = (teacher: { city?: string; country?: string }): string => {
   const city = teacher.city || '';
   const country = teacher.country || '';
   const countryName = country ? getCountryName(country) : '';
@@ -347,7 +347,7 @@ const decodeHtmlEntities = (str: string): string => {
 
 // API functions
 const loadCouple = async () => {
-  const coupleId = Number.parseInt(route.params.id as string);
+  const coupleId = Number.parseInt(route.params.id as string, 10);
   if (!coupleId) {
     error.value = 'Invalid couple ID';
     return;

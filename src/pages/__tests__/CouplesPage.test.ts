@@ -73,7 +73,7 @@ vi.mock('src/services/coupleService', () => ({
 import { coupleService as mockCouplesService } from 'src/services/coupleService';
 
 // Type-safe reference to mock function
-const mockGetCouples = mockCouplesService['getCouples'] as ReturnType<typeof vi.fn>;
+const mockGetCouples = mockCouplesService.getCouples as ReturnType<typeof vi.fn>;
 
 // Mock composables
 vi.mock('@/composables/useCountries', () => ({

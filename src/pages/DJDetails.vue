@@ -378,16 +378,16 @@ const $q = useQuasar();
 const dj = ref<DJ | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const tab = ref<'overview' | 'activities' | 'events' | 'contact'>('overview');
+const _tab = ref<'overview' | 'activities' | 'events' | 'contact'>('overview');
 const djEvents = ref<BaseEvent[]>([]);
 const eventsLoading = ref(false);
 
-const defaultImage = 'https://cdn.quasar.dev/img/parallax2.jpg';
+const _defaultImage = 'https://cdn.quasar.dev/img/parallax2.jpg';
 
 const { formatDate } = useFormatters();
 
 // Helper function to extract title from V4 API format
-const getEventTitle = (event: BaseEvent): string => {
+const _getEventTitle = (event: BaseEvent): string => {
   console.log('Processing event title:', event.title);
   if (typeof event.title === 'string') {
     return event.title;
@@ -403,7 +403,7 @@ const location = computed(() => {
   return [dj.value.tmd_dj_city, dj.value.tmd_dj_country].filter(Boolean).join(', ');
 });
 
-const djBio = computed(() => {
+const _djBio = computed(() => {
   if (!dj.value) return '';
   const about = dj.value.tmd_dj_about_the_dj;
   const abstract = dj.value.abstract;
@@ -415,7 +415,7 @@ const djBio = computed(() => {
 });
 
 // Activity chips for hero section
-const activityChips = computed(() => [
+const _activityChips = computed(() => [
   {
     show: dj.value?.tmd_dj_activity_marathons === '1',
     icon: 'run_circle',
@@ -449,7 +449,7 @@ const activityChips = computed(() => [
 ]);
 
 // DJ info items for sidebar
-const djInfoItems = computed(() => [
+const _djInfoItems = computed(() => [
   {
     show: !!(dj.value?.tmd_dj_name || dj.value?.title),
     icon: 'person',
@@ -489,7 +489,7 @@ const djInfoItems = computed(() => [
 ]);
 
 // Main activities
-const mainActivities = computed(() => [
+const _mainActivities = computed(() => [
   {
     show: dj.value?.tmd_dj_activity_marathons === '1',
     icon: 'run_circle',
@@ -543,7 +543,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_marathons_since || '',
       icon: 'run_circle',
       color: 'red',
-      year: Number.parseInt(dj.value?.tmd_dj_activity_marathons_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_marathons_since || '0', 10),
     },
     {
       show:
@@ -553,7 +553,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_festivals_since || '',
       icon: 'celebration',
       color: 'purple',
-      year: Number.parseInt(dj.value?.tmd_dj_activity_festivals_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_festivals_since || '0', 10),
     },
     {
       show:
@@ -563,7 +563,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_encuentros_since || '',
       icon: 'groups',
       color: 'blue',
-      year: Number.parseInt(dj.value?.tmd_dj_activity_encuentros_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_encuentros_since || '0', 10),
     },
     {
       show: dj.value?.tmd_dj_activity_milongas === '1' && dj.value?.tmd_dj_activity_milongas_since,
@@ -572,7 +572,7 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_milongas_since || '',
       icon: 'music_note',
       color: 'teal',
-      year: Number.parseInt(dj.value?.tmd_dj_activity_milongas_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_milongas_since || '0', 10),
     },
     {
       show:
@@ -583,17 +583,17 @@ const experienceTimeline = computed(() => {
       since: dj.value?.tmd_dj_activity_milongas_travel_since || '',
       icon: 'travel_explore',
       color: 'green',
-      year: Number.parseInt(dj.value?.tmd_dj_activity_milongas_travel_since || '0'),
+      year: Number.parseInt(dj.value?.tmd_dj_activity_milongas_travel_since || '0', 10),
     },
   ];
 
   return activities.filter((a) => a.show && a.year > 0).sort((a, b) => a.year - b.year);
 });
 
-const hasExperienceData = computed(() => experienceTimeline.value.length > 0);
+const _hasExperienceData = computed(() => experienceTimeline.value.length > 0);
 
 // Contact methods
-const contactMethods = computed(() => [
+const _contactMethods = computed(() => [
   {
     show: !!dj.value?.tmd_dj_e_mail,
     icon: 'email',
@@ -636,7 +636,7 @@ const contactMethods = computed(() => [
   },
 ]);
 
-const hasContactInfo = computed(
+const _hasContactInfo = computed(
   () =>
     !!(
       dj.value?.tmd_dj_e_mail ||
@@ -654,7 +654,7 @@ const upcomingEvents = computed(() => {
     .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 });
 
-const eventsByYear = computed(() => {
+const _eventsByYear = computed(() => {
   const eventGroups = new Map<number, typeof djEvents.value>();
 
   djEvents.value.forEach((event) => {
@@ -678,7 +678,7 @@ const eventsByYear = computed(() => {
     .sort((a, b) => b.year - a.year);
 });
 
-const eventsStats = computed(() => {
+const _eventsStats = computed(() => {
   const events = djEvents.value;
 
   // Data validation for countries
@@ -691,7 +691,7 @@ const eventsStats = computed(() => {
   const yearValues = events.map((e) => {
     if (!e.start_date) return null;
     const year = new Date(e.start_date).getFullYear();
-    return !isNaN(year) ? year : null;
+    return !Number.isNaN(year) ? year : null;
   });
   const validYears = yearValues.filter((year) => year !== null);
   const years = new Set(validYears);
@@ -708,7 +708,7 @@ const eventsStats = computed(() => {
 });
 
 // Methods
-const isEventUpcoming = (startDate: string): boolean => {
+const _isEventUpcoming = (startDate: string): boolean => {
   if (!startDate) return false;
   return new Date(startDate) > new Date();
 };
@@ -747,7 +747,7 @@ const loadDJEvents = () => {
   }
 };
 
-const goToEvent = (eventId: number) => {
+const _goToEvent = (eventId: number) => {
   void router.push(`/events/${eventId}`);
 };
 

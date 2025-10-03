@@ -198,22 +198,22 @@ const reminderNote = ref('');
 // Computed
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
-const isLiked = computed(() => interactionState.value.liked);
-const isBookmarked = computed(() => interactionState.value.bookmarked);
-const isFollowing = computed(() => interactionState.value.following);
+const _isLiked = computed(() => interactionState.value.liked);
+const _isBookmarked = computed(() => interactionState.value.bookmarked);
+const _isFollowing = computed(() => interactionState.value.following);
 const hasReminder = computed(() => !!interactionState.value.reminder);
 
-const isProfileType = computed(() =>
+const _isProfileType = computed(() =>
   ['tmd_teacher', 'tmd_dj', 'tmd_teacher_couple', 'tmd_event_series'].includes(props.targetType),
 );
 
-const layoutClass = computed(() => ({
+const _layoutClass = computed(() => ({
   'interaction-buttons--floating': props.layout === 'floating',
   'interaction-buttons--compact': props.layout === 'compact',
   'interaction-buttons--expanded': props.layout === 'expanded',
 }));
 
-const buttonClass = computed(() => ({
+const _buttonClass = computed(() => ({
   'q-mr-xs': props.layout !== 'floating',
 }));
 
@@ -244,7 +244,7 @@ const checkAuthentication = () => {
   return true;
 };
 
-const handleToggleLike = async () => {
+const _handleToggleLike = async () => {
   if (!checkAuthentication() || !hasValidTarget.value) return;
   try {
     await toggleLike();
@@ -253,7 +253,7 @@ const handleToggleLike = async () => {
   }
 };
 
-const handleToggleBookmark = async () => {
+const _handleToggleBookmark = async () => {
   if (!checkAuthentication() || !hasValidTarget.value) return;
   try {
     await toggleBookmark();
@@ -262,7 +262,7 @@ const handleToggleBookmark = async () => {
   }
 };
 
-const handleToggleFollow = async () => {
+const _handleToggleFollow = async () => {
   if (!checkAuthentication() || !hasValidTarget.value) return;
   try {
     await toggleFollow();
@@ -271,7 +271,7 @@ const handleToggleFollow = async () => {
   }
 };
 
-const openReminderDialog = () => {
+const _openReminderDialog = () => {
   if (!checkAuthentication()) return;
 
   showReminderDialog.value = true;
@@ -284,7 +284,7 @@ const openReminderDialog = () => {
   }
 };
 
-const saveReminder = async () => {
+const _saveReminder = async () => {
   if (!reminderDate.value) return;
 
   try {
@@ -295,7 +295,7 @@ const saveReminder = async () => {
   }
 };
 
-const handleRemoveReminder = async () => {
+const _handleRemoveReminder = async () => {
   try {
     await removeReminderFromComposable();
     showReminderDialog.value = false;
@@ -308,10 +308,10 @@ const handleRemoveReminder = async () => {
 const isValidDate = (dateStr: string): boolean => {
   if (!dateStr) return false;
   const date = new Date(dateStr);
-  return !isNaN(date.getTime());
+  return !Number.isNaN(date.getTime());
 };
 
-const formatReminderDate = (dateStr: string): string => {
+const _formatReminderDate = (dateStr: string): string => {
   if (!dateStr || !isValidDate(dateStr)) return '';
   try {
     const date = new Date(dateStr);

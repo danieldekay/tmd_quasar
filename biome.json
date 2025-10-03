@@ -21,6 +21,10 @@
   },
   "linter": {
     "enabled": true,
+    "domains": {
+      "project": "recommended",
+      "vue": "recommended"
+    },
     "rules": {
       "recommended": true,
       "complexity": {
@@ -96,6 +100,36 @@
           "style": {
             "useConst": "error",
             "useTemplate": "warn",
+            "noNonNullAssertion": "warn"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/boot/**/*.ts", "src/composables/**/*.ts", "src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useHookAtTopLevel": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/utils/cookies.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noDocumentCookie": "warn"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/utils/jwt.ts"],
+      "linter": {
+        "rules": {
+          "style": {
             "noNonNullAssertion": "warn"
           }
         }

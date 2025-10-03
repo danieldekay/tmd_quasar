@@ -139,7 +139,7 @@ withDefaults(defineProps<Props>(), {
 defineEmits<Emits>();
 
 // Mobile filter state
-const filtersExpanded = ref(false);
+const _filtersExpanded = ref(false);
 </script>
 
 <style lang="scss" scoped>

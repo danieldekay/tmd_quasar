@@ -1,19 +1,26 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.1 → 1.1.0
-- Amendment: Added Biome tooling principle, enhanced type checking, auto-fix workflows (MINOR version bump)
+- Version change: 1.0.1 → 1.1.0 → 1.1.1 (PATCH: Biome v2 type inference configuration)
+- Amendment: Added Biome v2 type inference capability to Principle VI (2025-10-03)
 - Modified principles:
-  - Principle II: TypeScript Strict Compliance - Added real-time dev server checking
-  - Principle VI: NEW - Biome-First Code Quality (replaces ESLint/Prettier for speed)
+  - Principle II: TypeScript Strict Compliance - Added real-time dev server checking (v1.1.0)
+  - Principle VI: Biome-First Code Quality - Added type inference domains and Vue support (v1.1.1)
 - Added sections:
-  - Auto-Fix Workflow Standards
-  - Enhanced Type Checking Requirements
-  - Package Manager Version Enforcement (pnpm@10.18.0)
+  - Auto-Fix Workflow Standards (v1.1.0)
+  - Enhanced Type Checking Requirements (v1.1.0)
+  - Package Manager Version Enforcement - pnpm@10.18.0 (v1.1.0)
+  - Biome v2 Type Inference Configuration - project + vue domains (v1.1.1)
+- Configuration changes:
+  - biome.json: Added "project": "recommended" domain for type inference
+  - biome.json: Added "vue": "recommended" domain for Vue 3 support
 - Templates requiring updates:
   - ✅ plan-template.md: Add Biome check to Constitution Check section
   - ✅ tasks-template.md: Add Biome auto-fix tasks, type-check tasks
   - ⚠ spec-template.md: Review for quality gate mentions
 - Follow-up TODOs: None
+- Documentation updated:
+  - BIOME_SETUP.md: Added comprehensive Biome v2 type inference section
+  - .github/copilot-instructions.md: Already mentions Biome as primary tool
 -->
 
 # TMD Quasar Constitution
@@ -88,6 +95,11 @@ Rationale: Ensures the application serves all users effectively across devices a
 - **Biome MUST be the primary tool** for code formatting and linting (20-100x faster than ESLint/Prettier)
 - All code MUST pass `pnpm check:biome` before commits
 - Biome auto-fixes MUST be applied: import sorting, formatting, common lint issues
+- **Biome v2 type inference MUST be enabled** (`"project": "recommended"` domain in `biome.json`)
+  - Provides ~75% type error coverage without TypeScript compiler overhead
+  - Detects floating promises, type mismatches, and unsafe operations
+  - Complements but does NOT replace `vue-tsc` for comprehensive type validation
+- **Vue domain MUST be enabled** (`"vue": "recommended"` domain for Vue 3 specific rules)
 - ESLint/Prettier remain available for Vue-specific rules but Biome takes precedence
 - VS Code Biome extension SHOULD be installed for format-on-save
 - Configuration in `biome.json` with these non-negotiable settings:
@@ -100,8 +112,10 @@ Rationale: Ensures the application serves all users effectively across devices a
   - `useConst` enforced (prefer const over let)
   - `useImportType` enforced (TypeScript type imports)
   - `noExplicitAny` as warning (error in production code, warning in tests)
+  - Project domain enabled for type inference
+  - Vue domain enabled for Vue 3 support
 
-Rationale: Biome provides instant feedback (100ms vs 5-10s), eliminates configuration complexity (single `biome.json` vs multiple config files), and automatically fixes most issues. The speed improvement enables pre-commit checks without frustrating developers. Auto-fix capabilities reduce manual formatting work and maintain consistency across the codebase.
+Rationale: Biome provides instant feedback (100ms vs 5-10s), eliminates configuration complexity (single `biome.json` vs multiple config files), and automatically fixes most issues. Biome v2's type inference catches ~75% of type errors during fast checks, reducing reliance on slow full type checking for rapid iteration. The speed improvement enables pre-commit checks without frustrating developers. Auto-fix capabilities reduce manual formatting work and maintain consistency across the codebase.
 
 ## Quality Standards
 

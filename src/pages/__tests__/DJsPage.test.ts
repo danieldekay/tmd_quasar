@@ -75,7 +75,7 @@ vi.mock('src/services/djService', () => ({
 import { djService as mockDJService } from 'src/services/djService';
 
 // Type-safe reference to mock function
-const mockGetDJs = mockDJService['getDJs'] as ReturnType<typeof vi.fn>;
+const mockGetDJs = mockDJService.getDJs as ReturnType<typeof vi.fn>;
 
 // Mock composables with simple implementations
 vi.mock('@/composables/useCountries', () => ({

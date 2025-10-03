@@ -3,7 +3,7 @@
 import type { Mock } from 'vitest';
 import { baseServiceMocks } from '../__tests__/serviceMocks'; // Adjust path as necessary
 
-export class BaseService<T = Record<string, unknown>> {
+export class BaseService<_T = Record<string, unknown>> {
   public endpoint: string;
   public defaultOptions: Record<string, unknown>;
   private mockImplementation: Record<string, Mock>;

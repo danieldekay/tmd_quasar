@@ -124,7 +124,6 @@ import { useRouter } from 'vue-router';
 import { useFormatters } from '../composables/useFormatters';
 import type { ContentItem } from '../services/contentService';
 import type { ContentType, InteractionType } from '../services/types';
-import InteractionButtons from './InteractionButtons.vue';
 
 interface ConsolidatedFavoriteItem extends ContentItem {
   interactions: Array<{
@@ -158,7 +157,7 @@ const formatDateTime = (dateString: string): string => {
 
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       return 'Invalid Date';
     }
 
@@ -180,20 +179,20 @@ const isValidDate = (dateString?: string): boolean => {
   if (!dateString || dateString === 'Invalid Date') return false;
   try {
     const date = new Date(dateString);
-    return !isNaN(date.getTime());
+    return !Number.isNaN(date.getTime());
   } catch {
     return false;
   }
 };
 
 // Helper to format reminder date safely
-const formatReminderDate = (dateString?: string): string => {
+const _formatReminderDate = (dateString?: string): string => {
   if (!isValidDate(dateString)) return '';
   return formatDateTime(dateString!);
 };
 
 // Type configuration with dashboard icons
-const typeConfig = computed(() => {
+const _typeConfig = computed(() => {
   const configs = {
     event: { label: 'Event', icon: 'event', color: 'primary' },
     teacher: { label: 'Teacher', icon: 'school', color: 'secondary' },
@@ -206,7 +205,7 @@ const typeConfig = computed(() => {
 });
 
 // Content type mapping for API
-const contentTypeMap: Record<string, ContentType> = {
+const _contentTypeMap: Record<string, ContentType> = {
   event: 'tmd_event',
   teacher: 'tmd_teacher',
   dj: 'tmd_dj',
@@ -223,12 +222,12 @@ const interactionTypeLabels: Record<InteractionType, string> = {
 };
 
 // Find all reminder interactions
-const reminderInteractions = computed(() => {
+const _reminderInteractions = computed(() => {
   return props.item.interactions.filter((interaction) => interaction.type === 'reminder');
 });
 
 // Create interaction summary
-const interactionSummary = computed(() => {
+const _interactionSummary = computed(() => {
   const interactions = props.item.interactions;
   if (!interactions || interactions.length === 0) {
     return 'No interactions';
@@ -251,19 +250,19 @@ const interactionSummary = computed(() => {
 });
 
 // Helper functions
-const stripHtml = (html: string): string => {
+const _stripHtml = (html: string): string => {
   const temp = document.createElement('div');
   temp.innerHTML = html;
   return temp.textContent || temp.innerText || '';
 };
 
-const truncateText = (text: string, maxLength: number): string => {
+const _truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + '...';
+  return `${text.substring(0, maxLength).trim()}...`;
 };
 
 // Navigation
-const navigateToDetail = () => {
+const _navigateToDetail = () => {
   const routeMap = {
     event: `/events/${props.item.id}`,
     teacher: `/teachers/${props.item.id}`,
@@ -279,7 +278,7 @@ const navigateToDetail = () => {
 };
 
 // Event handlers
-const handleInteractionChange = () => {
+const _handleInteractionChange = () => {
   // The interaction has been changed, emit remove event for re-evaluation
   emit('remove', props.item);
 };

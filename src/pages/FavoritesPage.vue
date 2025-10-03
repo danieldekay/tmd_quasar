@@ -218,15 +218,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import FavoriteCard from '../components/FavoriteCard.vue';
-import InteractionButtons from '../components/InteractionButtons.vue';
 import { useFormatters } from '../composables/useFormatters';
 import { useInteractionCache } from '../composables/useInteractionCache';
 import { type ContentItem, contentService } from '../services/contentService';
 import type { ContentType, InteractionType } from '../services/types';
 
 const router = useRouter();
-const activeTab = ref('bookmarks');
+const _activeTab = ref('bookmarks');
 const loading = ref(true);
 const { cache, syncWithServer } = useInteractionCache();
 const { formatDate } = useFormatters();
@@ -247,7 +245,7 @@ interface ConsolidatedFavoriteItem extends ContentItem {
 }
 
 // Helper functions for list layouts
-const getTypeIcon = (type: string): string => {
+const _getTypeIcon = (type: string): string => {
   const icons = {
     event: 'event',
     teacher: 'school',
@@ -258,7 +256,7 @@ const getTypeIcon = (type: string): string => {
   return icons[type as keyof typeof icons] || 'help';
 };
 
-const getTypeColor = (type: string): string => {
+const _getTypeColor = (type: string): string => {
   const colors = {
     event: 'primary',
     teacher: 'secondary',
@@ -269,7 +267,7 @@ const getTypeColor = (type: string): string => {
   return colors[type as keyof typeof colors] || 'grey';
 };
 
-const getTypeLabel = (type: string): string => {
+const _getTypeLabel = (type: string): string => {
   const labels = {
     event: 'Event',
     teacher: 'Teacher',
@@ -280,7 +278,7 @@ const getTypeLabel = (type: string): string => {
   return labels[type as keyof typeof labels] || 'Content';
 };
 
-const getContentType = (type: string): ContentType => {
+const _getContentType = (type: string): ContentType => {
   const contentTypeMap: Record<string, ContentType> = {
     event: 'tmd_event',
     teacher: 'tmd_teacher',
@@ -291,12 +289,12 @@ const getContentType = (type: string): ContentType => {
   return contentTypeMap[type] || 'tmd_event';
 };
 
-const truncateText = (text: string, maxLength: number): string => {
+const _truncateText = (text: string, maxLength: number): string => {
   if (!text || text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + '...';
+  return `${text.substring(0, maxLength).trim()}...`;
 };
 
-const navigateToItem = (item: ConsolidatedFavoriteItem) => {
+const _navigateToItem = (item: ConsolidatedFavoriteItem) => {
   const routes: Record<string, string> = {
     event: `/events/${item.id}`,
     teacher: `/teachers/${item.id}`,
@@ -373,14 +371,14 @@ const reminders = computed(() => createConsolidatedFavorites('reminder'));
 const following = computed(() => createConsolidatedFavorites('follow'));
 
 // Counts
-const totalFavorites = computed(
+const _totalFavorites = computed(
   () =>
     bookmarks.value.length + likes.value.length + reminders.value.length + following.value.length,
 );
-const bookmarksCount = computed(() => bookmarks.value.length);
-const likesCount = computed(() => likes.value.length);
-const remindersCount = computed(() => reminders.value.length);
-const followingCount = computed(() => following.value.length);
+const _bookmarksCount = computed(() => bookmarks.value.length);
+const _likesCount = computed(() => likes.value.length);
+const _remindersCount = computed(() => reminders.value.length);
+const _followingCount = computed(() => following.value.length);
 
 // Load favorites content
 const loadFavorites = async () => {
@@ -419,7 +417,7 @@ const loadFavorites = async () => {
 };
 
 // Handle removing an interaction
-const handleRemove = (item: ConsolidatedFavoriteItem) => {
+const _handleRemove = (item: ConsolidatedFavoriteItem) => {
   // The FavoriteCard component will handle the actual removal
   // This is just for any additional cleanup if needed
   console.log('Removing favorite:', item);

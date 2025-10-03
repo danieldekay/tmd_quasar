@@ -42,7 +42,7 @@ vi.mock('src/services/coupleService', () => ({
 import { coupleService as mockCoupleService } from 'src/services/coupleService';
 
 // Type-safe reference to mock function
-const mockGetCouple = mockCoupleService['getCouple'] as ReturnType<typeof vi.fn>;
+const mockGetCouple = mockCoupleService.getCouple as ReturnType<typeof vi.fn>;
 
 // Mock composables
 vi.mock('@/composables/useFormatters', () => ({
@@ -114,7 +114,7 @@ describe('CoupleDetails.vue - Component Tests (T013)', () => {
     });
 
     it('should call getCouple service with correct ID from route params', async () => {
-      const wrapper = mountWithQuasar(CoupleDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(CoupleDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetCouple).toHaveBeenCalledWith(1, expect.any(Object));
@@ -133,7 +133,7 @@ describe('CoupleDetails.vue - Component Tests (T013)', () => {
       const wrapper = mountWithQuasar(CoupleDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should display partnership info
       expect(wrapper.html()).toBeTruthy();
     });
@@ -441,7 +441,7 @@ describe('CoupleDetails.vue - Component Tests (T013)', () => {
 
   describe('Component Lifecycle', () => {
     it('should fetch couple data on mount', async () => {
-      const wrapper = mountWithQuasar(CoupleDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(CoupleDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetCouple).toHaveBeenCalledTimes(1);

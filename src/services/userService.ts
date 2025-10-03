@@ -294,8 +294,6 @@ export const ALL_USER_META_FIELDS = [
 ].join(',');
 
 export class UserService extends BaseService<UserProfile> {
-  private readonly defaultMetaFields: string;
-
   constructor() {
     super('/me', {
       _embed: false, // Disable embeds for better performance by default
@@ -371,7 +369,7 @@ export class UserService extends BaseService<UserProfile> {
   ): Promise<UserProfile> {
     try {
       const apiParams = {
-        _embed: params.include_events ? true : false,
+        _embed: !!params.include_events,
         meta_fields: params.essential_only ? ESSENTIAL_USER_META_FIELDS : ALL_USER_META_FIELDS,
         ...params,
       };
@@ -397,7 +395,7 @@ export class UserService extends BaseService<UserProfile> {
       const searchParams = {
         search: query,
         meta_fields: ALL_USER_META_FIELDS, // Include all fields for search results
-        _embed: params.include_events ? true : false,
+        _embed: !!params.include_events,
         ...params,
       };
 

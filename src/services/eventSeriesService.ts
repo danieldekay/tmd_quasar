@@ -21,8 +21,6 @@ export interface EventSeriesParams extends BaseParams {
 }
 
 class EventSeriesService extends BaseService<EventSeries> {
-  private readonly defaultMetaFields: string;
-
   constructor() {
     super('/event-series', {
       _embed: false, // Disable embeds for better performance by default
@@ -69,7 +67,7 @@ class EventSeriesService extends BaseService<EventSeries> {
   ): Promise<EventSeries> {
     try {
       const apiParams = {
-        _embed: params.include_events ? true : false,
+        _embed: !!params.include_events,
         meta_fields: params.essential_only
           ? ESSENTIAL_EVENT_SERIES_META_FIELDS
           : ALL_EVENT_SERIES_META_FIELDS,

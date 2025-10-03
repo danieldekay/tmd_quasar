@@ -4,11 +4,12 @@
 
 Biome is a fast, modern toolchain for web development that combines:
 
-- **Linter** (replaces ESLint)
+- **Linter** (replaces ESLint) - includes type-aware rules!
 - **Formatter** (replaces Prettier)
 - **Import Organizer** (built-in)
+- **Type Inference** (NEW in v2!) - detects ~75% of type errors without TypeScript compiler
 
-Written in Rust, it's **20x faster** than ESLint and Prettier combined.
+Written in Rust, it's **20-100x faster** than ESLint and Prettier combined.
 
 ## 📦 Installation
 
@@ -98,6 +99,89 @@ Add to your workspace settings (`.vscode/settings.json`):
   }
 }
 ```
+
+## 🧬 Type Inference (Biome v2)
+
+**NEW:** Biome v2 includes built-in type inference that catches type errors **without requiring the TypeScript compiler!**
+
+### What It Does
+
+- **Multi-file analysis**: Scans your entire project and builds a type index
+- **Type-aware linting**: Rules like `noFloatingPromises` work without installing `typescript` package
+- **~75% coverage**: Detects most common type errors that `typescript-eslint` would catch
+- **Fraction of the cost**: Much faster than running `tsc` or `vue-tsc`
+
+### How It Works
+
+```json
+// In biome.json - Already enabled!
+{
+  "linter": {
+    "domains": {
+      "project": "recommended", // ✅ Type inference + project rules
+      "vue": "recommended" // ✅ Vue-specific rules
+    }
+  }
+}
+```
+
+**Domains Explained:**
+
+- `"project"` - Enables multi-file analysis and type-aware rules
+- `"vue"` - Enables Vue 3 specific linting rules
+- `"recommended"` - Activates recommended rules only (faster)
+- `"all"` - Activates ALL rules (slower, more thorough)
+- `"none"` - Disables the domain
+
+### Type-Aware Rules
+
+When project domain is enabled, Biome activates these type-aware rules:
+
+- `noFloatingPromises` - Detects unhandled promises
+- `noMisusedPromises` - Catches promise usage errors
+- `noUnsafeArgument` - Type-safe function arguments
+- `noUnsafeCall` - Type-safe function calls
+- `noUnsafeMemberAccess` - Safe property access
+- And more...
+
+### Performance Impact
+
+- **First run**: ~1-2s (builds type index)
+- **Incremental**: ~200-500ms (only re-analyzes changed files)
+- **Much faster than**: Running full `vue-tsc` type check (2-5s)
+
+### Limitations
+
+⚠️ **Type inference is NOT a complete replacement for `vue-tsc`:**
+
+- **Coverage**: ~75% of common cases (improving constantly)
+- **Vue SFCs**: Limited support for `.vue` files (roadmap item)
+- **Edge cases**: May miss complex generic types, advanced mapped types
+- **Maturity**: Released June 2025, still early stage
+
+### Recommended Workflow
+
+```bash
+# Fast pre-commit checks (lint + format + type inference)
+pnpm check:biome  # ~100-500ms ⚡️
+
+# Full type validation (comprehensive coverage)
+pnpm type-check   # ~2-5s 🔍
+
+# Use both:
+# - Biome catches 75% instantly during development
+# - vue-tsc catches 100% before commits/CI
+```
+
+### Future: Vue.js Support
+
+Biome roadmap includes:
+
+- **2025 Q4**: Expand HTML support to Vue, Svelte, Astro
+- **Future**: Full `.vue` SFC type inference
+- **Future**: Improved coverage beyond 75%
+
+For now, keep using `vue-tsc` for production type validation!
 
 ## 📝 Configuration
 

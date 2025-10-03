@@ -28,8 +28,6 @@ export interface TeacherParams extends BaseParams {
 }
 
 class TeacherService extends BaseService<Teacher> {
-  private readonly defaultMetaFields: string;
-
   constructor() {
     super('/teachers', {
       _embed: false, // Disable embeds for better performance by default
@@ -72,7 +70,7 @@ class TeacherService extends BaseService<Teacher> {
   async getTeacher(id: number, params: TeacherParams = {}, signal?: AbortSignal): Promise<Teacher> {
     try {
       const apiParams = {
-        _embed: params.include_events || params.include_couples ? true : false,
+        _embed: !!(params.include_events || params.include_couples),
         meta_fields: params.essential_only
           ? ESSENTIAL_TEACHER_META_FIELDS
           : ALL_TEACHER_META_FIELDS,
@@ -100,7 +98,7 @@ class TeacherService extends BaseService<Teacher> {
       const searchParams = {
         search: query,
         meta_fields: ALL_TEACHER_META_FIELDS, // Include all fields for search results
-        _embed: params.include_events || params.include_couples ? true : false,
+        _embed: !!(params.include_events || params.include_couples),
         ...params,
       };
 

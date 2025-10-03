@@ -42,7 +42,7 @@ vi.mock('src/services/teacherService', () => ({
 import { teacherService as mockTeacherService } from 'src/services/teacherService';
 
 // Type-safe reference to mock function
-const mockGetTeacher = mockTeacherService['getTeacher'] as ReturnType<typeof vi.fn>;
+const mockGetTeacher = mockTeacherService.getTeacher as ReturnType<typeof vi.fn>;
 
 // Mock composables
 vi.mock('@/composables/useFormatters', () => ({
@@ -114,7 +114,7 @@ describe('TeacherDetails.vue - Component Tests (T012)', () => {
     });
 
     it('should call getTeacher service with correct ID from route params', async () => {
-      const wrapper = mountWithQuasar(TeacherDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(TeacherDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetTeacher).toHaveBeenCalledWith(1, expect.any(Object));
@@ -132,7 +132,7 @@ describe('TeacherDetails.vue - Component Tests (T012)', () => {
       const wrapper = mountWithQuasar(TeacherDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should display role (leader/follower/both/double-role)
       expect(wrapper.html()).toBeTruthy();
     });
@@ -150,7 +150,7 @@ describe('TeacherDetails.vue - Component Tests (T012)', () => {
       const wrapper = mountWithQuasar(TeacherDetails, {}, mockRouter, true);
       await flushPromises();
 
-      const text = wrapper.text();
+      const _text = wrapper.text();
       // Component should show teaching/dancing experience
       expect(wrapper.html()).toBeTruthy();
     });
@@ -401,7 +401,7 @@ describe('TeacherDetails.vue - Component Tests (T012)', () => {
 
   describe('Component Lifecycle', () => {
     it('should fetch teacher data on mount', async () => {
-      const wrapper = mountWithQuasar(TeacherDetails, {}, mockRouter, true);
+      const _wrapper = mountWithQuasar(TeacherDetails, {}, mockRouter, true);
       await flushPromises();
 
       expect(mockGetTeacher).toHaveBeenCalledTimes(1);

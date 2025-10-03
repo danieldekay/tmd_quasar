@@ -85,9 +85,9 @@ describe('useEventFilters', () => {
     await nextTick(); // Watcher's internal nextTick for saveFilters
 
     expect(cookieSpySet).toHaveBeenCalled();
-    const cookieSetValue = cookieSpySet.mock.calls[0]![0] as string;
+    const cookieSetValue = cookieSpySet.mock.calls[0]?.[0] as string;
     expect(cookieSetValue).toContain(`${COOKIE_NAME}=`);
-    expect(decodeURIComponent(cookieSetValue.split('=')[1]!.split(';')[0]!)).toContain(
+    expect(decodeURIComponent(cookieSetValue.split('=')[1]?.split(';')[0]!)).toContain(
       '"searchQuery":"New Search"',
     );
   });
@@ -120,8 +120,8 @@ describe('useEventFilters', () => {
     expect(cookieSpySet).toHaveBeenCalledTimes(2); // Initial + clear
     const lastCookieCall = cookieSpySet.mock.calls[
       cookieSpySet.mock.calls.length - 1
-    ]![0] as string;
-    expect(decodeURIComponent(lastCookieCall.split('=')[1]!.split(';')[0]!)).toBe(
+    ]?.[0] as string;
+    expect(decodeURIComponent(lastCookieCall.split('=')[1]?.split(';')[0]!)).toBe(
       JSON.stringify(defaultFilters),
     );
   });

@@ -143,7 +143,7 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 
 const loadTeacher = async () => {
-  const id = Number.parseInt(route.params.id as string);
+  const id = Number.parseInt(route.params.id as string, 10);
   if (!id) {
     error.value = 'Invalid teacher ID';
     isLoading.value = false;
