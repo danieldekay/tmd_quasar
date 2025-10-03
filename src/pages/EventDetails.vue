@@ -4,7 +4,7 @@
       <!-- Hero Banner -->
       <div v-if="event" class="hero-wrapper q-mb-md">
         <q-img
-          :src="event.featured_image || defaultImage"
+          :src="heroImageSrc"
           :alt="`Event banner for ${event.event_name || event.title}`"
           class="hero-img"
           loading="lazy"
@@ -20,20 +20,23 @@
             <div class="row items-center q-gutter-sm text-white q-mt-sm">
               <div class="row items-center">
                 <q-icon name="event" size="18px" class="q-mr-xs" />
-                {{ formattedDates }}
+                {{ formattedDateRange }}
               </div>
               <div v-if="location" class="row items-center">
                 <q-icon name="location_on" size="18px" class="q-mr-xs" />
                 {{ location }}
               </div>
               <q-chip
-                v-if="getEventCategory(event.taxonomies)"
+                v-if="categoryPillData"
                 dense
-                :color="getEventCategoryColor(event.taxonomies).color"
-                :text-color="getEventCategoryColor(event.taxonomies).textColor"
-                :icon="getEventCategoryColor(event.taxonomies).icon"
+                :color="categoryPillData.color"
+                text-color="white"
+                :icon="categoryPillData.icon"
               >
-                {{ getEventCategory(event.taxonomies) }}
+                {{ categoryPillData.name }}
+              </q-chip>
+              <q-chip v-if="editionDisplay" dense color="grey-7" text-color="white" icon="stars">
+                {{ editionDisplay }}
               </q-chip>
             </div>
             <!-- Quick Stats Chips -->
@@ -435,92 +438,12 @@
           <!-- Venue & Location Panel -->
           <q-tab-panel name="venue" class="q-pa-md">
             <div class="row q-col-gutter-lg">
-              <!-- Map -->
-              <div class="col-12 col-md-6" v-if="event.lat && event.lon">
+              <!-- Map Component -->
+              <div class="col-12 col-md-6">
                 <q-card flat bordered>
                   <q-card-section>
                     <div class="text-h6 q-mb-md">Location Map</div>
-                    <div
-                      class="map-container"
-                      style="
-                        height: 300px;
-                        border-radius: 8px;
-                        overflow: hidden;
-                        position: relative;
-                        cursor: pointer;
-                      "
-                      @click="openInMaps(event.lat!, event.lon!)"
-                    >
-                      <!-- Use Google Maps embed without API key -->
-                      <iframe
-                        v-if="!mapImageError"
-                        :src="`https://maps.google.com/maps?q=${event.lat},${event.lon}&hl=en&z=8&output=embed`"
-                        width="100%"
-                        height="300"
-                        style="border: 0; border-radius: 8px"
-                        loading="lazy"
-                        referrerpolicy="no-referrer-when-downgrade"
-                        title="Event Location Map"
-                        @error="handleMapImageError"
-                      ></iframe>
-
-                      <!-- Fallback display when iframe fails -->
-                      <div
-                        v-if="mapImageError"
-                        class="fallback-map bg-grey-2 column items-center justify-center text-center q-pa-lg"
-                        style="width: 100%; height: 100%; border-radius: 8px"
-                      >
-                        <q-icon name="location_on" size="4em" color="primary" class="q-mb-md" />
-                        <div class="text-h6 text-primary q-mb-sm">
-                          {{ event.city }}, {{ event.country }}
-                        </div>
-                        <div class="text-body2 text-grey-7 q-mb-md" v-if="fullAddress">
-                          <strong>{{ fullAddress }}</strong>
-                        </div>
-                        <div class="text-caption text-grey-6 q-mb-md">
-                          {{ formattedCoordinates }}
-                        </div>
-                        <q-btn
-                          color="primary"
-                          icon="open_in_new"
-                          label="Open in Maps"
-                          @click.stop="openInMaps(event.lat!, event.lon!)"
-                        />
-                      </div>
-
-                      <!-- Interactive overlay for successful iframe -->
-                      <div
-                        v-if="!mapImageError"
-                        class="map-click-overlay absolute-full"
-                        style="background: transparent; z-index: 10"
-                        @click="openInMaps(event.lat!, event.lon!)"
-                      >
-                        <div class="absolute-bottom-right q-ma-sm">
-                          <q-btn
-                            round
-                            size="sm"
-                            color="white"
-                            text-color="primary"
-                            icon="open_in_new"
-                            class="shadow-2"
-                            @click.stop="openInMaps(event.lat!, event.lon!)"
-                          >
-                            <q-tooltip>Open in Maps</q-tooltip>
-                          </q-btn>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="q-mt-sm text-center">
-                      <q-btn
-                        flat
-                        dense
-                        no-caps
-                        color="primary"
-                        icon="open_in_new"
-                        @click="openInMaps(event.lat!, event.lon!)"
-                        label="Open in Maps"
-                      />
-                    </div>
+                    <EventVenueMap :venue="venueData" />
                   </q-card-section>
                 </q-card>
               </div>
@@ -629,12 +552,15 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, type Ref, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import EventVenueMap from '../components/event/EventVenueMap.vue';
+import { useEventDisplay } from '../composables/useEventDisplay';
 import { useFormatters } from '../composables/useFormatters';
 import { useInteractions } from '../composables/useInteractions';
 import { eventDetailsService as eventService } from '../services';
 import type { DJ, EventDetails, Teacher } from '../services/types';
+import type { EventResponse, VenueData } from '../types/event';
 
 defineOptions({ name: 'EventDetails' });
 
@@ -642,10 +568,15 @@ const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
 
-const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
+const { formatDate, getEventCategory } = useFormatters();
 
 // State
 const event = ref<EventDetails | null>(null);
+
+// Enhanced event display - cast EventDetails to EventResponse for composable
+const { formattedDateRange, editionDisplay, categoryPillData, heroImageSrc } = useEventDisplay(
+  event as Ref<EventResponse | null>,
+);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const tab = ref<'overview' | 'details' | 'djs' | 'venue' | 'contact'>('overview');
@@ -660,13 +591,8 @@ const teachers = ref<Teacher[]>([]);
 const teachersLoading = ref(false);
 const teachersError = ref<string | null>(null);
 
-// Map-related state
-const mapImageError = ref(false);
-
 // Interactions
 const interactions = useInteractions(Number(route.params.id), 'tmd_event');
-
-const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
 // Computed properties
 const formattedDates = computed(() => {
@@ -736,6 +662,27 @@ const formattedCoordinates = computed(() => {
   const latDir = event.value.lat >= 0 ? 'N' : 'S';
   const lonDir = event.value.lon >= 0 ? 'E' : 'W';
   return `Lat: ${lat.toFixed(4)}°${latDir}, Lon: ${lon.toFixed(4)}°${lonDir}`;
+});
+
+// Venue data for map component
+const venueData = computed(() => {
+  if (!event.value) return null;
+
+  const venue = {
+    name: event.value.venue_name || event.value['venue-name'],
+    address: event.value.street,
+    city: event.value.city,
+    country: event.value.country,
+  };
+
+  if (event.value.lat && event.value.lon) {
+    return {
+      ...venue,
+      coordinates: { lat: event.value.lat, lng: event.value.lon },
+    } as VenueData;
+  }
+
+  return venue as VenueData;
 });
 
 // Hero chips configuration
@@ -1096,11 +1043,6 @@ const hasContactInfo = computed(
 const openInMaps = (lat: number, lon: number) => {
   const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
   window.open(mapsUrl, '_blank', 'noopener,noreferrer');
-};
-
-// Map error handling
-const handleMapImageError = () => {
-  mapImageError.value = true;
 };
 
 // DJ-related methods and computed properties
