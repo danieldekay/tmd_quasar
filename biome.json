@@ -91,22 +91,26 @@
   },
   "overrides": [
     {
-      "includes": ["*.vue", "src/App.vue"],
+      "includes": ["**/*.vue"],
       "linter": {
         "rules": {
           "correctness": {
-            "useHookAtTopLevel": "off"
+            "useHookAtTopLevel": "off",
+            "noUnusedVariables": "off"
           },
           "style": {
             "useConst": "error",
             "useTemplate": "warn",
             "noNonNullAssertion": "warn"
+          },
+          "suspicious": {
+            "noExplicitAny": "warn"
           }
         }
       }
     },
     {
-      "includes": ["src/boot/**/*.ts", "src/composables/**/*.ts", "src/**/*.ts"],
+      "includes": ["src/**/*.ts"],
       "linter": {
         "rules": {
           "correctness": {
@@ -116,7 +120,12 @@
       }
     },
     {
-      "includes": ["src/utils/cookies.ts"],
+      "includes": [
+        "src/utils/cookies.ts",
+        "src/composables/useEventFilters.ts",
+        "src/composables/useGenericList.ts",
+        "src/composables/__tests__/**/*.ts"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
@@ -126,7 +135,11 @@
       }
     },
     {
-      "includes": ["src/utils/jwt.ts"],
+      "includes": [
+        "src/utils/jwt.ts",
+        "src/composables/useFormatters.ts",
+        "src/composables/__tests__/**/*.ts"
+      ],
       "linter": {
         "rules": {
           "style": {
@@ -136,11 +149,12 @@
       }
     },
     {
-      "includes": ["*.test.ts", "*.spec.ts", "**/__tests__/**"],
+      "includes": ["*.test.ts", "*.spec.ts", "**/__tests__/**", "**/__mocks__/**"],
       "linter": {
         "rules": {
           "suspicious": {
-            "noExplicitAny": "off"
+            "noExplicitAny": "off",
+            "noTemplateCurlyInString": "off"
           }
         }
       }

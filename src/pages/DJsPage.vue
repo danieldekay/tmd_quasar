@@ -513,7 +513,7 @@ watch(
   (newLoading, oldLoading) => {
     if (oldLoading && !newLoading && !listState.value.error && $q.platform.is.desktop) {
       // A bit of a hack to guess if it was a user-triggered refresh action
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // biome-ignore lint/suspicious/noExplicitAny: accessing internal refresh timestamp
       const lastRefreshTime = (refresh as any).lastRefreshTime;
       if (lastRefreshTime && Date.now() - lastRefreshTime < 1000) {
         $q.notify({
