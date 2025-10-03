@@ -155,7 +155,7 @@ const isFormValid = computed(() => {
   return username.value.trim() !== '' && password.value.trim() !== '';
 });
 
-const _buttonText = computed(() => {
+const buttonText = computed(() => {
   if (props.isLoading) return 'Signing in...';
   if (props.isDelayed) return 'Please wait...';
   return 'Sign In';

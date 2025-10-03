@@ -56,7 +56,7 @@ withDefaults(defineProps<Props>(), {
 /**
  * Format count with locale-specific thousands separators
  */
-const _formatCount = (count: number): string => {
+const formatCount = (count: number): string => {
   return count.toLocaleString();
 };
 </script>

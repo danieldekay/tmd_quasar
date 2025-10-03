@@ -290,7 +290,7 @@ const emit = defineEmits<Emits>();
 /**
  * Format results text with proper pluralization
  */
-const _formatResultsText = (count: number): string => {
+const formatResultsText = (count: number): string => {
   const displayCount = count || 0;
 
   if (displayCount === 1) {
@@ -303,7 +303,7 @@ const _formatResultsText = (count: number): string => {
 /**
  * Handle pull to refresh
  */
-const _handlePullToRefresh = (done: () => void) => {
+const handlePullToRefresh = (done: () => void) => {
   emit('pull-to-refresh', done);
 };
 </script>

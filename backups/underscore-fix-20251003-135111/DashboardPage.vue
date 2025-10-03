@@ -204,7 +204,7 @@ const authStore = useAuthStore();
 const profile = ref<UserProfile | null>(null);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
-const activeTab = ref('published');
+const _activeTab = ref('published');
 
 // Use dashboard composable
 const { publishedContent, contentCounts } = useDashboard(profile);
@@ -212,33 +212,33 @@ const { publishedContent, contentCounts } = useDashboard(profile);
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
-const totalContentCount = computed(() => contentCounts.value.total);
-const publishedCount = computed(() => contentCounts.value.published);
-const scheduledCount = computed(() => contentCounts.value.scheduled);
-const draftCount = computed(() => contentCounts.value.draft);
-const privateCount = computed(() => contentCounts.value.private);
+const _totalContentCount = computed(() => contentCounts.value.total);
+const _publishedCount = computed(() => contentCounts.value.published);
+const _scheduledCount = computed(() => contentCounts.value.scheduled);
+const _draftCount = computed(() => contentCounts.value.draft);
+const _privateCount = computed(() => contentCounts.value.private);
 
 // Content by status
-const allPublishedContent = computed(() => {
+const _allPublishedContent = computed(() => {
   return publishedContent.value;
 });
 
-const scheduledContent = computed(() => {
+const _scheduledContent = computed(() => {
   // For now, return empty array since we don't have scheduled content in the API
   return [];
 });
 
-const draftContent = computed(() => {
+const _draftContent = computed(() => {
   // For now, return empty array since we don't have draft content in the API
   return [];
 });
 
-const privateContent = computed(() => {
+const _privateContent = computed(() => {
   // For now, return empty array since we don't have private content in the API
   return [];
 });
 
-const viewContent = (content: DashboardContentItem) => {
+const _viewContent = (content: DashboardContentItem) => {
   const routes = {
     event: `/events/${content.id}`,
     teacher: `/teachers/${content.id}`,
@@ -252,38 +252,38 @@ const viewContent = (content: DashboardContentItem) => {
   }
 };
 
-const editContent = (content: DashboardContentItem) => {
+const _editContent = (content: DashboardContentItem) => {
   // Redirect to WordPress admin edit screen
   const editUrl = `http://localhost:10014/wp-admin/post.php?post=${content.id}&action=edit`;
   window.open(editUrl, '_blank');
 };
 
-const createNewEvent = () => {
+const _createNewEvent = () => {
   // Redirect to WordPress admin new event screen
   const newEventUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_event';
   window.open(newEventUrl, '_blank');
 };
 
-const createNewTeacher = () => {
+const _createNewTeacher = () => {
   // Redirect to WordPress admin new teacher screen
   const newTeacherUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_teacher';
   window.open(newTeacherUrl, '_blank');
 };
 
-const createNewTeacherCouple = () => {
+const _createNewTeacherCouple = () => {
   // Redirect to WordPress admin new teacher couple screen
   const newTeacherCoupleUrl =
     'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_teacher_couple';
   window.open(newTeacherCoupleUrl, '_blank');
 };
 
-const createNewDJ = () => {
+const _createNewDJ = () => {
   // Redirect to WordPress admin new DJ screen
   const newDJUrl = 'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_dj';
   window.open(newDJUrl, '_blank');
 };
 
-const createNewEventSeries = () => {
+const _createNewEventSeries = () => {
   // Redirect to WordPress admin new event series screen
   const newEventSeriesUrl =
     'http://localhost:10014/wp-admin/post-new.php?post_type=tmd_event_series';

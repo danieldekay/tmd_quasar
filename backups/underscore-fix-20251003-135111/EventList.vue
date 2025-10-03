@@ -488,8 +488,8 @@ const overallTotalCount = ref(0);
 const allCountriesSet = ref<Set<string>>(new Set()); // To populate country dropdown
 
 // View state
-const currentView = ref<'table' | 'calendar'>('table');
-const viewOptions = [
+const _currentView = ref<'table' | 'calendar'>('table');
+const _viewOptions = [
   { label: 'Table', value: 'table', icon: 'table_rows' },
   { label: 'Calendar', value: 'calendar', icon: 'calendar_month' },
 ];
@@ -598,7 +598,7 @@ const {
 // --- End useGenericList Setup ---
 
 // Computed
-const countryOptions = computed(() => getCountryOptionsFromCodes(allCountriesSet.value));
+const _countryOptions = computed(() => getCountryOptionsFromCodes(allCountriesSet.value));
 
 const categoryOptions = computed(() => [
   { label: 'Conference', value: 'conference' },
@@ -616,7 +616,7 @@ const categoryOptions = computed(() => [
 ]);
 
 // Table columns - matching contracts/table-columns.json
-const columns = [
+const _columns = [
   {
     name: 'title',
     label: 'Event Name',
@@ -676,7 +676,7 @@ const columns = [
 ];
 
 // Helper functions
-const capitalizeCity = (city: string): string => {
+const _capitalizeCity = (city: string): string => {
   if (!city) return '';
   return city
     .split(' ')
@@ -684,40 +684,40 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const getCategoryLabel = (categoryValue: string | null): string => {
+const _getCategoryLabel = (categoryValue: string | null): string => {
   if (!categoryValue) return '';
   const option = categoryOptions.value.find((opt) => opt.value === categoryValue);
   return option ? option.label : categoryValue;
 };
 
-const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+const _getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
   if (typeof title === 'string') return title;
   if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
   return '';
 };
 
 // Event handlers
-const handleRowClick = (_evt: Event, row: EventListItem) => {
+const _handleRowClick = (_evt: Event, row: EventListItem) => {
   const eventId = row.id;
   void router.push(`/events/${eventId}`);
 };
 
 // Calendar event handlers
-const onDateSelected = (date: string) => {
+const _onDateSelected = (date: string) => {
   console.log('Date selected:', date);
 };
 
-const onEventSelected = (event: CalendarEvent) => {
+const _onEventSelected = (event: CalendarEvent) => {
   void router.push(`/events/${event.id}`);
 };
 
 // Wrapper to satisfy Quasar input typing (string | number | null)
-const handleSearchInput = (value: string | number | null) => {
+const _handleSearchInput = (value: string | number | null) => {
   updateSearch(typeof value === 'string' ? value : '');
 };
 
 // Date filter handlers (convert QInput/QDate values to string | null)
-const handleDateInput = (filterKey: keyof EventListFilters, value: string | number | null) => {
+const _handleDateInput = (filterKey: keyof EventListFilters, value: string | number | null) => {
   const dateValue = typeof value === 'string' ? value : null;
   updateFilter(filterKey, dateValue);
 };

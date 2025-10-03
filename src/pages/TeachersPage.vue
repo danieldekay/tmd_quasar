@@ -268,22 +268,22 @@ const allCountries = ref<Set<string>>(new Set());
 const totalCount = ref(0);
 
 // Computed
-const _countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
+const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const _teacherTypeOptions = computed(() => [
+const teacherTypeOptions = computed(() => [
   { label: 'Leader', value: 'leader' },
   { label: 'Follower', value: 'follower' },
   { label: 'Both', value: 'both' },
   { label: 'Double Role', value: 'double-role' },
 ]);
 
-const _hasActiveFilters = computed(() => {
+const hasActiveFilters = computed(() => {
   return searchQuery.value || selectedCountry.value || selectedTeacherType.value;
 });
 
 // Table columns
 // Table columns - matching contracts/table-columns.json
-const _columns = [
+const columns = [
   {
     name: 'name',
     label: 'Teacher Name',
@@ -344,7 +344,7 @@ const pagination = ref({
 });
 
 // Helper functions
-const _capitalizeCity = (city: string): string => {
+const capitalizeCity = (city: string): string => {
   if (!city) return '';
   return city
     .split(' ')
@@ -352,7 +352,7 @@ const _capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const _getRoleColor = (role: string): string => {
+const getRoleColor = (role: string): string => {
   switch (role?.toLowerCase()) {
     case 'leader':
       return 'blue-6';
@@ -370,7 +370,7 @@ const _getRoleColor = (role: string): string => {
 /**
  * Get label for teacher type filter (used in filter chips)
  */
-const _getTeacherTypeLabel = (type: string | null): string => {
+const getTeacherTypeLabel = (type: string | null): string => {
   if (!type) return '';
   const labelMap: Record<string, string> = {
     leader: 'Leader',
@@ -456,7 +456,7 @@ const loadTeachers = async (forceReload = false) => {
 };
 
 // Event handlers
-const _onRequest = async (requestProp: {
+const onRequest = async (requestProp: {
   pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
 }) => {
   const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
@@ -469,7 +469,7 @@ const _onRequest = async (requestProp: {
   await loadTeachers();
 };
 
-const _handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
+const handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
   const teacherId = row.id as number;
   void router.push(`/teachers/${teacherId}`);
 };
@@ -496,17 +496,17 @@ const clearFilters = () => {
   void loadTeachers();
 };
 
-const _clearCountryFilter = () => {
+const clearCountryFilter = () => {
   selectedCountry.value = null;
   onFilterChange();
 };
 
-const _clearTeacherTypeFilter = () => {
+const clearTeacherTypeFilter = () => {
   selectedTeacherType.value = null;
   onFilterChange();
 };
 
-const _clearSearch = () => {
+const clearSearch = () => {
   searchQuery.value = '';
   onSearchChange();
 };

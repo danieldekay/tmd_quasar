@@ -89,20 +89,20 @@ const retrying = ref(false);
 // Computed properties for reactive state
 const isOffline = computed(() => apiStatus.isOffline.value);
 const isApiDown = computed(() => apiStatus.isApiDown.value);
-const _canRetry = computed(() => props.showRetry && apiStatus.canRetry.value);
+const canRetry = computed(() => props.showRetry && apiStatus.canRetry.value);
 
-const _message = computed(() => {
+const message = computed(() => {
   if (props.customMessage) return props.customMessage;
   return apiStatus.getErrorMessage(props.error);
 });
 
-const _icon = computed(() => {
+const icon = computed(() => {
   if (isOffline.value) return 'wifi_off';
   if (isApiDown.value) return 'cloud_off';
   return 'error_outline';
 });
 
-const _handleRetry = async () => {
+const handleRetry = async () => {
   retrying.value = true;
 
   try {

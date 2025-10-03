@@ -1,18 +1,18 @@
 <template>
-  <q-page class="couples-list-page">
+  <q-page class="teachers-list-page">
     <!-- Header -->
     <div class="page-header q-pa-lg">
       <div class="row items-center justify-between">
         <div class="col">
-          <h1 class="text-h4 text-weight-bold q-mb-xs">Couples Directory</h1>
+          <h1 class="text-h4 text-weight-bold q-mb-xs">Teachers Directory</h1>
           <p class="text-subtitle1 text-grey-6 q-ma-none">
-            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} couples
-            found based on filters
+            {{ pagination.rowsNumber.toLocaleString() }} /
+            {{ totalCount.toLocaleString() }} teachers found based on filters
           </p>
         </div>
         <div class="col-auto">
           <q-btn round color="primary" icon="refresh" @click="refreshData" :loading="loading">
-            <q-tooltip>Refresh Couples</q-tooltip>
+            <q-tooltip>Refresh Teachers</q-tooltip>
           </q-btn>
         </div>
       </div>
@@ -27,7 +27,7 @@
             <div class="col-12 col-md-4">
               <q-input
                 v-model="searchQuery"
-                placeholder="Search couples, cities, or countries..."
+                placeholder="Search teachers, cities, or countries..."
                 dense
                 outlined
                 clearable
@@ -61,12 +61,12 @@
               </q-select>
             </div>
 
-            <!-- Couple Type Filter -->
+            <!-- Teacher Type Filter -->
             <div class="col-12 col-md-4">
               <q-select
-                v-model="selectedCoupleType"
-                :options="coupleTypeOptions"
-                label="Filter by Couple Type"
+                v-model="selectedTeacherType"
+                :options="teacherTypeOptions"
+                label="Filter by Teacher Type"
                 dense
                 outlined
                 clearable
@@ -75,7 +75,7 @@
                 @update:model-value="onFilterChange"
               >
                 <template v-slot:prepend>
-                  <q-icon name="favorite" />
+                  <q-icon name="school" />
                 </template>
               </q-select>
             </div>
@@ -105,13 +105,13 @@
               {{ getCountryName(selectedCountry) }}
             </q-chip>
             <q-chip
-              v-if="selectedCoupleType"
+              v-if="selectedTeacherType"
               removable
-              @remove="clearCoupleTypeFilter"
+              @remove="clearTeacherTypeFilter"
               size="sm"
-              icon="favorite"
+              icon="school"
             >
-              {{ getCoupleTypeLabel(selectedCoupleType) }}
+              {{ getTeacherTypeLabel(selectedTeacherType) }}
             </q-chip>
             <q-chip v-if="searchQuery" removable @remove="clearSearch" size="sm" icon="search">
               Search: "{{ searchQuery }}"
@@ -121,11 +121,11 @@
       </q-card>
     </div>
 
-    <!-- Couples Table -->
+    <!-- Teachers Table -->
     <div class="table-section q-px-lg q-pb-lg">
       <q-card flat bordered class="table-card">
         <q-table
-          :rows="couples"
+          :rows="teachers"
           :columns="columns"
           :loading="loading"
           v-model:pagination="pagination"
@@ -136,33 +136,35 @@
           binary-state-sort
           flat
           bordered
-          class="couples-table"
+          class="teachers-table"
         >
           <!-- Custom Cell Templates -->
-          <!-- Custom Cell Templates -->
-          <template #body-cell-couple_name="props">
-            <q-td :props="props" class="couple-name-cell cursor-pointer">
-              <span class="text-weight-medium">{{ formatText(props.row.title) }}</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-leader_name="props">
-            <q-td :props="props" class="leader-name-cell cursor-pointer">
-              <span class="text-grey-7">{{ getLeaderName(props.row) || '—' }}</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-follower_name="props">
-            <q-td :props="props" class="follower-name-cell cursor-pointer">
-              <span class="text-grey-7">{{ getFollowerName(props.row) || '—' }}</span>
+          <template #body-cell-name="props">
+            <q-td :props="props" class="teacher-name-cell cursor-pointer">
+              <div class="teacher-name-content">
+                <div class="teacher-name text-weight-medium">
+                  {{ formatText(props.row.title) }}
+                </div>
+                <div
+                  v-if="
+                    props.row.meta_box?.nickname && props.row.meta_box.nickname !== props.row.title
+                  "
+                  class="teacher-real-name text-caption text-grey-6"
+                >
+                  {{ formatText(props.row.meta_box.nickname) }}
+                </div>
+              </div>
             </q-td>
           </template>
 
           <template #body-cell-city="props">
             <q-td :props="props" class="city-cell cursor-pointer">
-              <span class="text-weight-medium">{{
-                formatText(capitalizeCity(props.row.city))
-              }}</span>
+              <div class="city-content">
+                <q-icon name="place" size="xs" class="q-mr-xs" />
+                <span class="text-weight-medium">{{
+                  formatText(capitalizeCity(props.row.city))
+                }}</span>
+              </div>
             </q-td>
           </template>
 
@@ -172,27 +174,38 @@
             </q-td>
           </template>
 
-          <template #body-cell-type="props">
-            <q-td :props="props" class="type-cell cursor-pointer text-center">
+          <template #body-cell-role="props">
+            <q-td :props="props" class="role-cell cursor-pointer text-center">
               <q-chip
-                v-if="props.row.couple_type"
+                v-if="props.row.role"
                 dense
                 size="sm"
-                :color="getCoupleTypeColor(props.row.couple_type)"
+                :color="getRoleColor(props.row.role)"
                 text-color="white"
-                :icon="getCoupleTypeIcon(props.row.couple_type)"
               >
-                {{ getCoupleTypeLabel(props.row.couple_type) }}
+                {{ formatText(props.row.role) }}
               </q-chip>
               <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-teaching_since="props">
+            <q-td :props="props" class="teaching-since-cell cursor-pointer text-center">
+              <span class="text-weight-medium">{{ props.row.teaching_since || '—' }}</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-specialization="props">
+            <q-td :props="props" class="specialization-cell cursor-pointer">
+              <span>{{ formatText(props.row.teaching_style) || '—' }}</span>
             </q-td>
           </template>
 
           <!-- No Data State -->
           <template #no-data>
             <div class="text-center q-py-xl">
-              <q-icon name="favorite_border" size="4em" color="grey-4" />
-              <p class="text-h6 q-mt-md text-grey-6">No couples found</p>
+              <q-icon name="school" size="4em" color="grey-4" />
+              <p class="text-h6 q-mt-md text-grey-6">No teachers found</p>
               <p class="text-body2 text-grey-5 q-mb-md">
                 Try adjusting your search criteria or filters
               </p>
@@ -220,7 +233,7 @@
         <template v-slot:avatar>
           <q-icon name="error" color="white" />
         </template>
-        Failed to load couples
+        Failed to load teachers
         <template v-slot:action>
           <q-btn flat color="white" label="Retry" @click="refreshData" />
         </template>
@@ -235,7 +248,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCountries } from '../composables/useCountries';
 import { useFormatters } from '../composables/useFormatters';
-import { type Couple, coupleService } from '../services';
+import { type Teacher, teacherService } from '../services';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -245,72 +258,47 @@ const { getCountryName, getCountryOptionsFromCodes } = useCountries();
 const { formatText } = useFormatters();
 
 // State
-const couples = ref<Couple[]>([]);
+const teachers = ref<Teacher[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
 const selectedCountry = ref<string | null>(null);
-const selectedCoupleType = ref<string | null>(null);
+const selectedTeacherType = ref<string | null>(null);
 const allCountries = ref<Set<string>>(new Set());
 const totalCount = ref(0);
 
 // Computed
-const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
+const _countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const coupleTypeOptions = computed(() => [
+const _teacherTypeOptions = computed(() => [
   { label: 'Leader', value: 'leader' },
   { label: 'Follower', value: 'follower' },
   { label: 'Both', value: 'both' },
   { label: 'Double Role', value: 'double-role' },
 ]);
 
-const hasActiveFilters = computed(() => {
-  return searchQuery.value || selectedCountry.value || selectedCoupleType.value;
+const _hasActiveFilters = computed(() => {
+  return searchQuery.value || selectedCountry.value || selectedTeacherType.value;
 });
 
 // Table columns
-// Helper to get leader name from embedded data
-const getLeaderName = (couple: Couple): string => {
-  const leader = couple._embedded?.leader?.[0];
-  if (!leader) return '';
-  const title = typeof leader.title === 'string' ? leader.title : leader.title?.rendered || '';
-  return formatText(title);
-};
-
-// Helper to get follower name from embedded data
-const getFollowerName = (couple: Couple): string => {
-  const follower = couple._embedded?.follower?.[0];
-  if (!follower) return '';
-  const title =
-    typeof follower.title === 'string' ? follower.title : follower.title?.rendered || '';
-  return formatText(title);
-};
-
 // Table columns - matching contracts/table-columns.json
-const columns = [
+const _columns = [
   {
-    name: 'couple_name',
-    label: 'Couple Name',
+    name: 'name',
+    label: 'Teacher Name',
     field: 'title',
     align: 'left' as const,
     sortable: true,
     style: 'min-width: 200px',
   },
   {
-    name: 'leader_name',
-    label: 'Leader',
-    field: (row: Couple) => getLeaderName(row),
-    align: 'left' as const,
-    sortable: false,
-    style: 'min-width: 150px',
-  },
-  {
-    name: 'follower_name',
-    label: 'Follower',
-    field: (row: Couple) => getFollowerName(row),
-    align: 'left' as const,
-    sortable: false,
-    style: 'min-width: 150px',
+    name: 'role',
+    label: 'Role',
+    field: 'role',
+    align: 'center' as const,
+    sortable: true,
+    style: 'min-width: 100px',
   },
   {
     name: 'city',
@@ -329,12 +317,20 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'type',
-    label: 'Type',
-    field: 'couple_type',
+    name: 'teaching_since',
+    label: 'Teaching Since',
+    field: 'teaching_since',
     align: 'center' as const,
     sortable: true,
-    style: 'min-width: 120px',
+    style: 'min-width: 100px',
+  },
+  {
+    name: 'specialization',
+    label: 'Specialization',
+    field: 'teaching_style',
+    align: 'left' as const,
+    sortable: false,
+    style: 'min-width: 150px',
   },
 ];
 
@@ -348,7 +344,7 @@ const pagination = ref({
 });
 
 // Helper functions
-const capitalizeCity = (city: string): string => {
+const _capitalizeCity = (city: string): string => {
   if (!city) return '';
   return city
     .split(' ')
@@ -356,23 +352,8 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const getCoupleTypeLabel = (coupleType: string): string => {
-  switch (coupleType) {
-    case 'leader':
-      return 'Leader';
-    case 'follower':
-      return 'Follower';
-    case 'both':
-      return 'Both';
-    case 'double-role':
-      return 'Double Role';
-    default:
-      return coupleType;
-  }
-};
-
-const getCoupleTypeColor = (coupleType: string): string => {
-  switch (coupleType) {
+const _getRoleColor = (role: string): string => {
+  switch (role?.toLowerCase()) {
     case 'leader':
       return 'blue-6';
     case 'follower':
@@ -386,29 +367,28 @@ const getCoupleTypeColor = (coupleType: string): string => {
   }
 };
 
-const getCoupleTypeIcon = (coupleType: string): string => {
-  switch (coupleType) {
-    case 'leader':
-      return 'person';
-    case 'follower':
-      return 'person_outline';
-    case 'both':
-      return 'group';
-    case 'double-role':
-      return 'swap_horiz';
-    default:
-      return 'favorite';
-  }
+/**
+ * Get label for teacher type filter (used in filter chips)
+ */
+const _getTeacherTypeLabel = (type: string | null): string => {
+  if (!type) return '';
+  const labelMap: Record<string, string> = {
+    leader: 'Leader',
+    follower: 'Follower',
+    both: 'Both',
+    'double-role': 'Double Role',
+  };
+  return labelMap[type] || type;
 };
 
-const updateCountrySet = (couples: Couple[]) => {
-  couples.forEach((couple) => {
-    if (couple.country) allCountries.value.add(couple.country);
+const updateCountrySet = (teachers: Teacher[]) => {
+  teachers.forEach((teacher) => {
+    if (teacher.country) allCountries.value.add(teacher.country);
   });
 };
 
 // API functions
-const loadCouples = async (forceReload = false) => {
+const loadTeachers = async (forceReload = false) => {
   loading.value = true;
   error.value = null;
 
@@ -418,14 +398,14 @@ const loadCouples = async (forceReload = false) => {
       perPage: pagination.value.rowsPerPage,
       orderby: pagination.value.sortBy === 'name' ? 'title' : pagination.value.sortBy,
       order: pagination.value.descending ? 'desc' : 'asc',
-      meta_fields: 'country,city,couple_type',
+      meta_fields: 'country,city,teacher_type',
     };
 
     if (selectedCountry.value) {
       params.country = selectedCountry.value;
     }
-    if (selectedCoupleType.value) {
-      params.couple_type = selectedCoupleType.value;
+    if (selectedTeacherType.value) {
+      params.teacher_type = selectedTeacherType.value;
     }
     if (searchQuery.value) {
       params.search = searchQuery.value;
@@ -434,9 +414,9 @@ const loadCouples = async (forceReload = false) => {
       params._t = Date.now();
     }
 
-    const response = await coupleService.getCouples(params);
+    const response = await teacherService.getTeachers(params);
 
-    couples.value = response.couples;
+    teachers.value = response.teachers;
     pagination.value.rowsNumber = response.total;
 
     // Load total count without filters if we don't have it yet or if it's a fresh load
@@ -447,9 +427,9 @@ const loadCouples = async (forceReload = false) => {
           perPage: 1,
           orderby: 'title' as const,
           order: 'asc' as const,
-          meta_fields: 'country,city,couple_type',
+          meta_fields: 'country,city,teacher_type',
         };
-        const totalResponse = await coupleService.getCouples(totalParams);
+        const totalResponse = await teacherService.getTeachers(totalParams);
         totalCount.value = totalResponse.total;
       } catch (totalErr) {
         console.warn('Failed to load total count:', totalErr);
@@ -457,26 +437,26 @@ const loadCouples = async (forceReload = false) => {
       }
     }
 
-    updateCountrySet(response.couples);
+    updateCountrySet(response.teachers);
 
     if (forceReload) {
       $q.notify({
         type: 'positive',
-        message: 'Couples refreshed successfully',
+        message: 'Teachers refreshed successfully',
         position: 'top',
         timeout: 2000,
       });
     }
   } catch (err) {
-    console.error('Error loading couples:', err);
-    error.value = 'Failed to load couples';
+    console.error('Error loading teachers:', err);
+    error.value = 'Failed to load teachers';
   } finally {
     loading.value = false;
   }
 };
 
 // Event handlers
-const onRequest = async (requestProp: {
+const _onRequest = async (requestProp: {
   pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
 }) => {
   const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
@@ -486,69 +466,69 @@ const onRequest = async (requestProp: {
   pagination.value.sortBy = sortBy || 'name';
   pagination.value.descending = descending;
 
-  await loadCouples();
+  await loadTeachers();
 };
 
-const handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
-  const coupleId = row.id as number;
-  void router.push(`/couples/${coupleId}`);
+const _handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
+  const teacherId = row.id as number;
+  void router.push(`/teachers/${teacherId}`);
 };
 
 const refreshData = () => {
-  void loadCouples(true);
+  void loadTeachers(true);
 };
 
 const onSearchChange = () => {
   pagination.value.page = 1;
-  void loadCouples();
+  void loadTeachers();
 };
 
 const onFilterChange = () => {
   pagination.value.page = 1;
-  void loadCouples();
+  void loadTeachers();
 };
 
 const clearFilters = () => {
   searchQuery.value = '';
   selectedCountry.value = null;
-  selectedCoupleType.value = null;
+  selectedTeacherType.value = null;
   pagination.value.page = 1;
-  void loadCouples();
+  void loadTeachers();
 };
 
-const clearCountryFilter = () => {
+const _clearCountryFilter = () => {
   selectedCountry.value = null;
   onFilterChange();
 };
 
-const clearCoupleTypeFilter = () => {
-  selectedCoupleType.value = null;
+const _clearTeacherTypeFilter = () => {
+  selectedTeacherType.value = null;
   onFilterChange();
 };
 
-const clearSearch = () => {
+const _clearSearch = () => {
   searchQuery.value = '';
   onSearchChange();
 };
 
 // Watchers
 watch(
-  [selectedCountry, selectedCoupleType],
+  [selectedCountry, selectedTeacherType],
   () => {
     pagination.value.page = 1;
-    void loadCouples();
+    void loadTeachers();
   },
   { deep: true },
 );
 
 // Lifecycle
 onMounted(() => {
-  void loadCouples();
+  void loadTeachers();
 });
 </script>
 
 <style lang="scss" scoped>
-.couples-list-page {
+.teachers-list-page {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
@@ -581,7 +561,7 @@ onMounted(() => {
     overflow: hidden;
   }
 
-  .couples-table {
+  .teachers-table {
     :deep(.q-table__top) {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -638,9 +618,9 @@ onMounted(() => {
   }
 }
 
-.couple-name-cell {
-  .couple-name-content {
-    .couple-name {
+.teacher-name-cell {
+  .teacher-name-content {
+    .teacher-name {
       font-size: 14px;
       line-height: 1.4;
       max-width: none;
@@ -649,7 +629,7 @@ onMounted(() => {
       text-overflow: initial;
     }
 
-    .couple-real-name {
+    .teacher-real-name {
       margin-top: 2px;
       font-size: 11px;
     }
@@ -670,7 +650,7 @@ onMounted(() => {
   }
 }
 
-.couple-type-cell {
+.teacher-type-cell {
   text-align: center;
 }
 
@@ -700,7 +680,7 @@ onMounted(() => {
   }
 
   .table-section {
-    .couples-table {
+    .teachers-table {
       :deep(.q-table thead th) {
         padding: 10px 8px !important;
         font-size: 11px !important;

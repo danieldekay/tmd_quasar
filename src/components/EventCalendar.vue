@@ -177,7 +177,7 @@ import { useFormatters } from '../composables/useFormatters';
 import type { EventListItem } from '../services/types';
 
 // Helper function to extract rendered title from V4 API responses
-const _getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
   if (typeof title === 'string') {
     return title;
   }
@@ -235,19 +235,19 @@ const maxEventsInMonth = computed(() => {
 });
 
 // Date selection handlers
-const _onDateClick = (timestamp: { date: string }) => {
+const onDateClick = (timestamp: { date: string }) => {
   selectedDate.value = timestamp.date;
   selectedDateEvents.value = getEventsForDate(calendarEvents.value, timestamp.date);
   showDateEventsDialog.value = true;
   emit('date-selected', timestamp.date);
 };
 
-const _onEventClick = (event: CalendarEvent) => {
+const onEventClick = (event: CalendarEvent) => {
   emit('event-selected', event);
 };
 
 // Formatted selected date
-const _selectedDateFormatted = computed(() => {
+const selectedDateFormatted = computed(() => {
   if (!selectedDate.value) return '';
   return new Date(selectedDate.value).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -258,7 +258,7 @@ const _selectedDateFormatted = computed(() => {
 });
 
 // Year view helper functions
-const _getMonthName = (month: number) => {
+const getMonthName = (month: number) => {
   return new Date(2024, month - 1, 1).toLocaleDateString('en-US', { month: 'short' });
 };
 
@@ -268,7 +268,7 @@ const getMonthEventCount = (month: number) => {
   return eventCountsByMonth.value[monthKey] || 0;
 };
 
-const _getMonthHeatmapStyle = (month: number) => {
+const getMonthHeatmapStyle = (month: number) => {
   const count = getMonthEventCount(month);
   const intensity = count / maxEventsInMonth.value;
   return {
@@ -282,7 +282,7 @@ const getHeatmapColor = (intensity: number) => {
   return `rgba(25, 118, 210, ${opacity})`;
 };
 
-const _navigateToMonth = (month: number) => {
+const navigateToMonth = (month: number) => {
   const year = new Date(currentDate.value || new Date()).getFullYear();
   const date = new Date(year, month - 1, 1);
   const dateString = date.toISOString().split('T')[0];
@@ -293,7 +293,7 @@ const _navigateToMonth = (month: number) => {
 };
 
 // Event color based on category
-const _getEventColor = (event: CalendarEvent | undefined) => {
+const getEventColor = (event: CalendarEvent | undefined) => {
   if (!event?.category) return 'primary';
   const colorConfig = getCategoryColor(event.category);
   return colorConfig.color;

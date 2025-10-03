@@ -255,16 +255,16 @@ const allCountries = ref<Set<string>>(new Set());
 const totalCount = ref(0);
 
 // Computed
-const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
+const _countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const coupleTypeOptions = computed(() => [
+const _coupleTypeOptions = computed(() => [
   { label: 'Leader', value: 'leader' },
   { label: 'Follower', value: 'follower' },
   { label: 'Both', value: 'both' },
   { label: 'Double Role', value: 'double-role' },
 ]);
 
-const hasActiveFilters = computed(() => {
+const _hasActiveFilters = computed(() => {
   return searchQuery.value || selectedCountry.value || selectedCoupleType.value;
 });
 
@@ -287,7 +287,7 @@ const getFollowerName = (couple: Couple): string => {
 };
 
 // Table columns - matching contracts/table-columns.json
-const columns = [
+const _columns = [
   {
     name: 'couple_name',
     label: 'Couple Name',
@@ -348,7 +348,7 @@ const pagination = ref({
 });
 
 // Helper functions
-const capitalizeCity = (city: string): string => {
+const _capitalizeCity = (city: string): string => {
   if (!city) return '';
   return city
     .split(' ')
@@ -356,7 +356,7 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const getCoupleTypeLabel = (coupleType: string): string => {
+const _getCoupleTypeLabel = (coupleType: string): string => {
   switch (coupleType) {
     case 'leader':
       return 'Leader';
@@ -371,7 +371,7 @@ const getCoupleTypeLabel = (coupleType: string): string => {
   }
 };
 
-const getCoupleTypeColor = (coupleType: string): string => {
+const _getCoupleTypeColor = (coupleType: string): string => {
   switch (coupleType) {
     case 'leader':
       return 'blue-6';
@@ -386,7 +386,7 @@ const getCoupleTypeColor = (coupleType: string): string => {
   }
 };
 
-const getCoupleTypeIcon = (coupleType: string): string => {
+const _getCoupleTypeIcon = (coupleType: string): string => {
   switch (coupleType) {
     case 'leader':
       return 'person';
@@ -476,7 +476,7 @@ const loadCouples = async (forceReload = false) => {
 };
 
 // Event handlers
-const onRequest = async (requestProp: {
+const _onRequest = async (requestProp: {
   pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
 }) => {
   const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
@@ -489,12 +489,12 @@ const onRequest = async (requestProp: {
   await loadCouples();
 };
 
-const handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
+const _handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
   const coupleId = row.id as number;
   void router.push(`/couples/${coupleId}`);
 };
 
-const refreshData = () => {
+const _refreshData = () => {
   void loadCouples(true);
 };
 
@@ -508,7 +508,7 @@ const onFilterChange = () => {
   void loadCouples();
 };
 
-const clearFilters = () => {
+const _clearFilters = () => {
   searchQuery.value = '';
   selectedCountry.value = null;
   selectedCoupleType.value = null;
@@ -516,17 +516,17 @@ const clearFilters = () => {
   void loadCouples();
 };
 
-const clearCountryFilter = () => {
+const _clearCountryFilter = () => {
   selectedCountry.value = null;
   onFilterChange();
 };
 
-const clearCoupleTypeFilter = () => {
+const _clearCoupleTypeFilter = () => {
   selectedCoupleType.value = null;
   onFilterChange();
 };
 
-const clearSearch = () => {
+const _clearSearch = () => {
   searchQuery.value = '';
   onSearchChange();
 };

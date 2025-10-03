@@ -1,18 +1,18 @@
 <template>
-  <q-page class="couples-list-page">
+  <q-page class="event-series-list-page">
     <!-- Header -->
     <div class="page-header q-pa-lg">
       <div class="row items-center justify-between">
         <div class="col">
-          <h1 class="text-h4 text-weight-bold q-mb-xs">Couples Directory</h1>
+          <h1 class="text-h4 text-weight-bold q-mb-xs">Event Series Directory</h1>
           <p class="text-subtitle1 text-grey-6 q-ma-none">
-            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} couples
-            found based on filters
+            {{ pagination.rowsNumber.toLocaleString() }} / {{ totalCount.toLocaleString() }} event
+            series found based on filters
           </p>
         </div>
         <div class="col-auto">
           <q-btn round color="primary" icon="refresh" @click="refreshData" :loading="loading">
-            <q-tooltip>Refresh Couples</q-tooltip>
+            <q-tooltip>Refresh Event Series</q-tooltip>
           </q-btn>
         </div>
       </div>
@@ -27,7 +27,7 @@
             <div class="col-12 col-md-4">
               <q-input
                 v-model="searchQuery"
-                placeholder="Search couples, cities, or countries..."
+                placeholder="Search event series, cities, or countries..."
                 dense
                 outlined
                 clearable
@@ -61,12 +61,12 @@
               </q-select>
             </div>
 
-            <!-- Couple Type Filter -->
+            <!-- Series Type Filter -->
             <div class="col-12 col-md-4">
               <q-select
-                v-model="selectedCoupleType"
-                :options="coupleTypeOptions"
-                label="Filter by Couple Type"
+                v-model="selectedSeriesType"
+                :options="seriesTypeOptions"
+                label="Filter by Series Type"
                 dense
                 outlined
                 clearable
@@ -75,7 +75,7 @@
                 @update:model-value="onFilterChange"
               >
                 <template v-slot:prepend>
-                  <q-icon name="favorite" />
+                  <q-icon name="repeat" />
                 </template>
               </q-select>
             </div>
@@ -105,13 +105,13 @@
               {{ getCountryName(selectedCountry) }}
             </q-chip>
             <q-chip
-              v-if="selectedCoupleType"
+              v-if="selectedSeriesType"
               removable
-              @remove="clearCoupleTypeFilter"
+              @remove="clearSeriesTypeFilter"
               size="sm"
-              icon="favorite"
+              icon="repeat"
             >
-              {{ getCoupleTypeLabel(selectedCoupleType) }}
+              {{ getSeriesTypeLabel(selectedSeriesType) }}
             </q-chip>
             <q-chip v-if="searchQuery" removable @remove="clearSearch" size="sm" icon="search">
               Search: "{{ searchQuery }}"
@@ -121,11 +121,11 @@
       </q-card>
     </div>
 
-    <!-- Couples Table -->
+    <!-- Event Series Table -->
     <div class="table-section q-px-lg q-pb-lg">
       <q-card flat bordered class="table-card">
         <q-table
-          :rows="couples"
+          :rows="eventSeries"
           :columns="columns"
           :loading="loading"
           v-model:pagination="pagination"
@@ -136,25 +136,13 @@
           binary-state-sort
           flat
           bordered
-          class="couples-table"
+          class="event-series-table"
         >
           <!-- Custom Cell Templates -->
           <!-- Custom Cell Templates -->
-          <template #body-cell-couple_name="props">
-            <q-td :props="props" class="couple-name-cell cursor-pointer">
+          <template #body-cell-series_name="props">
+            <q-td :props="props" class="series-name-cell cursor-pointer">
               <span class="text-weight-medium">{{ formatText(props.row.title) }}</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-leader_name="props">
-            <q-td :props="props" class="leader-name-cell cursor-pointer">
-              <span class="text-grey-7">{{ getLeaderName(props.row) || '—' }}</span>
-            </q-td>
-          </template>
-
-          <template #body-cell-follower_name="props">
-            <q-td :props="props" class="follower-name-cell cursor-pointer">
-              <span class="text-grey-7">{{ getFollowerName(props.row) || '—' }}</span>
             </q-td>
           </template>
 
@@ -172,27 +160,32 @@
             </q-td>
           </template>
 
-          <template #body-cell-type="props">
-            <q-td :props="props" class="type-cell cursor-pointer text-center">
-              <q-chip
-                v-if="props.row.couple_type"
-                dense
-                size="sm"
-                :color="getCoupleTypeColor(props.row.couple_type)"
-                text-color="white"
-                :icon="getCoupleTypeIcon(props.row.couple_type)"
-              >
-                {{ getCoupleTypeLabel(props.row.couple_type) }}
+          <template #body-cell-latest_edition="props">
+            <q-td :props="props" class="latest-edition-cell cursor-pointer text-center">
+              <q-chip v-if="getLatestEdition(props.row)" dense size="sm" color="primary">
+                {{ getLatestEdition(props.row) }}
               </q-chip>
               <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-total_events="props">
+            <q-td :props="props" class="total-events-cell cursor-pointer text-center">
+              <span class="text-weight-medium">{{ getTotalEvents(props.row) }}</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-active_since="props">
+            <q-td :props="props" class="active-since-cell cursor-pointer text-center">
+              <span class="text-weight-medium">{{ getActiveSince(props.row) || '—' }}</span>
             </q-td>
           </template>
 
           <!-- No Data State -->
           <template #no-data>
             <div class="text-center q-py-xl">
-              <q-icon name="favorite_border" size="4em" color="grey-4" />
-              <p class="text-h6 q-mt-md text-grey-6">No couples found</p>
+              <q-icon name="repeat" size="4em" color="grey-4" />
+              <p class="text-h6 q-mt-md text-grey-6">No event series found</p>
               <p class="text-body2 text-grey-5 q-mb-md">
                 Try adjusting your search criteria or filters
               </p>
@@ -220,7 +213,7 @@
         <template v-slot:avatar>
           <q-icon name="error" color="white" />
         </template>
-        Failed to load couples
+        Failed to load event series
         <template v-slot:action>
           <q-btn flat color="white" label="Retry" @click="refreshData" />
         </template>
@@ -235,7 +228,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCountries } from '../composables/useCountries';
 import { useFormatters } from '../composables/useFormatters';
-import { type Couple, coupleService } from '../services';
+import { type EventSeries, eventSeriesService } from '../services';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -245,72 +238,67 @@ const { getCountryName, getCountryOptionsFromCodes } = useCountries();
 const { formatText } = useFormatters();
 
 // State
-const couples = ref<Couple[]>([]);
+const eventSeries = ref<EventSeries[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
 const selectedCountry = ref<string | null>(null);
-const selectedCoupleType = ref<string | null>(null);
+const selectedSeriesType = ref<string | null>(null);
 const allCountries = ref<Set<string>>(new Set());
 const totalCount = ref(0);
 
 // Computed
 const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const coupleTypeOptions = computed(() => [
-  { label: 'Leader', value: 'leader' },
-  { label: 'Follower', value: 'follower' },
-  { label: 'Both', value: 'both' },
-  { label: 'Double Role', value: 'double-role' },
+const seriesTypeOptions = computed(() => [
+  { label: 'Marathon', value: 'marathon' },
+  { label: 'Festival', value: 'festival' },
+  { label: 'Encuentro', value: 'encuentro' },
+  { label: 'Workshop', value: 'workshop' },
 ]);
 
 const hasActiveFilters = computed(() => {
-  return searchQuery.value || selectedCountry.value || selectedCoupleType.value;
+  return searchQuery.value || selectedCountry.value || selectedSeriesType.value;
 });
 
 // Table columns
-// Helper to get leader name from embedded data
-const getLeaderName = (couple: Couple): string => {
-  const leader = couple._embedded?.leader?.[0];
-  if (!leader) return '';
-  const title = typeof leader.title === 'string' ? leader.title : leader.title?.rendered || '';
-  return formatText(title);
+// Helper to get latest edition from embedded events
+const getLatestEdition = (series: EventSeries): string => {
+  const events = series._embedded?.events || [];
+  if (events.length === 0) return '';
+  // Find most recent event by start_date
+  const sorted = [...events].sort(
+    (a, b) => new Date(b.start_date || '').getTime() - new Date(a.start_date || '').getTime(),
+  );
+  return sorted[0]?.edition || '';
 };
 
-// Helper to get follower name from embedded data
-const getFollowerName = (couple: Couple): string => {
-  const follower = couple._embedded?.follower?.[0];
-  if (!follower) return '';
-  const title =
-    typeof follower.title === 'string' ? follower.title : follower.title?.rendered || '';
-  return formatText(title);
+// Helper to get total events count
+const getTotalEvents = (series: EventSeries): number => {
+  return series._embedded?.events?.length || 0;
+};
+
+// Helper to get earliest active year from embedded events
+const getActiveSince = (series: EventSeries): string => {
+  const events = series._embedded?.events || [];
+  if (events.length === 0) return '';
+  // Find earliest event by start_date
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.start_date || '').getTime() - new Date(b.start_date || '').getTime(),
+  );
+  const earliestDate = sorted[0]?.start_date;
+  return earliestDate ? new Date(earliestDate).getFullYear().toString() : '';
 };
 
 // Table columns - matching contracts/table-columns.json
 const columns = [
   {
-    name: 'couple_name',
-    label: 'Couple Name',
+    name: 'series_name',
+    label: 'Series Name',
     field: 'title',
     align: 'left' as const,
     sortable: true,
     style: 'min-width: 200px',
-  },
-  {
-    name: 'leader_name',
-    label: 'Leader',
-    field: (row: Couple) => getLeaderName(row),
-    align: 'left' as const,
-    sortable: false,
-    style: 'min-width: 150px',
-  },
-  {
-    name: 'follower_name',
-    label: 'Follower',
-    field: (row: Couple) => getFollowerName(row),
-    align: 'left' as const,
-    sortable: false,
-    style: 'min-width: 150px',
   },
   {
     name: 'city',
@@ -329,12 +317,28 @@ const columns = [
     style: 'min-width: 120px',
   },
   {
-    name: 'type',
-    label: 'Type',
-    field: 'couple_type',
+    name: 'latest_edition',
+    label: 'Latest Edition',
+    field: (row: EventSeries) => getLatestEdition(row),
     align: 'center' as const,
-    sortable: true,
+    sortable: false,
     style: 'min-width: 120px',
+  },
+  {
+    name: 'total_events',
+    label: 'Total Events',
+    field: (row: EventSeries) => getTotalEvents(row),
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
+  },
+  {
+    name: 'active_since',
+    label: 'Active Since',
+    field: (row: EventSeries) => getActiveSince(row),
+    align: 'center' as const,
+    sortable: false,
+    style: 'min-width: 100px',
   },
 ];
 
@@ -356,59 +360,29 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const getCoupleTypeLabel = (coupleType: string): string => {
-  switch (coupleType) {
-    case 'leader':
-      return 'Leader';
-    case 'follower':
-      return 'Follower';
-    case 'both':
-      return 'Both';
-    case 'double-role':
-      return 'Double Role';
+const getSeriesTypeLabel = (seriesType: string): string => {
+  switch (seriesType) {
+    case 'marathon':
+      return 'Marathon';
+    case 'festival':
+      return 'Festival';
+    case 'encuentro':
+      return 'Encuentro';
+    case 'workshop':
+      return 'Workshop';
     default:
-      return coupleType;
+      return seriesType;
   }
 };
 
-const getCoupleTypeColor = (coupleType: string): string => {
-  switch (coupleType) {
-    case 'leader':
-      return 'blue-6';
-    case 'follower':
-      return 'pink-6';
-    case 'both':
-      return 'purple-6';
-    case 'double-role':
-      return 'orange-6';
-    default:
-      return 'grey-6';
-  }
-};
-
-const getCoupleTypeIcon = (coupleType: string): string => {
-  switch (coupleType) {
-    case 'leader':
-      return 'person';
-    case 'follower':
-      return 'person_outline';
-    case 'both':
-      return 'group';
-    case 'double-role':
-      return 'swap_horiz';
-    default:
-      return 'favorite';
-  }
-};
-
-const updateCountrySet = (couples: Couple[]) => {
-  couples.forEach((couple) => {
-    if (couple.country) allCountries.value.add(couple.country);
+const updateCountrySet = (eventSeries: EventSeries[]) => {
+  eventSeries.forEach((series) => {
+    if (series.country) allCountries.value.add(series.country);
   });
 };
 
 // API functions
-const loadCouples = async (forceReload = false) => {
+const loadEventSeries = async (forceReload = false) => {
   loading.value = true;
   error.value = null;
 
@@ -418,14 +392,14 @@ const loadCouples = async (forceReload = false) => {
       perPage: pagination.value.rowsPerPage,
       orderby: pagination.value.sortBy === 'name' ? 'title' : pagination.value.sortBy,
       order: pagination.value.descending ? 'desc' : 'asc',
-      meta_fields: 'country,city,couple_type',
+      meta_fields: 'start_date,end_date,country,city,series_type',
     };
 
     if (selectedCountry.value) {
       params.country = selectedCountry.value;
     }
-    if (selectedCoupleType.value) {
-      params.couple_type = selectedCoupleType.value;
+    if (selectedSeriesType.value) {
+      params.series_type = selectedSeriesType.value;
     }
     if (searchQuery.value) {
       params.search = searchQuery.value;
@@ -434,9 +408,9 @@ const loadCouples = async (forceReload = false) => {
       params._t = Date.now();
     }
 
-    const response = await coupleService.getCouples(params);
+    const response = await eventSeriesService.getEventSeries(params);
 
-    couples.value = response.couples;
+    eventSeries.value = response.eventSeries;
     pagination.value.rowsNumber = response.total;
 
     // Load total count without filters if we don't have it yet or if it's a fresh load
@@ -447,9 +421,9 @@ const loadCouples = async (forceReload = false) => {
           perPage: 1,
           orderby: 'title' as const,
           order: 'asc' as const,
-          meta_fields: 'country,city,couple_type',
+          meta_fields: 'start_date,end_date,country,city,series_type',
         };
-        const totalResponse = await coupleService.getCouples(totalParams);
+        const totalResponse = await eventSeriesService.getEventSeries(totalParams);
         totalCount.value = totalResponse.total;
       } catch (totalErr) {
         console.warn('Failed to load total count:', totalErr);
@@ -457,19 +431,19 @@ const loadCouples = async (forceReload = false) => {
       }
     }
 
-    updateCountrySet(response.couples);
+    updateCountrySet(response.eventSeries);
 
     if (forceReload) {
       $q.notify({
         type: 'positive',
-        message: 'Couples refreshed successfully',
+        message: 'Event series refreshed successfully',
         position: 'top',
         timeout: 2000,
       });
     }
   } catch (err) {
-    console.error('Error loading couples:', err);
-    error.value = 'Failed to load couples';
+    console.error('Error loading event series:', err);
+    error.value = 'Failed to load event series';
   } finally {
     loading.value = false;
   }
@@ -486,34 +460,34 @@ const onRequest = async (requestProp: {
   pagination.value.sortBy = sortBy || 'name';
   pagination.value.descending = descending;
 
-  await loadCouples();
+  await loadEventSeries();
 };
 
 const handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
-  const coupleId = row.id as number;
-  void router.push(`/couples/${coupleId}`);
+  const seriesId = row.id as number;
+  void router.push(`/event-series/${seriesId}`);
 };
 
 const refreshData = () => {
-  void loadCouples(true);
+  void loadEventSeries(true);
 };
 
 const onSearchChange = () => {
   pagination.value.page = 1;
-  void loadCouples();
+  void loadEventSeries();
 };
 
 const onFilterChange = () => {
   pagination.value.page = 1;
-  void loadCouples();
+  void loadEventSeries();
 };
 
 const clearFilters = () => {
   searchQuery.value = '';
   selectedCountry.value = null;
-  selectedCoupleType.value = null;
+  selectedSeriesType.value = null;
   pagination.value.page = 1;
-  void loadCouples();
+  void loadEventSeries();
 };
 
 const clearCountryFilter = () => {
@@ -521,8 +495,8 @@ const clearCountryFilter = () => {
   onFilterChange();
 };
 
-const clearCoupleTypeFilter = () => {
-  selectedCoupleType.value = null;
+const clearSeriesTypeFilter = () => {
+  selectedSeriesType.value = null;
   onFilterChange();
 };
 
@@ -533,22 +507,22 @@ const clearSearch = () => {
 
 // Watchers
 watch(
-  [selectedCountry, selectedCoupleType],
+  [selectedCountry, selectedSeriesType],
   () => {
     pagination.value.page = 1;
-    void loadCouples();
+    void loadEventSeries();
   },
   { deep: true },
 );
 
 // Lifecycle
 onMounted(() => {
-  void loadCouples();
+  void loadEventSeries();
 });
 </script>
 
 <style lang="scss" scoped>
-.couples-list-page {
+.event-series-list-page {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
@@ -581,7 +555,7 @@ onMounted(() => {
     overflow: hidden;
   }
 
-  .couples-table {
+  .event-series-table {
     :deep(.q-table__top) {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -638,9 +612,9 @@ onMounted(() => {
   }
 }
 
-.couple-name-cell {
-  .couple-name-content {
-    .couple-name {
+.series-name-cell {
+  .series-name-content {
+    .series-name {
       font-size: 14px;
       line-height: 1.4;
       max-width: none;
@@ -649,15 +623,17 @@ onMounted(() => {
       text-overflow: initial;
     }
 
-    .couple-real-name {
+    .series-description {
       margin-top: 2px;
       font-size: 11px;
     }
   }
 }
 
+.date-cell,
 .city-cell,
 .country-cell {
+  .date-content,
   .city-content,
   .country-content {
     display: flex;
@@ -670,7 +646,7 @@ onMounted(() => {
   }
 }
 
-.couple-type-cell {
+.series-type-cell {
   text-align: center;
 }
 
@@ -700,7 +676,7 @@ onMounted(() => {
   }
 
   .table-section {
-    .couples-table {
+    .event-series-table {
       :deep(.q-table thead th) {
         padding: 10px 8px !important;
         font-size: 11px !important;

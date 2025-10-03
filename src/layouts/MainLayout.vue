@@ -238,8 +238,6 @@
 import { Notify } from 'quasar';
 import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import pkg from '../../package.json';
 import { useInteractionCache } from '../composables/useInteractionCache';
 import { useSessionMonitor } from '../composables/useSessionMonitor';
@@ -258,7 +256,7 @@ interface LinkProps {
   link: string;
 }
 
-const _linksList: LinkProps[] = [
+const linksList: LinkProps[] = [
   {
     title: 'Home',
     icon: 'home',
@@ -313,11 +311,11 @@ const _linksList: LinkProps[] = [
 
 const leftDrawerOpen = ref(false);
 
-function _toggleLeftDrawer() {
+function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 
-const _handleLogout = async () => {
+const handleLogout = async () => {
   try {
     authStore.logout();
     Notify.create({
@@ -354,7 +352,7 @@ watch(
   { immediate: true },
 );
 
-function _getUserDisplayName(): string {
+function getUserDisplayName(): string {
   if (!authStore.user?.name) return 'User';
 
   // Try to get first name from full name
@@ -362,7 +360,7 @@ function _getUserDisplayName(): string {
   return nameParts[0] || authStore.user.name;
 }
 
-function _getUserAvatar(): string {
+function getUserAvatar(): string {
   // First try WordPress avatar
   if (authStore.user?.avatar_urls?.['96']) {
     return authStore.user.avatar_urls['96'];
@@ -386,7 +384,7 @@ function _getUserAvatar(): string {
   return '';
 }
 
-function _getInteractionCounts(): {
+function getInteractionCounts(): {
   total: number;
   likes: number;
   bookmarks: number;

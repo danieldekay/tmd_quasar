@@ -151,7 +151,7 @@ defineEmits<{
 }>();
 
 // Helper functions for activity styling
-const _getActivityColor = (activity: string): string => {
+const getActivityColor = (activity: string): string => {
   const colorMap: Record<string, string> = {
     Marathons: 'deep-purple',
     Festivals: 'orange',
@@ -162,7 +162,7 @@ const _getActivityColor = (activity: string): string => {
   return colorMap[activity] || 'primary';
 };
 
-const _getActivityIcon = (activity: string): string => {
+const getActivityIcon = (activity: string): string => {
   const iconMap: Record<string, string> = {
     Marathons: 'sports_score',
     Festivals: 'celebration',
@@ -173,7 +173,7 @@ const _getActivityIcon = (activity: string): string => {
   return iconMap[activity] || 'music_note';
 };
 
-const _openExternalLink = (url: string) => {
+const openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 </script>

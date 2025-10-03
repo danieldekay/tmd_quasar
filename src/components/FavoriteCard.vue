@@ -186,13 +186,13 @@ const isValidDate = (dateString?: string): boolean => {
 };
 
 // Helper to format reminder date safely
-const _formatReminderDate = (dateString?: string): string => {
+const formatReminderDate = (dateString?: string): string => {
   if (!isValidDate(dateString)) return '';
   return formatDateTime(dateString!);
 };
 
 // Type configuration with dashboard icons
-const _typeConfig = computed(() => {
+const typeConfig = computed(() => {
   const configs = {
     event: { label: 'Event', icon: 'event', color: 'primary' },
     teacher: { label: 'Teacher', icon: 'school', color: 'secondary' },
@@ -205,7 +205,7 @@ const _typeConfig = computed(() => {
 });
 
 // Content type mapping for API
-const _contentTypeMap: Record<string, ContentType> = {
+const contentTypeMap: Record<string, ContentType> = {
   event: 'tmd_event',
   teacher: 'tmd_teacher',
   dj: 'tmd_dj',
@@ -222,12 +222,12 @@ const interactionTypeLabels: Record<InteractionType, string> = {
 };
 
 // Find all reminder interactions
-const _reminderInteractions = computed(() => {
+const reminderInteractions = computed(() => {
   return props.item.interactions.filter((interaction) => interaction.type === 'reminder');
 });
 
 // Create interaction summary
-const _interactionSummary = computed(() => {
+const interactionSummary = computed(() => {
   const interactions = props.item.interactions;
   if (!interactions || interactions.length === 0) {
     return 'No interactions';
@@ -250,19 +250,19 @@ const _interactionSummary = computed(() => {
 });
 
 // Helper functions
-const _stripHtml = (html: string): string => {
+const stripHtml = (html: string): string => {
   const temp = document.createElement('div');
   temp.innerHTML = html;
   return temp.textContent || temp.innerText || '';
 };
 
-const _truncateText = (text: string, maxLength: number): string => {
+const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return `${text.substring(0, maxLength).trim()}...`;
 };
 
 // Navigation
-const _navigateToDetail = () => {
+const navigateToDetail = () => {
   const routeMap = {
     event: `/events/${props.item.id}`,
     teacher: `/teachers/${props.item.id}`,
@@ -278,7 +278,7 @@ const _navigateToDetail = () => {
 };
 
 // Event handlers
-const _handleInteractionChange = () => {
+const handleInteractionChange = () => {
   // The interaction has been changed, emit remove event for re-evaluation
   emit('remove', props.item);
 };

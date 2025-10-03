@@ -358,7 +358,7 @@ const {
 // --- End useGenericList Setup ---
 
 // Computed
-const countryOptions = computed(() => getCountryOptionsFromCodes(allCountriesSet.value));
+const _countryOptions = computed(() => getCountryOptionsFromCodes(allCountriesSet.value));
 
 const activityTypeOptions = computed(() => [
   { label: 'Marathon', value: 'marathon' },
@@ -392,7 +392,7 @@ const getYearsActive = (dj: DJ): string => {
 };
 
 // Helper to get activity badge color
-const getActivityColor = (activity: string): string => {
+const _getActivityColor = (activity: string): string => {
   const colorMap: Record<string, string> = {
     Marathon: 'red-7',
     Festival: 'purple-6',
@@ -403,7 +403,7 @@ const getActivityColor = (activity: string): string => {
 };
 
 // Table columns - matching contracts/table-columns.json
-const columns = [
+const _columns = [
   {
     name: 'name',
     label: 'DJ Name',
@@ -455,7 +455,7 @@ const columns = [
 ];
 
 // Helper functions
-const capitalizeCity = (city: string): string => {
+const _capitalizeCity = (city: string): string => {
   if (!city) return '';
   return city
     .split(' ')
@@ -463,14 +463,14 @@ const capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const getActivityTypeLabel = (activityValue: string | null): string => {
+const _getActivityTypeLabel = (activityValue: string | null): string => {
   if (!activityValue) return '';
   const option = activityTypeOptions.value.find((opt) => opt.value === activityValue);
   return option ? option.label : activityValue;
 };
 
 // Event handlers
-const handleRowClick = (_evt: Event, row: DJ) => {
+const _handleRowClick = (_evt: Event, row: DJ) => {
   const djId = row.id;
   void router.push(`/djs/${djId}`);
 };

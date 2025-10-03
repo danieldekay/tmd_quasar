@@ -648,7 +648,7 @@ const { formatDate, getEventCategory, getEventCategoryColor } = useFormatters();
 const event = ref<EventDetails | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const tab = ref<'overview' | 'details' | 'djs' | 'venue' | 'contact'>('overview');
+const _tab = ref<'overview' | 'details' | 'djs' | 'venue' | 'contact'>('overview');
 
 // DJ-related state
 const djs = ref<DJ[]>([]);
@@ -666,7 +666,7 @@ const mapImageError = ref(false);
 // Interactions
 const interactions = useInteractions(Number(route.params.id), 'tmd_event');
 
-const defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
+const _defaultImage = 'https://cdn.quasar.dev/img/parallax1.jpg';
 
 // Computed properties
 const formattedDates = computed(() => {
@@ -688,7 +688,7 @@ const getDisplayName = (title: string | { rendered: string } | undefined): strin
   return '';
 };
 
-const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+const _getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
   if (typeof title === 'string') return title;
   if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
   return '';
@@ -711,7 +711,7 @@ const editionOrdinal = computed(() => {
   return Number.isNaN(num) ? raw : getOrdinal(num);
 });
 
-const descriptionHtml = computed(() => {
+const _descriptionHtml = computed(() => {
   const desc = event.value?.event_description;
   const post = event.value?.post_content;
   if (desc && post) return `${desc}<hr/>${post}`;
@@ -739,7 +739,7 @@ const formattedCoordinates = computed(() => {
 });
 
 // Hero chips configuration
-const heroChips = computed(() => [
+const _heroChips = computed(() => [
   {
     show: event.value?.have_milongas,
     icon: 'music_note',
@@ -791,7 +791,7 @@ const heroChips = computed(() => [
 ]);
 
 // Event info items for sidebar
-const eventInfoItems = computed(() => [
+const _eventInfoItems = computed(() => [
   {
     show: true,
     icon: 'event',
@@ -852,7 +852,7 @@ const eventInfoItems = computed(() => [
 ]);
 
 // Registration items
-const registrationItems = computed(() => {
+const _registrationItems = computed(() => {
   const isInvitationOnly = isFeatureAvailable(event.value?.invitation_only);
   const hasRegistration = isFeatureAvailable(event.value?.have_registration);
 
@@ -893,7 +893,7 @@ const registrationItems = computed(() => {
 });
 
 // Dance and music features - only show if value is "1"
-const danceFeatures = computed(() => [
+const _danceFeatures = computed(() => [
   {
     show: isFeatureAvailable(event.value?.have_milongas),
     icon: 'music_note',
@@ -946,7 +946,7 @@ const danceFeatures = computed(() => [
 ]);
 
 // Practical services - only show if value is "1"
-const practicalServices = computed(() => [
+const _practicalServices = computed(() => [
   {
     show: isFeatureAvailable(event.value?.have_food),
     icon: 'restaurant',
@@ -978,7 +978,7 @@ const practicalServices = computed(() => [
 ]);
 
 // Venue details
-const venueDetails = computed(() => [
+const _venueDetails = computed(() => [
   {
     show: !!fullAddress.value,
     icon: 'location_on',
@@ -1018,7 +1018,7 @@ const venueDetails = computed(() => [
   },
 ]);
 
-const hasVenueDetails = computed(
+const _hasVenueDetails = computed(
   () => !!(fullAddress.value || event.value?.type_of_floor || event.value?.venue_features),
 );
 
@@ -1029,7 +1029,7 @@ const eventSeriesLinks = computed(() => {
 });
 
 // Contact methods
-const contactMethods = computed(() => [
+const _contactMethods = computed(() => [
   {
     show: !!event.value?.email,
     icon: 'email',
@@ -1082,7 +1082,7 @@ const contactMethods = computed(() => [
   },
 ]);
 
-const hasContactInfo = computed(
+const _hasContactInfo = computed(
   () =>
     !!(
       event.value?.email ||
@@ -1099,7 +1099,7 @@ const openInMaps = (lat: number, lon: number) => {
 };
 
 // Map error handling
-const handleMapImageError = () => {
+const _handleMapImageError = () => {
   mapImageError.value = true;
 };
 
@@ -1169,7 +1169,7 @@ const loadTeachers = () => {
   }
 };
 
-const djsWithDetails = computed(() =>
+const _djsWithDetails = computed(() =>
   djs.value.map((dj) => {
     const activities = [
       dj.tmd_dj_activity_marathons === '1' ? 'Marathons' : null,
@@ -1208,7 +1208,7 @@ const djsWithDetails = computed(() =>
   }),
 );
 
-const teachersWithDetails = computed(() =>
+const _teachersWithDetails = computed(() =>
   teachers.value.map((teacher) => ({
     ...teacher,
     displayName: teacher.title,
@@ -1219,7 +1219,7 @@ const teachersWithDetails = computed(() =>
 const isFeatureAvailable = (value: string | undefined): boolean => value === '1';
 
 // Music Features
-const musicFeatures = computed(() => [
+const _musicFeatures = computed(() => [
   {
     key: 'live_music',
     show: event.value?.have_live_music !== undefined,
@@ -1256,7 +1256,7 @@ const musicFeatures = computed(() => [
 ]);
 
 // Other Features
-const otherFeatures = computed(() => [
+const _otherFeatures = computed(() => [
   {
     key: 'lessons',
     show: event.value?.have_lessons !== undefined,
@@ -1303,20 +1303,20 @@ const otherFeatures = computed(() => [
   },
 ]);
 
-const goToDJ = (djId: number) => {
+const _goToDJ = (djId: number) => {
   void router.push(`/djs/${djId}`);
 };
 
-const goToTeacher = (teacherId: number) => {
+const _goToTeacher = (teacherId: number) => {
   void router.push(`/teachers/${teacherId}`);
 };
 
-const openExternalLink = (url: string) => {
+const _openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 // Event series navigation methods
-const navigateToEventSeries = (href: string) => {
+const _navigateToEventSeries = (href: string) => {
   // Extract event series ID from the href and navigate to the event series
   const seriesId = extractEventSeriesIdFromLink(href);
   if (seriesId) {

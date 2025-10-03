@@ -125,7 +125,7 @@ const displayName = computed(() => {
   return user.value.display_name || user.value.username || 'User';
 });
 
-const _userIcon = computed(() => {
+const userIcon = computed(() => {
   if (!user.value) return 'person';
 
   // Show admin icon for administrators
@@ -150,19 +150,19 @@ const statusClass = computed(() => {
   return 'session-indicator--active';
 });
 
-const _statusIcon = computed(() => {
+const statusIcon = computed(() => {
   if (!isValid.value) return 'error';
   if (isExpiringSoon.value) return 'warning';
   return 'check_circle';
 });
 
-const _statusColor = computed(() => {
+const statusColor = computed(() => {
   if (!isValid.value) return 'negative';
   if (isExpiringSoon.value) return 'warning';
   return 'positive';
 });
 
-const _statusText = computed(() => {
+const statusText = computed(() => {
   if (!isValid.value) return 'Invalid';
   if (isExpiringSoon.value) return 'Expiring Soon';
   return 'Active';
@@ -174,11 +174,11 @@ const timeRemaining = computed(() => {
 });
 
 // Methods
-const _navigateToLogin = (): void => {
+const navigateToLogin = (): void => {
   void router.push('/auth/login');
 };
 
-const _navigateToProfile = (): void => {
+const navigateToProfile = (): void => {
   void router.push('/profile');
 };
 

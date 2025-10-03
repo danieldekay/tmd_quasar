@@ -163,7 +163,7 @@ const isLoading = ref(false);
 
 // Debug flag
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const debug = ref(true);
+const _debug = ref(true);
 
 // Debug information
 const isLocalhost = computed(() => {

@@ -418,9 +418,9 @@ const error = ref<string | null>(null);
 
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated);
-const isAdmin = computed(() => authStore.isAdmin);
+const _isAdmin = computed(() => authStore.isAdmin);
 
-const hasAuthoredContent = computed(() => {
+const _hasAuthoredContent = computed(() => {
   if (!profile.value?.content_counts) return false;
   const counts = profile.value.content_counts;
   return (
@@ -473,7 +473,7 @@ watch(
   { immediate: true }, // Run the watcher immediately on component mount
 );
 
-const formatDate = (dateString: string): string => {
+const _formatDate = (dateString: string): string => {
   try {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -485,7 +485,7 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-const getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
+const _getRenderedTitle = (title: string | { rendered: string } | undefined): string => {
   if (typeof title === 'string') return title;
   if (title && typeof title === 'object' && 'rendered' in title) return title.rendered;
   return '';
