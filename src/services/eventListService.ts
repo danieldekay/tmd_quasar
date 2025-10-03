@@ -177,7 +177,10 @@ const transformRawEvent = (rawEvent: Record<string, unknown>): EventListItem => 
 
   // If event_category is empty but we have taxonomies, derive from first category
   if (!result.event_category && taxonomies?.['event-categories-2020']?.length) {
-    result.event_category = taxonomies['event-categories-2020'][0]?.name;
+    const categoryName = taxonomies['event-categories-2020'][0]?.name;
+    if (categoryName) {
+      result.event_category = categoryName;
+    }
   }
 
   return result;

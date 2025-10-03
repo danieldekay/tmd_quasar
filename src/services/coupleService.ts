@@ -29,7 +29,6 @@ class CoupleService extends BaseService<Couple> {
       meta_fields: ESSENTIAL_COUPLE_META_FIELDS, // Use essential fields only by default
       include_relationships: true,
     });
-    this.defaultMetaFields = ESSENTIAL_COUPLE_META_FIELDS;
   }
 
   /**

@@ -224,7 +224,8 @@ import { type ContentItem, contentService } from '../services/contentService';
 import type { ContentType, InteractionType } from '../services/types';
 
 const router = useRouter();
-const _activeTab = ref('bookmarks');
+// Tab state
+const activeTab = ref('bookmarks');
 const loading = ref(true);
 const { cache, syncWithServer } = useInteractionCache();
 const { formatDate } = useFormatters();
@@ -245,7 +246,8 @@ interface ConsolidatedFavoriteItem extends ContentItem {
 }
 
 // Helper functions for list layouts
-const _getTypeIcon = (type: string): string => {
+// Helper functions
+const getTypeIcon = (type: string): string => {
   const icons = {
     event: 'event',
     teacher: 'school',
@@ -256,7 +258,7 @@ const _getTypeIcon = (type: string): string => {
   return icons[type as keyof typeof icons] || 'help';
 };
 
-const _getTypeColor = (type: string): string => {
+const getTypeColor = (type: string): string => {
   const colors = {
     event: 'primary',
     teacher: 'secondary',
@@ -267,7 +269,7 @@ const _getTypeColor = (type: string): string => {
   return colors[type as keyof typeof colors] || 'grey';
 };
 
-const _getTypeLabel = (type: string): string => {
+const getTypeLabel = (type: string): string => {
   const labels = {
     event: 'Event',
     teacher: 'Teacher',
@@ -278,7 +280,7 @@ const _getTypeLabel = (type: string): string => {
   return labels[type as keyof typeof labels] || 'Content';
 };
 
-const _getContentType = (type: string): ContentType => {
+const getContentType = (type: string): ContentType => {
   const contentTypeMap: Record<string, ContentType> = {
     event: 'tmd_event',
     teacher: 'tmd_teacher',
@@ -289,12 +291,12 @@ const _getContentType = (type: string): ContentType => {
   return contentTypeMap[type] || 'tmd_event';
 };
 
-const _truncateText = (text: string, maxLength: number): string => {
+const truncateText = (text: string, maxLength: number): string => {
   if (!text || text.length <= maxLength) return text;
   return `${text.substring(0, maxLength).trim()}...`;
 };
 
-const _navigateToItem = (item: ConsolidatedFavoriteItem) => {
+const navigateToItem = (item: ConsolidatedFavoriteItem) => {
   const routes: Record<string, string> = {
     event: `/events/${item.id}`,
     teacher: `/teachers/${item.id}`,
@@ -371,14 +373,14 @@ const reminders = computed(() => createConsolidatedFavorites('reminder'));
 const following = computed(() => createConsolidatedFavorites('follow'));
 
 // Counts
-const _totalFavorites = computed(
+const totalFavorites = computed(
   () =>
     bookmarks.value.length + likes.value.length + reminders.value.length + following.value.length,
 );
-const _bookmarksCount = computed(() => bookmarks.value.length);
-const _likesCount = computed(() => likes.value.length);
-const _remindersCount = computed(() => reminders.value.length);
-const _followingCount = computed(() => following.value.length);
+const bookmarksCount = computed(() => bookmarks.value.length);
+const likesCount = computed(() => likes.value.length);
+const remindersCount = computed(() => reminders.value.length);
+const followingCount = computed(() => following.value.length);
 
 // Load favorites content
 const loadFavorites = async () => {
@@ -417,7 +419,7 @@ const loadFavorites = async () => {
 };
 
 // Handle removing an interaction
-const _handleRemove = (item: ConsolidatedFavoriteItem) => {
+const handleRemove = (item: ConsolidatedFavoriteItem) => {
   // The FavoriteCard component will handle the actual removal
   // This is just for any additional cleanup if needed
   console.log('Removing favorite:', item);

@@ -34,7 +34,6 @@ class TeacherService extends BaseService<Teacher> {
       meta_fields: ESSENTIAL_TEACHER_META_FIELDS, // Use essential fields only by default
       include_relationships: true,
     });
-    this.defaultMetaFields = ESSENTIAL_TEACHER_META_FIELDS;
   }
 
   /**

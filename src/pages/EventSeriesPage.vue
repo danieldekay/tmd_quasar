@@ -248,16 +248,16 @@ const allCountries = ref<Set<string>>(new Set());
 const totalCount = ref(0);
 
 // Computed
-const _countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
+const countryOptions = computed(() => getCountryOptionsFromCodes(allCountries.value));
 
-const _seriesTypeOptions = computed(() => [
+const seriesTypeOptions = computed(() => [
   { label: 'Marathon', value: 'marathon' },
   { label: 'Festival', value: 'festival' },
   { label: 'Encuentro', value: 'encuentro' },
   { label: 'Workshop', value: 'workshop' },
 ]);
 
-const _hasActiveFilters = computed(() => {
+const hasActiveFilters = computed(() => {
   return searchQuery.value || selectedCountry.value || selectedSeriesType.value;
 });
 
@@ -291,7 +291,7 @@ const getActiveSince = (series: EventSeries): string => {
 };
 
 // Table columns - matching contracts/table-columns.json
-const _columns = [
+const columns = [
   {
     name: 'series_name',
     label: 'Series Name',
@@ -352,7 +352,7 @@ const pagination = ref({
 });
 
 // Helper functions
-const _capitalizeCity = (city: string): string => {
+const capitalizeCity = (city: string): string => {
   if (!city) return '';
   return city
     .split(' ')
@@ -360,7 +360,7 @@ const _capitalizeCity = (city: string): string => {
     .join(' ');
 };
 
-const _getSeriesTypeLabel = (seriesType: string): string => {
+const getSeriesTypeLabel = (seriesType: string): string => {
   switch (seriesType) {
     case 'marathon':
       return 'Marathon';
@@ -450,7 +450,7 @@ const loadEventSeries = async (forceReload = false) => {
 };
 
 // Event handlers
-const _onRequest = async (requestProp: {
+const onRequest = async (requestProp: {
   pagination: { page: number; rowsPerPage: number; sortBy?: string; descending: boolean };
 }) => {
   const { page, rowsPerPage, sortBy, descending } = requestProp.pagination;
@@ -463,12 +463,12 @@ const _onRequest = async (requestProp: {
   await loadEventSeries();
 };
 
-const _handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
+const handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
   const seriesId = row.id as number;
   void router.push(`/event-series/${seriesId}`);
 };
 
-const _refreshData = () => {
+const refreshData = () => {
   void loadEventSeries(true);
 };
 
@@ -482,7 +482,7 @@ const onFilterChange = () => {
   void loadEventSeries();
 };
 
-const _clearFilters = () => {
+const clearFilters = () => {
   searchQuery.value = '';
   selectedCountry.value = null;
   selectedSeriesType.value = null;
@@ -490,17 +490,17 @@ const _clearFilters = () => {
   void loadEventSeries();
 };
 
-const _clearCountryFilter = () => {
+const clearCountryFilter = () => {
   selectedCountry.value = null;
   onFilterChange();
 };
 
-const _clearSeriesTypeFilter = () => {
+const clearSeriesTypeFilter = () => {
   selectedSeriesType.value = null;
   onFilterChange();
 };
 
-const _clearSearch = () => {
+const clearSearch = () => {
   searchQuery.value = '';
   onSearchChange();
 };

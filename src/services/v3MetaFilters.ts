@@ -191,10 +191,9 @@ export class V3MetaFilterBuilder {
 export const buildMetaFiltersFromParams = (params: V3EventParams): V3MetaFilters | undefined => {
   const builder = new V3MetaFilterBuilder();
 
-  // Direct meta_filters from params
-  if (params.meta_filters) {
-    Object.assign(builder.filters, params.meta_filters);
-  }
+  // Note: We cannot directly access builder.filters (it's private)
+  // So if params.meta_filters exists, we'll merge it at the end
+  const directMetaFilters = params.meta_filters || {};
 
   // Legacy boolean filters converted to V3 API format
   if (params.have_milongas !== undefined) {
@@ -223,7 +222,15 @@ export const buildMetaFiltersFromParams = (params: V3EventParams): V3MetaFilters
     params.registration_start_date_to,
   );
 
-  return builder.build();
+  // Build the filters from the builder, then merge with direct meta_filters
+  const builtFilters = builder.build();
+
+  // Merge direct meta_filters with built filters (direct meta_filters take precedence)
+  if (Object.keys(directMetaFilters).length > 0) {
+    return { ...builtFilters, ...directMetaFilters };
+  }
+
+  return builtFilters;
 };
 
 /**

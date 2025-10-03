@@ -491,53 +491,54 @@ const _getRenderedTitle = (title: string | { rendered: string } | undefined): st
   return '';
 };
 
-const _viewEvent = (id: number) => {
+const viewEvent = (id: number) => {
   void router.push(`/events/${id}`);
 };
 
-const _viewTeacher = (id: number) => {
+const viewTeacher = (id: number) => {
   void router.push(`/teachers/${id}`);
 };
 
-const _viewDJ = (id: number) => {
+const viewDJ = (id: number) => {
   void router.push(`/djs/${id}`);
 };
 
-const _viewEventSeries = (id: number) => {
+const viewEventSeries = (id: number) => {
   void router.push(`/event-series/${id}`);
 };
 
-const _editProfile = () => {
+const editProfile = () => {
   // Redirect to WordPress admin profile page
   const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
   const profileUrl = `${wordpressUrl}/wp-admin/profile.php`;
   window.open(profileUrl, '_blank');
 };
 
-const _changePassword = () => {
+const changePassword = () => {
   // Redirect to WordPress admin password change page
   const wordpressUrl = process.env.WORDPRESS_API_URL || 'http://localhost:10014';
   const passwordUrl = `${wordpressUrl}/wp-admin/profile.php#password`;
   window.open(passwordUrl, '_blank');
 };
 
-const _logout = () => {
+const logout = () => {
   try {
     void authStore.logout();
     $q.notify({
       type: 'positive',
-      message: 'Successfully logged out',
+      message: 'Logged out successfully',
     });
-    void router.push('/auth/login');
-  } catch {
+    void router.push('/login');
+  } catch (error) {
+    console.error('Logout error:', error);
     $q.notify({
       type: 'negative',
-      message: 'Logout failed',
+      message: 'Error logging out',
     });
   }
 };
 
-const _manageUsers = () => {
+const manageUsers = () => {
   $q.notify({
     type: 'info',
     message: 'User management functionality coming soon!',

@@ -141,8 +141,7 @@
 import { Notify } from 'quasar';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error - JSON import for version reading
+
 import pkg from '../../package.json';
 import { useAuthStore } from '../stores/authStore';
 
@@ -159,7 +158,7 @@ const form = reactive({
   remember: false,
 });
 
-const _showPassword = ref(false);
+const showPassword = ref(false);
 const isLoading = ref(false);
 
 // Debug flag
@@ -167,7 +166,7 @@ const isLoading = ref(false);
 const _debug = ref(true);
 
 // Debug information
-const _isLocalhost = computed(() => {
+const isLocalhost = computed(() => {
   if (typeof window === 'undefined') return false;
   return (
     window.location.hostname === 'localhost' ||
@@ -176,7 +175,7 @@ const _isLocalhost = computed(() => {
   );
 });
 
-const _envInfo = computed(() => ({
+const envInfo = computed(() => ({
   apiBaseUrl: process.env.API_BASE_URL || 'Not set',
   graphqlEndpoint: process.env.GRAPHQL_ENDPOINT || 'Not set',
   wordpressUrl: process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'Not set',
@@ -184,12 +183,12 @@ const _envInfo = computed(() => ({
   routerMode: process.env.VUE_ROUTER_MODE || 'hash',
 }));
 
-const _currentUrl = computed(() => {
+const currentUrl = computed(() => {
   if (typeof window === 'undefined') return 'Server-side rendering';
   return window.location.href;
 });
 
-const _userAgent = computed(() => {
+const userAgent = computed(() => {
   if (typeof window === 'undefined') return 'Server-side rendering';
   return `${window.navigator.userAgent.substring(0, 50)}...`;
 });
@@ -198,16 +197,16 @@ const _userAgent = computed(() => {
 const wordpressUrl =
   process.env.WORDPRESS_URL || process.env.WORDPRESS_API_URL || 'http://localhost:10014';
 
-const _redirectToForgotPassword = (): void => {
+const redirectToForgotPassword = (): void => {
   window.open(`${wordpressUrl}/wp-login.php?action=lostpassword`, '_blank');
 };
 
-const _redirectToRegister = (): void => {
+const redirectToRegister = (): void => {
   window.open(`${wordpressUrl}/wp-login.php?action=register`, '_blank');
 };
 
 // Handle login
-const _handleLogin = async (): Promise<void> => {
+const handleLogin = async (): Promise<void> => {
   if (!form.username || !form.password) return;
 
   isLoading.value = true;

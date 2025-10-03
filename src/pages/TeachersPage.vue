@@ -474,7 +474,7 @@ const _handleRowClick = (_evt: Event, row: Record<string, unknown>) => {
   void router.push(`/teachers/${teacherId}`);
 };
 
-const _refreshData = () => {
+const refreshData = () => {
   void loadTeachers(true);
 };
 
@@ -488,7 +488,7 @@ const onFilterChange = () => {
   void loadTeachers();
 };
 
-const _clearFilters = () => {
+const clearFilters = () => {
   searchQuery.value = '';
   selectedCountry.value = null;
   selectedTeacherType.value = null;

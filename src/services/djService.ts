@@ -28,7 +28,6 @@ class DJService extends BaseService<DJ> {
       meta_fields: ESSENTIAL_DJ_META_FIELDS, // Use essential fields only by default
       include_relationships: true,
     });
-    this.defaultMetaFields = ESSENTIAL_DJ_META_FIELDS;
   }
 
   /**

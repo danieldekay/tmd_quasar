@@ -119,13 +119,12 @@ import { ref } from 'vue';
 const $q = useQuasar();
 const email = ref('');
 
-const _subscribe = () => {
+const subscribe = () => {
   if (email.value) {
     $q.notify({
       type: 'positive',
       message: 'Thank you for subscribing!',
-      icon: 'check_circle',
-      position: 'top',
+      caption: 'You will receive updates about new tango marathons',
     });
     email.value = '';
   }

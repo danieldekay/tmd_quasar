@@ -299,7 +299,6 @@ export class UserService extends BaseService<UserProfile> {
       _embed: false, // Disable embeds for better performance by default
       meta_fields: ESSENTIAL_USER_META_FIELDS, // Use essential fields only by default
     });
-    this.defaultMetaFields = ESSENTIAL_USER_META_FIELDS;
   }
 
   /**
