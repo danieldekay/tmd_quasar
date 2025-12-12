@@ -16,6 +16,14 @@ You are working on the **TMD (Tango Marathons) Quasar Frontend**, a Vue 3 + Type
 
 ## Quasar Framework Best Practices
 
+### Architectural Principles
+
+- **Always choose better architecture over faster shortcuts**
+  - Extract components for better separation of concerns
+  - Create reusable components even if initially used once
+  - Prefer clean, maintainable code over quick implementations
+  - When given "optional" tasks for better architecture, always do them
+
 ### Component Development
 
 - **Always use Quasar's built-in components** when available before creating custom solutions
@@ -365,6 +373,7 @@ Before submitting code:
 ### Quality Commands
 
 **Terminal Commands:**
+
 - `pnpm check:biome` - Format + lint with auto-fix (⭐ PRIMARY - run before commits)
 - `pnpm ci:biome` - Check without auto-fix (CI/CD mode)
 - `pnpm type-check` - Check TypeScript types without emitting files
@@ -376,6 +385,7 @@ Before submitting code:
 - `pnpm dev` - Now includes real-time TypeScript checking in browser!
 
 **VS Code Tasks** (Press `Cmd+Shift+P` → "Run Task"):
+
 - **Quality: Full Check (Biome)** - Type-check + Biome + Tests (⭐ RECOMMENDED)
 - **Quality: Pre-Commit (Biome)** - Biome auto-fix + type-check + tests
 - **Quality: Full Check** - Type-check + ESLint + Tests (legacy)
@@ -385,6 +395,7 @@ Before submitting code:
 - See `.vscode/TASKS.md` and `BIOME_SETUP.md` for complete documentation
 
 **Package Manager:**
+
 - Use `pnpm@10.18.0` exclusively (enforced via `corepack use pnpm@10.18.0`)
 - Never use `npm` or `yarn`
 - Run `pnpm install` for dependencies

@@ -87,9 +87,8 @@ describe('useEventFilters', () => {
     expect(cookieSpySet).toHaveBeenCalled();
     const cookieSetValue = cookieSpySet.mock.calls[0]?.[0] as string;
     expect(cookieSetValue).toContain(`${COOKIE_NAME}=`);
-    expect(decodeURIComponent(cookieSetValue.split('=')[1]?.split(';')[0]!)).toContain(
-      '"searchQuery":"New Search"',
-    );
+    const cookieValue = cookieSetValue.split('=')[1]?.split(';')[0] ?? '';
+    expect(decodeURIComponent(cookieValue)).toContain('"searchQuery":"New Search"');
   });
 
   it('should handle malformed cookie data gracefully', () => {
@@ -121,9 +120,8 @@ describe('useEventFilters', () => {
     const lastCookieCall = cookieSpySet.mock.calls[
       cookieSpySet.mock.calls.length - 1
     ]?.[0] as string;
-    expect(decodeURIComponent(lastCookieCall.split('=')[1]?.split(';')[0]!)).toBe(
-      JSON.stringify(defaultFilters),
-    );
+    const lastCookieValue = lastCookieCall.split('=')[1]?.split(';')[0] ?? '';
+    expect(decodeURIComponent(lastCookieValue)).toBe(JSON.stringify(defaultFilters));
   });
 
   describe('hasActiveFilters', () => {

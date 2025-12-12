@@ -513,8 +513,7 @@ watch(
   (newLoading, oldLoading) => {
     if (oldLoading && !newLoading && !listState.value.error && $q.platform.is.desktop) {
       // A bit of a hack to guess if it was a user-triggered refresh action
-      // biome-ignore lint/suspicious/noExplicitAny: accessing internal refresh timestamp
-      const lastRefreshTime = (refresh as any).lastRefreshTime;
+      const lastRefreshTime = (refresh as unknown as { lastRefreshTime?: number }).lastRefreshTime;
       if (lastRefreshTime && Date.now() - lastRefreshTime < 1000) {
         $q.notify({
           type: 'positive',
